@@ -3,7 +3,7 @@ var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
 var bwbpsUploadStatus = false;
 
-var bwbpsAjaxURL = '/wp-content/plugins/bwb-photosmash/ajax.php';
+var bwbpsAjaxURL = '/wp-content/plugins/photosmash-galleries/ajax.php';
 
 $j(document).ready(function() { 
 
@@ -33,7 +33,7 @@ $j(document).ready(function() {
 		beforeSubmit:  bwbpsVerifyUploadRequest,  
 		success:      bwbpsUploadSuccess , 
 		failure: function(){alert('failed');},
-		url:       '/wp-content/plugins/bwb-photosmash/ajax_upload.php',  // your upload script
+		url:       '/wp-content/plugins/photosmash-galleries/ajax_upload.php',  // your upload script
 		dataType:  'json'
 	}; 
 	$j('#bwbps_uploadform').submit(function() { 

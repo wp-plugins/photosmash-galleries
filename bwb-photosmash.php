@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.1
+Version: 0.1.2
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -345,7 +345,7 @@ function build_PhotoSmash($g)
 		}
 	} else {
 		$psTable .= "<li class='psgal_".$g['gallery_id']
-			."' style='height: ".($g['thumb_height'] + 15)."px; margin: 15px 0;'><img src='/wp-content/plugins/bwb-photosmash/images/"
+			."' style='height: ".($g['thumb_height'] + 15)."px; margin: 15px 0;'><img src='/wp-content/plugins/photosmash-galleries/images/"
 			."ps_blank.gif' width='1' height='".$g['thumb_height']."' /></li>";
 	}
 	$ret .= "<ul id='bwbps_gal_".$g['gallery_id']."' class='bwbps_gallery'>".$psTable;
@@ -386,7 +386,7 @@ function getPhotoForm($g){
 	        		<input type="button" class="ps-submit" value="Done" onclick="tb_remove();return false;" />
 	        	</th>
 	        	<td>
-	        		<img id="bwbps_loading" src="/wp-content/plugins/bwb-photosmash/images/loading.gif" style="display:none;" />	
+	        		<img id="bwbps_loading" src="/wp-content/plugins/photosmash-galleries/images/loading.gif" style="display:none;" />	
 	        	</td>
 	        </tr>
 	        <tr><th><span id="bwbps_message"></span></th>
@@ -426,11 +426,11 @@ function getPhotoForm($g){
 		wp_enqueue_script('thickbox');
 		
 		//enqueue jQuery Forms
-		wp_register_script('jquery_forms', get_bloginfo('wpurl') . '/wp-content/plugins/bwb-photosmash/js/jquery.form.js', array('jquery'), '2.17');
+		wp_register_script('jquery_forms', get_bloginfo('wpurl') . '/wp-content/plugins/photosmash-galleries/js/jquery.form.js', array('jquery'), '2.17');
 		wp_enqueue_script('jquery_forms');
 		
 		//enqueue BWB-PS Javascript
-		wp_register_script('bwbps_js', get_bloginfo('wpurl') . '/wp-content/plugins/bwb-photosmash/js/bwbps.js', array('jquery'), '1.0');
+		wp_register_script('bwbps_js', get_bloginfo('wpurl') . '/wp-content/plugins/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
 		wp_enqueue_script('bwbps_js');
 	}
 	
@@ -438,10 +438,11 @@ function getPhotoForm($g){
 	function injectBWBPS_CSS(){
 	?>
 	<link rel="stylesheet" href="<?= get_bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
-	<link rel="stylesheet" href="<?= get_bloginfo('wpurl'); ?>/wp-content/plugins/bwb-photosmash/bwbps.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="<?= get_bloginfo('wpurl'); ?>/wp-content/plugins/photosmash-galleries/bwbps.css" type="text/css" media="screen" />
     <script type="text/javascript">
     var tb_pathToImage = "<?= get_bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/loadingAnimation.gif";
     var tb_closeImage = "<?= get_bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/tb-close.png";
+	var displayedGalleries = "";
 	</script>
 	<?php
 	}
