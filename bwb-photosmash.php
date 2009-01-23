@@ -371,7 +371,7 @@ function getPhotoForm($g){
         	<input type="hidden" name="bwbps_imgcaption" id="bwbps_imgcaption" />
         	<input type="hidden" name="gallery_id" id="bwbps_galleryid" value="'.$g["gallery_id"].'" />
         	<table class="ps-form-table">
-			<tr><th>Select image to upload:</th>
+			<tr><th>Select image to upload:<br/>(Max. allowed size: 400k)</th>
 				<td>
 					<input type="file" name="bwbps_uploadfile" id="bwbps_uploadfile" />
 				</td>

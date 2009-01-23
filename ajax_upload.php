@@ -1,13 +1,11 @@
 <?php
-
+ini_set ('memory_limit','100M');
 if (!function_exists('add_action'))
 {
 	require_once("../../../wp-load.php");
 }
 
 check_ajax_referer( "bwb_upload_photos" );
-
-include('classes/upload/class.upload.php');
 
 $json['gallery_id'] = (int)$_POST['gallery_id'];
 
@@ -29,7 +27,13 @@ if(!$user_level){
 	echo json_encode($json);
 	exit();
 }
+
+
 $user_level = current_user_can('level_1');
+
+include('classes/upload/class.upload.php');
+
+$handle->file_max_size = 5000000;
 $handle = new upload($_FILES['bwbps_uploadfile']);
 
 $handle->file_auto_rename = true;

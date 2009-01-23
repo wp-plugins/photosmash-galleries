@@ -1,10 +1,17 @@
 var $j = jQuery.noConflict();
 var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
+var bwbpsUploadStatus = false;
 
 var bwbpsAjaxURL = '/wp-content/plugins/bwb-photosmash/ajax.php';
 
 $j(document).ready(function() { 
+
+	//For Admin section
+	
+	if($j('#citytracs_sectionid').length > 0){
+		$j('#citytracs_sectionid').prependTo("#normal-sortables");
+	}
 	//Show and hide the Loading icon on Ajax start/end
 	$j("#bwbps_loading")
 	.ajaxStart(function(){
@@ -12,6 +19,13 @@ $j(document).ready(function() {
 	})
 	.ajaxComplete(function(){
 		$j(this).hide();
+		if(	bwbpsUploadStatus == false)
+			{
+				$j("#bwbps_submitBtn").removeAttr('disabled');
+				$j("#bwbps_imgcaptionInput").removeAttr('disabled');
+				$j('#bwbps_message').html("The maximum file size allowed is 400k.  Please resize and try again.");
+			}
+		bwbpsUploadStatus = false;
 	});
 	
 	
@@ -53,6 +67,7 @@ function bwbpsVerifyUploadRequest(formData, jqForm, options) {
 	$j("#bwbps_imgcaption").val($j("#bwbps_imgcaptionInput").val());
 	$j("#bwbps_submitBtn").attr('disabled','disabled');
 	$j("#bwbps_imgcaptionInput").attr('disabled','disabled');
+	$j('#bwbps_result').html('');
 	
 	return true;
 } 
@@ -63,12 +78,12 @@ function bwbpsVerifyUploadRequest(formData, jqForm, options) {
 function bwbpsUploadSuccess(data, statusText)  { 
 	$j("#bwbps_submitBtn").removeAttr('disabled');
 	$j("#bwbps_imgcaptionInput").removeAttr('disabled');
-	
+	bwbpsUploadStatus = true;
 	if (statusText == 'success') {
 		if(data == -1){
 				alert('nonce');
 			//The nonce	 check failed
-			$j('#bwbps_message').html("<span class='error'>Upload failed due to invalid authorization.  Please reload this page and try again.</span>"); 
+			$j('#bwbps_message').html("<span class='error'>Upload failed due to invalid authorization.  Please reload this page and try again.</span>");
 			return false;
 	 	}
 	 	
@@ -105,7 +120,6 @@ function bwbpsUploadSuccess(data, statusText)  {
 	} else {
 		$j('#bwbps_message').html('Unknown error!'); 
 	}
-	
 } 
 
 
