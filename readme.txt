@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, gallery, social, community, posts, admin
 Requires at least: 2.5
 Tested up to: 2.7
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -66,7 +66,7 @@ It should be relatively straight forward to change the look and feel through thi
 
 Using PhotoSmash is extremely simple:
 
-1. Download PhotoSmash and unzipÉyou should wind up with a folder named: bwb-photosmash
+1. Download PhotoSmash and unzipï¿½you should wind up with a folder named: bwb-photosmash
 1. Upload the bwb-photosmash plugin folder to your /wp-content/plugins/ folder
 1. In the Plugins page of your WordPress Admin, activate PhotoSmash
 1. There are 3 ways to add new galleries to your posts:
@@ -74,8 +74,8 @@ Using PhotoSmash is extremely simple:
          --2--   Also in the PhotoSmash options page, scroll down below the PhotoSmash defaults section and select New in the gallery drop down.  Fill in the details you want to use for the new gallery, and click the Save Gallery button to create the new gallery.  After the save is complete, select your new gallery from the Gallery drop down and click the Edit button to retrieve it.  The code (like [photosmash=1] )for adding this specific gallery to any post or page will be in red beneath the Gallery drop down.  Cut and past the code anywhere you like in your posts or pages.  You can also specify multiple specific galleries within a single post or page by putting the tags with their ids in as needed.
          --3--   PhotoSmash can also create galleries on the fly for specific posts.  Simply enter the following code anywhere you like in posts or pages and a gallery will be automatically created:   [photosmash=] The code should include everything in red, including the braces and the = sign.
 1.  To prevent a post or page from receiving a gallery when Auto-add is activated, insert the following tag anywhere in your post or page:  [ps-skip]
-1.  To add photos to your galleries, go to the post or page and click Add Photos link.  IÕm not sure what the size limit is right now.  It may vary based on your php.ini settings.
+1.  To add photos to your galleries, go to the post or page and click Add Photos link.  Iï¿½m not sure what the size limit is right now.  It may vary based on your php.ini settings.
 1.  If you choose to let Registered users upload photos, their photos will be visible to Admins and the themselves only.  Admins will be presented with buttons for Approve or Bury.  Approve is self explanatory.  Bury simply deletes the record from the database and deletes (unlinks in PHP terms) the files from the bwbps and bwbps/thumbs/ folders in the wp-content/uploads/ folder
-1.  You will receive an email alert for photos requiring moderation.  These alerts use a pseudo-cron like scheduling scheme that is triggered whenever someone views one of your blogÕs pages.  You can set the alert program to check every 10 minutes, 1 hour, or 1  day, or not at all.
-1.  To edit a photoÕs caption, go to the PhotoSmash options page in wp-admin.  Select the desired gallery from the drop down and click Edit.  When the page comes back, the images for that gallery will show up at the bottom of the page.  There will be text boxes beneath image allowing you to edit captions.  Click save to save caption edits.  Approve buttons will be present for images needing moderation.  Delete will be available for all images.
-1.  To integrate with Lightbox or Shadowbox, simply include the correct ÒrelÓ information in the Gallery specific options on the PhotoSmash options page.  You can set your general PhotoSmash default rel in PhotoSmash Defaults section so that any newly created galleries will automatically get the rel.   For Lightbox, set the rel to lightbox.  Shadowbox can use lightbox or shadowbox.  To group a galleries images together as an album for Shadowbox, use something like:  shadowbox[album] as the galleryÕs rel.
+1.  You will receive an email alert for photos requiring moderation.  These alerts use a pseudo-cron like scheduling scheme that is triggered whenever someone views one of your blogï¿½s pages.  You can set the alert program to check every 10 minutes, 1 hour, or 1  day, or not at all.
+1.  To edit a photoï¿½s caption, go to the PhotoSmash options page in wp-admin.  Select the desired gallery from the drop down and click Edit.  When the page comes back, the images for that gallery will show up at the bottom of the page.  There will be text boxes beneath image allowing you to edit captions.  Click save to save caption edits.  Approve buttons will be present for images needing moderation.  Delete will be available for all images.
+1.  To integrate with Lightbox or Shadowbox, simply include the correct ï¿½relï¿½ information in the Gallery specific options on the PhotoSmash options page.  You can set your general PhotoSmash default rel in PhotoSmash Defaults section so that any newly created galleries will automatically get the rel.   For Lightbox, set the rel to lightbox.  Shadowbox can use lightbox or shadowbox.  To group a galleries images together as an album for Shadowbox, use something like:  shadowbox[album] as the galleryï¿½s rel.
