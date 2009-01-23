@@ -37,7 +37,7 @@ class BWBPS_Init{
 				seq BIGINT(11) NOT NULL,
 				avg_rating FLOAT(8,4) NOT NULL,
 				rating_cnt BIGINT(11) NOT NULL,
-				PRIMARY KEY   (image_id),
+				PRIMARY KEY  (image_id),
 				INDEX (gallery_id)
 				)  DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;";
 			dbDelta($sql);
@@ -52,7 +52,7 @@ class BWBPS_Init{
 				comment VARCHAR(250) NOT NULL,
 				updated_date TIMESTAMP NOT NULL,
 				status TINYINT(1) NOT NULL,
-				PRIMARY KEY   (rating_id),
+				PRIMARY KEY  (rating_id),
 				INDEX (image_id)
 				)  DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;";
 			dbDelta($sql);
@@ -76,7 +76,7 @@ class BWBPS_Init{
 				created_date DATETIME NOT NULL,
 				updated_date TIMESTAMP NOT NULL,
 				status TINYINT(1),
-				PRIMARY KEY   (gallery_id))
+				PRIMARY KEY  (gallery_id))
 				DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci
 				;";
 			dbDelta($sql);
