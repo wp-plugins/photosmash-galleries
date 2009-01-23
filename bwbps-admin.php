@@ -426,7 +426,7 @@ if($galleryID){
  		 
 		$ret = "<option value='0'>&lt;New&gt;</value>";
 		
-		$query = $wpdb->get_results("SELECT wp_bwbps_galleries.gallery_id, wp_bwbps_galleries.gallery_name, wp_posts.post_title FROM wp_bwbps_galleries LEFT OUTER JOIN wp_posts ON wp_bwbps_galleries.post_id = wp_posts.ID WHERE wp_bwbps_galleries.status = 1 ORDER BY wp_bwbps_galleries.gallery_id");
+		$query = $wpdb->get_results("SELECT ".$wpdb->prefix."bwbps_galleries.gallery_id, ".$wpdb->prefix."bwbps_galleries.gallery_name, ".$wpdb->prefix."posts.post_title FROM ".$wpdb->prefix."bwbps_galleries LEFT OUTER JOIN ".$wpdb->prefix."posts ON ".$wpdb->prefix."bwbps_galleries.post_id = ".$wpdb->prefix."posts.ID WHERE ".$wpdb->prefix."bwbps_galleries.status = 1 ORDER BY ".$wpdb->prefix."bwbps_galleries.gallery_id");
 		if(is_array($query)){
 		foreach($query as $row){
 			if($selectedGallery == $row->gallery_id){$sel = "selected='selected'";}else{$sel = "";}
