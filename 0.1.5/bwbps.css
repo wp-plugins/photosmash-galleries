@@ -1,0 +1,142 @@
+ul.bwbps_gallery, ul.bwbps_gallery li
+{
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+ul.bwbps_gallery li{
+	display: block;
+	float: left;
+	margin: 15px;
+} 
+
+.bwbps_clear{
+	clear: both;
+}
+
+.bwbps_gallery_div{
+	background:#333;
+	border:1px solid #ddd;
+	border-color:#888 #000 #000 #888;
+	margin: 15px;
+}
+
+.bwbps_gallery_div li{
+	text-align: center;
+	
+}
+
+.bwbps_gallery_div a{
+	color: #fff;
+}
+
+.bwbps_gallery_div a:hover{
+	color: #fff;
+	text-decoration: underline;
+}
+
+.bwbps_galid {
+	float: right;
+	color: #fff;
+}
+
+.bwbps_galler_div span{
+	max-width: 125px;
+}
+
+.photoform a, .photoform a:visited{
+	font-size: 12px !important;
+	color: #0066ff !important;
+}
+
+
+
+.ps-submit input, .ps-submit {
+	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;
+	text-decoration: none;
+	font-size: 11px !important;
+	line-height: 16px;
+	padding: 2px 8px;
+	cursor: pointer;
+	border-width: 1px;
+	border-style: solid;
+	-moz-border-radius: 11px;
+	-khtml-border-radius: 11px;
+	-webkit-border-radius: 11px;
+	border-radius: 11px;
+	-moz-box-sizing: content-box;
+	-webkit-box-sizing: content-box;
+	-khtml-box-sizing: content-box;
+	box-sizing: content-box;
+}
+
+.ps-modbutton input, .ps-modbutton {
+	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;
+	text-decoration: none;
+	font-size: 9px !important;
+	line-height: 11px;
+	padding: 1px 0px;
+	cursor: pointer;
+	border-width: 1px;
+	border-style: solid;
+	-moz-border-radius: 2px;
+	-khtml-border-radius: 2px;
+	-webkit-border-radius: 2px;
+	border-radius: 2px;
+	-moz-box-sizing: content-box;
+	-webkit-box-sizing: content-box;
+	-khtml-box-sizing: content-box;
+	box-sizing: content-box;
+}
+
+.ps-form-table {
+	border-collapse: collapse;
+	margin-top: 0.5em;
+	width: 100%;
+	margin-bottom: -8px;
+	clear: both;
+}
+
+.ps-form-table td {
+	margin-bottom: 9px;
+	padding: 4px 10px 12px;
+	line-height: 20px;
+	font-size: 11px;
+}
+
+.ps-form-table th {
+	font-weight: normal;
+	text-shadow: rgba(255,255,255,1) 0 1px 0;
+}
+
+.ps-form-table th{
+	vertical-align: top;
+	text-align: left;
+	padding: 10px;
+	width: 200px;
+}
+
+.ps-form-table input{
+	border-width: 1px;
+	border-style: solid;
+}
+
+.ps-moderate img {
+	border: 2px solid red !important;
+}
+
+.ps-buried img {
+	border: 2px solid purple !important;
+}
+
+.ps-modmenu {
+	font-size: 10px;
+	color: #aaccff !important;
+}
+
+.ps-modmenu img{
+	border: none !important;
+	margin-left: 5px;
+	vertical-align: top;
+}
