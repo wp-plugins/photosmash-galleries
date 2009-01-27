@@ -6,12 +6,6 @@ var bwbpsUploadStatus = false;
 var bwbpsAjaxURL = '/wp-content/plugins/photosmash-galleries/ajax.php';
 
 $j(document).ready(function() { 
-
-	//For Admin section
-	
-	if($j('#citytracs_sectionid').length > 0){
-		$j('#citytracs_sectionid').prependTo("#normal-sortables");
-	}
 	//Show and hide the Loading icon on Ajax start/end
 	$j("#bwbps_loading")
 	.ajaxStart(function(){
