@@ -1,5 +1,5 @@
 <?php
-// Admin Pages for BWB-PhotoSmash plugin
+//Admin Pages for BWB-PhotoSmash plugin
 
 
 class BWBPS_Admin{
