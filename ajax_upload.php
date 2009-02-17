@@ -1,11 +1,15 @@
 <?php
-ini_set ('memory_limit','100M');
+//ini_set ('memory_limit','100M');
+
 if (!function_exists('add_action'))
 {
 	require_once("../../../wp-load.php");
 }
 
 check_ajax_referer( "bwb_upload_photos" );
+
+// required for Windows & XAMPP
+define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
 $json['gallery_id'] = (int)$_POST['gallery_id'];
 
@@ -50,7 +54,7 @@ $handle->file_new_name_body = $newname;
 sleep(3);
 $json['img'] = $newname.".".$handle->file_src_name_ext;
 //process and save full sized image
-$handle->process($_SERVER['DOCUMENT_ROOT']."/wp-content/uploads/bwbps/");
+$handle->process(WINABSPATH."/wp-content/uploads/bwbps/");
 
 
 
@@ -77,7 +81,7 @@ if($g['thumb_width'] || $g['thumb_height']){
 	}
 }
 
-$handle->process($_SERVER['DOCUMENT_ROOT']."/wp-content/uploads/bwbps/thumbs/");
+$handle->process(WINABSPATH."/wp-content/uploads/bwbps/thumbs/");
 
 if($handle->processed){
 	$json['succeed'] = "true";

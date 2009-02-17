@@ -3,10 +3,25 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.5
+Version: 0.1.6
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
+
+// SafeMode code Borrow from NextGen gallery
+// get value for safe mode
+if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
+	// if sever did in in a other way
+	if ( ini_get('safe_mode') == 'off' ) define('SAFEMODE', FALSE);
+	else define( 'SAFEMODE', ini_get('safe_mode') );
+} else{
+define( 'SAFEMODE', ini_get('safe_mode') );
+}
+
+
+// required for Windows & XAMPP
+define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
+
 
 class BWB_PhotoSmash{
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
@@ -371,7 +386,11 @@ function getPhotoForm($g){
         	<input type="hidden" name="bwbps_imgcaption" id="bwbps_imgcaption" />
         	<input type="hidden" name="gallery_id" id="bwbps_galleryid" value="'.$g["gallery_id"].'" />
         	<table class="ps-form-table">
-			<tr><th>Select image to upload:<br/>(Max. allowed size: 400k)</th>
+			<tr><th>Select image to upload:<br/>(Max. allowed size: 400k)';
+	
+	if(SAFEMODE) {$retForm .= '<br/>Safe Mode is <b>ON</b>.';} 
+	$retForm .= '
+			</th>
 				<td>
 					<input type="file" name="bwbps_uploadfile" id="bwbps_uploadfile" />
 				</td>
