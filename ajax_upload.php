@@ -24,8 +24,13 @@ $json['img'] = '';
 $json['imgrel'] = $g['img_rel'];
 $json['show_imgcaption'] = $g['show_imgcaption'];
 
-$json['succeed'] = 'false';
-$user_level = current_user_can('level_'.$g['contrib_role']);
+$json['succeed'] = 'false'; 
+if($g['contrib_role'] == -1){
+	$user_level = true;
+} else {
+	$user_level = current_user_can('level_'.$g['contrib_role']);
+}
+
 if(!$user_level){
 	$json['message'] = "Current user does not have authorization for uploading to this gallery.";
 	echo json_encode($json);
@@ -107,7 +112,11 @@ if ($handle->processed) {
 	if($user_level){
 		$data['status'] = 1;
 	}else{
-		$data['status'] = -1;
+		if($g['img_status'] == 1){
+			$data['status'] = 1;
+		} else {
+			$data['status'] = -1;
+		}
 	}
 	$data['alerted'] = 0;
 	$data['updated_by'] = $current_user->ID;

@@ -235,15 +235,16 @@ class BWBPS_Admin{
 				<th>Default Minimum role to upload photos:</th>
 				<td>
 					<select name="ps_contrib_role">
-						<option value="0" <?php if($psOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Registered user</option>
+						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
+						<option value="0" <?php if($psOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
 						<option value="1" <?php if($psOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
 						<option value="10" <?php if($psOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
 					</select>
-					<br/>Images uploaded by users with the Register user role require moderation.
+					<br/>Authors/Contributors and Admins will not need moderation, even if selected below.
 				</td>
 			</tr>
 			<tr>
-				<th>Default image status:</th>
+				<th>Default moderation status:</th>
 				<td>
 					<select name="ps_img_status">
 						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
@@ -315,7 +316,8 @@ class BWBPS_Admin{
 				<th>Minimum role to upload photos:</th>
 				<td>
 					<select name="gal_contrib_role">
-						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Registered user</option>
+						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
+						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
 						<option value="1" <?php if($galOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
 						<option value="10" <?php if($galOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
 					</select>
