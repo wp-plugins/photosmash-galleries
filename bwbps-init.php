@@ -14,10 +14,8 @@ class BWBPS_Init{
 		global $wpdb;
 		
 		$table_name = $wpdb->prefix . "bwbps_images";
-		
-		if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
-			
-			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+				
+			require_once(WINABSPATH . 'wp-admin/includes/upgrade.php');
 			
 			//Create the Images table
 			$sql = "CREATE TABLE " . $table_name . " (
@@ -81,7 +79,6 @@ class BWBPS_Init{
 				;";
 			dbDelta($sql);
 						
-		}
 		//Neeed to Set PS Default Options
 		$this->getPSDefaultOptions();
 	}
