@@ -11,6 +11,9 @@ check_ajax_referer( "bwb_upload_photos" );
 // required for Windows & XAMPP
 define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
+$_psuploadpath = wp_upload_dir();
+define('PSUPLOADPATH', $_psuploadpath['path']);
+
 $json['gallery_id'] = (int)$_POST['gallery_id'];
 
 $table_name = $wpdb->prefix . "bwbps_galleries";
@@ -59,7 +62,7 @@ $handle->file_new_name_body = $newname;
 sleep(3);
 $json['img'] = $newname.".".$handle->file_src_name_ext;
 //process and save full sized image
-$handle->process(WINABSPATH."/wp-content/uploads/bwbps/");
+$handle->process(PSUPLOADPATH."/bwbps/");
 
 
 
@@ -86,7 +89,7 @@ if($g['thumb_width'] || $g['thumb_height']){
 	}
 }
 
-$handle->process(WINABSPATH."/wp-content/uploads/bwbps/thumbs/");
+$handle->process(PSUPLOADPATH."/bwbps/thumbs/");
 
 if($handle->processed){
 	$json['succeed'] = "true";
