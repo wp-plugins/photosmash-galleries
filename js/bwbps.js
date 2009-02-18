@@ -136,6 +136,11 @@ function bwbps_equalHeight(group) {
     group.height(tallest);
 }
 
+function bwbpsConfirmDeleteGallery(){
+	var fieldname = jQuery("#bwbpsGalleryDDL option:selected").text();
+	return confirm('Do you want to delete Gallery: ' + fieldname + '?');
+}
+
 //Moderate/Delete Image
 function bwbpsModerateImage(action, image_id)
 {

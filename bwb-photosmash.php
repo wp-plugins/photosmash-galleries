@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.7
+Version: 0.1.71
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -22,6 +22,8 @@ define( 'SAFEMODE', ini_get('safe_mode') );
 // required for Windows & XAMPP
 define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
+define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
+
 
 class BWB_PhotoSmash{
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
@@ -29,6 +31,8 @@ class BWB_PhotoSmash{
 	var $uploadFormCount = 0;
 	var $moderateNonceCount = 0;
 	var $loadedGalleries;
+	
+	var $psAdmin;
 	
 	var $psOptions;
 	
@@ -77,11 +81,60 @@ class BWB_PhotoSmash{
 	}
 	
 	
+		
+	/**
+	 * Adds the PhotoSmash menu items	to Admin
+	 * 
+	 */
+	function photoSmashOptionsPage()
+	{
+		global $bwbPS;
+		if (!isset($bwbPS)) {
+			return;
+		}
+		if (function_exists('add_menu_page')) {
+			
+			add_menu_page('PhotoSmash', 'PhotoSmash', 9, basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
+			
+			add_submenu_page(basename(__FILE__), __('PhotoSmash Settings'), __('PhotoSmash Settings'), 9,  basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
+			
+			add_submenu_page(basename(__FILE__), __('Gallery Settings'), __('Gallery Settings'), 9,  
+			'editPSGallerySettings', array(&$bwbPS, 'loadGallerySettings'));
+			
+			add_submenu_page(basename(__FILE__), __('Database Viewer'), __('Photo Manager'), 9,  
+			'managePhotoSmashImages', array(&$bwbPS, 'loadPhotoManager'));
+		}
+		
+	}
+	
 	//Prints out the Admin Options Page
 	function loadAdminPage(){
-		require_once("bwbps-admin.php");
-		$psAdmin = new BWBPS_Admin();
+		if(!$this->psAdmin){
+			require_once("bwbps-admin.php");
+			$this->psAdmin = new BWBPS_Admin();
+		}
+		$this->psAdmin->printGeneralSettings();
 	}
+	
+	function loadGallerySettings(){
+		if(!$this->psAdmin){
+			require_once("bwbps-admin.php");
+			$this->psAdmin = new BWBPS_Admin();
+		}
+		$this->psAdmin->printGallerySettings();
+		return true;
+	}
+	
+	function loadPhotoManager(){
+		if(!$this->psAdmin){
+			require_once("bwbps-admin.php");
+			$this->psAdmin = new BWBPS_Admin();
+		}
+		$this->psAdmin->printManageImages();
+		
+		return true;
+	}
+	
 	
 	//Send email alerts for new images
 	function sendNewImageAlerts()
@@ -495,21 +548,9 @@ function getPhotoForm($g){
 
 $bwbPS = new BWB_PhotoSmash();
 
-//Initialize the admin panel
-if (!function_exists("bwbpsAdminPage")) {
-	function bwbpsAdminPage() {
-		global $bwbPS;
-		if (!isset($bwbPS)) {
-			return;
-		}
-		if (function_exists('add_options_page')) {
-			add_options_page('PhotoSmash Gallery', 'PhotoSmash', 9, basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
-		}
-	}
-}
 
-//Call the Function that will Add the Admin Page
-add_action('admin_menu', 'bwbpsAdminPage');
+//Call the Function that will Add the Options Page
+add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));
 
 
 

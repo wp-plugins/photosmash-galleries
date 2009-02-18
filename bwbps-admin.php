@@ -4,16 +4,34 @@
 
 class BWBPS_Admin{
 	
+	var $psOptions;
+	var $message = false;
+	var $msgclass = "updated fade";
+	
 	//Constructor
 	function BWBPS_Admin(){
 		//Get PS Defaults
-		$psOptions = $this->getPSOptions();
+		$this->psOptions = $this->getPSOptions();
 		
-		//Save PS or Gallery options as needed
-		$this->saveOptions(&$psOptions);
+		//Save PS General Settings
+		if(isset($_POST['update_bwbPSDefaults'])){
+			check_admin_referer( 'update-gallery');
+			$this->saveGeneralSettings($this->psOptions);
+			//Refresh options
+			$this->psOptions = $this->getPSOptions();
+		}
 		
-		//Display the Admin Page form
-		$this->printAdminPage($psOptions);
+		//Save Gallery Settings
+		if(isset($_POST['save_bwbPSGallery'])){
+			check_admin_referer( 'update-gallery');
+			$this->saveGallerySettings($this->psOptions);
+		}
+		
+		//Delete field
+		if(isset($_POST['deletePhotoSmashGallery'])){
+			check_admin_referer( 'update-gallery');
+			$this->deleteGallery($this->options);
+		}
 	
 	}
 	
@@ -53,15 +71,28 @@ class BWBPS_Admin{
 		);
 	}
 	
-	//Checks to see if we're saving options
-	function saveOptions(&$psOptions){
+	function deleteGallery($options)
+	{
+		global $wpdb;
+		
+		//This section deletes a Gallery
+		$gallery_id = (int)$_POST['gal_gallery_id'];
+		
+		if($gallery_id){
+			$ret = $wpdb->query("DELETE FROM ".PSGALLERIESTABLE." WHERE gallery_id="
+				.$gallery_id." LIMIT 1" );
+		}
+		if($ret){$this->message = "Gallery deleted...";}
+		
+		return;
+	}
+
 	
+	//Checks to see if we're saving options
+	function saveGeneralSettings($ps){
 		global $wpdb;
 		
 		//This section Saves the overall PhotoSmash defaults
-		if(isset($_POST['update_bwbPSDefaults'])){
-			check_admin_referer( 'update-gallery');
-			$ps =& $psOptions;
 			if(isset($_POST['ps_auto_add'])){
 				$ps['auto_add'] = (int)$_POST['ps_auto_add'];
 			}
@@ -103,13 +134,14 @@ class BWBPS_Admin{
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
 			
-			echo "<h3 style='color: red;'>PhotoSmash defaults updated...</h3>";
-		}
-		
+			$this->message = "PhotoSmash defaults updated...";
+			return true;
+	}
+	
+	function saveGallerySettings()
+	{
+		global $wpdb;
 		//This section saves Gallery specific settings
-		if(isset($_POST['save_bwbPSGallery'])){
-			check_admin_referer( 'update-gallery');
-			echo '<h3>Updating PS Settings</h3>';
 			$gallery_id = (int)$_POST['gal_gallery_id'];
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
 			$d['thumb_width'] = (int)$_POST['gal_thumb_width'];
@@ -133,21 +165,20 @@ class BWBPS_Admin{
 				$d['created_date'] = date('Y-m-d H:i:s');
 				$d['status'] = 1;
 				$wpdb->insert($tablename,$d);
-				echo "<h3 style='color: red;'>New Gallery Created...</h3>";
+				$this->message = "New Gallery Created: ".$d['gallery_name'];
 			}else{
 				$where['gallery_id'] = $gallery_id;
 				$wpdb->update($tablename, $d, $where);
-				echo "<h3 style='color: red;'>Gallery - $gallery_id - Updated...</h3>";
-			}
-			
-		}
-		
-		
+				$this->message .= "Gallery Updated: ".$d['gallery_name'];
+			}		
 	}
-
-	//Disply the Admin Options Page
-	function printAdminPage($psOptions){
+	
+	
+	//Disply the General Settings Page
+	function printGallerySettings(){
 		global $wpdb;
+		$psOptions = $this->psOptions;
+		
 		if(isset($_POST['gal_gallery_id'])){
 			$galleryID = (int)$_POST['gal_gallery_id'];
 		} else { $galleryID = 0; }
@@ -156,13 +187,133 @@ class BWBPS_Admin{
 		if($galleryID){
 			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.$wpdb->prefix.'bwbps_galleries WHERE gallery_id = %d',$galleryID), ARRAY_A);
 		}
+		
 		?>
 		<div class=wrap>
 		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
 		<?php bwbps_nonce_field('update-gallery'); ?>
 		<h2>PhotoSmash Galleries</h2>
-		<h3>PhotoSmash Defaults</h3>
+		
+		<?php
+			if($this->message){
+				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
+			}
+		?>
+		<h3>Gallery Settings</h3>
+<table class="form-table"><tr>
+<th><input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" /></th><td><a href='admin.php?page=bwb-photosmash.php'>PhotoSmash General Settings</a></td>
+</tr>
+<tr>
+<th>Select Gallery to edit:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
+<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'suppleLang') ?>" />
+<?php if($galleryID){
+	echo "<br/><a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=".(int)$galleryID."'>Manage photos</a>";
+}
+?>
+
+</td></tr>
+
+<?php if($galleryID){
+?>
+<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash=<?php echo $galleryID;?>]</span>
+<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)</td></tr>
+<?php }?>
+	<tr>
+				<th>Gallery name:</th>
+				<td>
+					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>'/>
+				</td>
+	</tr>
+
+	<tr>
+				<th>Thumbnail width (px):</th>
+				<td>
+					<input type='text' name="gal_thumb_width" value='<?php echo $galOptions['thumb_width'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Thumbnail height (px):</th>
+				<td>
+					<input type='text' name="gal_thumb_height" value='<?php echo $galOptions['thumb_height'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>"Rel" parameter for image links:</th>
+				<td>
+					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Upload form caption:</th>
+				<td>
+					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Default image css class:</th>
+				<td>
+					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Show image caption:</th>
+				<td>
+					<select name="gal_show_imgcaption">
+						<option value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'selected=selected'; ?>>No</option>
+						<option value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'selected=selected'; ?>>Yes</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>Minimum role to upload photos:</th>
+				<td>
+					<select name="gal_contrib_role">
+						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
+						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
+						<option value="1" <?php if($galOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
+						<option value="10" <?php if($galOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>Default image status:</th>
+				<td>
+					<select name="gal_img_status">
+						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
+						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+					</select>
+				</td>
+			</tr>
+
+</table>
+<p class="submit">
+	<input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" />
+</p>
+</form>
+<?php
+	}
+	
+
+	//Disply the General Settings Page
+	function printGeneralSettings(){
+		global $wpdb;
+		
+		$psOptions = $this->psOptions;
+		
+		?>
+		<div class=wrap>
+		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+		<?php bwbps_nonce_field('update-gallery'); ?>
+		<h2>PhotoSmash Galleries</h2>
+		
+		<?php
+			if($this->message){
+				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
+			}
+		?>		
+		<h3>PhotoSmash Default Settings</h3>
 		<table class="form-table">
+			<tr><th><input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" /></th><td><a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a></td></tr>
 			<tr>
 				<th>Auto-add gallery to posts:</th>
 				<td>
@@ -256,91 +407,59 @@ class BWBPS_Admin{
 	<p class="submit">
 		<input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" />
 	</p>
-
-<h3>Select a Gallery or Create &lt;New&gt;</h3>
-<table class="form-table"><tr>
-<th>Select Gallery to edit:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" /></td></tr>
-
-<?php if($galleryID){
-?>
-<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash=<?php echo $galleryID;?>]</span>
-<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)</td></tr>
-<?php }?>
-	<tr>
-				<th>Gallery name:</th>
-				<td>
-					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>'/>
-				</td>
-	</tr>
-
-	<tr>
-				<th>Thumbnail width (px):</th>
-				<td>
-					<input type='text' name="gal_thumb_width" value='<?php echo $galOptions['thumb_width'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Thumbnail height (px):</th>
-				<td>
-					<input type='text' name="gal_thumb_height" value='<?php echo $galOptions['thumb_height'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>"Rel" parameter for image links:</th>
-				<td>
-					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Upload form caption:</th>
-				<td>
-					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Default image css class:</th>
-				<td>
-					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Show image caption:</th>
-				<td>
-					<select name="gal_show_imgcaption">
-						<option value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'selected=selected'; ?>>No</option>
-						<option value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'selected=selected'; ?>>Yes</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<th>Minimum role to upload photos:</th>
-				<td>
-					<select name="gal_contrib_role">
-						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
-						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
-						<option value="1" <?php if($galOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
-						<option value="10" <?php if($galOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<th>Default image status:</th>
-				<td>
-					<select name="gal_img_status">
-						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
-					</select>
-				</td>
-			</tr>
-
-</table>
-<p class="submit">
-	<input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" />
-</p>
 </form>
-<?php
-if($galleryID){
-			global $bwbPS;
+
+</div>
+<?php 
+	
+	}
+	
+	
+	/**
+	 * printManageImages()
+	 * 
+	 * @access public 
+	 * @prints the manage images page
+	 */
+	function printManageImages()
+	{
+	
+		global $wpdb;
+		$psOptions = $this->psOptions;
+		
+		if(isset($_POST['gal_gallery_id'])){
+			$galleryID = (int)$_POST['gal_gallery_id'];
+		} else { 
+			if(isset($_GET['psget_gallery_id'])){
+				$galleryID = (int)$_GET['psget_gallery_id'];
+			}else{
+				$galleryID = 0; 
+			}
+		}
+		
+		$galleryDDL = $this->getGalleryDDL($galleryID);
+		
+		if($galleryID){
+			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$galleryID), ARRAY_A);
+		}
+
+		?>
+		
+		<div class=wrap>
+		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+		<?php bwbps_nonce_field('update-gallery'); ?>
+		<h2>PhotoSmash Galleries</h2>
+		
+		<?php
+			if($this->message){
+				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
+			}
+		?>		
+		<h3>Photo Manager</h3>
+		<?php 
+			echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />		
+		<?php
+		if($galleryID){
 			$result = $this->getGalleryImages($galleryID);
 			
 			if($result){
@@ -350,14 +469,22 @@ if($galleryID){
 				';
 			}
 			echo $result;
-}
-?>
- </div>
-					<?php
-		
-		
+		}
+	?>
+	</form>
+
+ 	</div>
+<?php
 	}
+
 	
+	/**
+	 * getGalleryImages()
+	 * 
+	 * @access public 
+	 * @param integer $gallery_id
+	 * @return a table of the images
+	 */
 	function getGalleryImages($gallery_id)
 	{
 		$images = $this->getGalleryQuery($gallery_id);
@@ -428,7 +555,7 @@ if($galleryID){
  		 
 		$ret = "<option value='0'>&lt;New&gt;</value>";
 		
-		$query = $wpdb->get_results("SELECT ".$wpdb->prefix."bwbps_galleries.gallery_id, ".$wpdb->prefix."bwbps_galleries.gallery_name, ".$wpdb->prefix."posts.post_title FROM ".$wpdb->prefix."bwbps_galleries LEFT OUTER JOIN ".$wpdb->prefix."posts ON ".$wpdb->prefix."bwbps_galleries.post_id = ".$wpdb->prefix."posts.ID WHERE ".$wpdb->prefix."bwbps_galleries.status = 1 ORDER BY ".$wpdb->prefix."bwbps_galleries.gallery_id");
+		$query = $wpdb->get_results("SELECT ".PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, ".$wpdb->prefix."posts.post_title FROM ".PSGALLERIESTABLE." LEFT OUTER JOIN ".$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = ".$wpdb->prefix."posts.ID WHERE ".PSGALLERIESTABLE.".status = 1 ORDER BY ".PSGALLERIESTABLE.".gallery_id");
 		if(is_array($query)){
 		foreach($query as $row){
 			if($selectedGallery == $row->gallery_id){$sel = "selected='selected'";}else{$sel = "";}
@@ -440,7 +567,7 @@ if($galleryID){
 			$ret .= "<option value='".$row->gallery_id."' ".$sel.">ID: ".$row->gallery_id."-".$title."</option>";
 		}
 		}
-		$ret ="<select name='gal_gallery_id'>".$ret."</select>";
+		$ret ="<select id='bwbpsGalleryDDL' name='gal_gallery_id'>".$ret."</select>";
 		return $ret;
 	}
 	
