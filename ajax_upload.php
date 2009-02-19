@@ -11,8 +11,9 @@ check_ajax_referer( "bwb_upload_photos" );
 // required for Windows & XAMPP
 define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
-$_psuploadpath = wp_upload_dir();
-define('PSUPLOADPATH', $_psuploadpath['path']);
+$bwbpsuploaddir = wp_upload_dir();
+$_psuploadpath = $bwbpsuploaddir['basedir'];
+define('PSUPLOADPATH', $_psuploadpath);
 
 $json['gallery_id'] = (int)$_POST['gallery_id'];
 
