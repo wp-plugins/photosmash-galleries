@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.8
+Version: 0.1.9
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -145,8 +145,8 @@ class BWB_PhotoSmash{
 		$results = $wpdb->get_results($sql);
 		if(!$results) return;
 		
-		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos awaiting moderation.  Follow this link (requires you be signed in as an Admin), and Edit the Galleries identified in the photos below to moderate images: <p><a href='".get_bloginfo('url')
-		."/wp-admin/options-general.php?page=bwb-photosmash.php'>".get_bloginfo('name')." - PhotoSmash Options Page</a></p>";
+		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos awaiting moderation.  Select the appropriate gallery or click image below.<p><a href='".get_bloginfo('url')
+		."/wp-admin/admin.php?page=managePhotoSmashImages'>".get_bloginfo('name')." - PhotoSmash Photo Manager</a></p>";
 		
 		
 		$ret .= "<table><tr>";
@@ -154,7 +154,7 @@ class BWB_PhotoSmash{
 		foreach($results as $row)
 		{
 			$ret .= "<td><a href='".get_bloginfo('url')
-		."/wp-admin/options-general.php?page=bwb-photosmash.php'><img src='".get_bloginfo('url')."/wp-content/uploads/bwbps/thumbs/".$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
+		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".get_bloginfo('url')."/wp-content/uploads/bwbps/thumbs/".$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
 			$i++;
 			if($i==4){
 				$ret .="</tr><tr>";
@@ -509,14 +509,29 @@ function getPhotoForm($g){
 	//Add CSS
 	function injectBWBPS_CSS(){
 	?>
-	<link rel="stylesheet" href="<?= get_bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
-	<link rel="stylesheet" href="<?= get_bloginfo('wpurl'); ?>/wp-content/plugins/photosmash-galleries/bwbps.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/wp-content/plugins/photosmash-galleries/bwbps.css" type="text/css" media="screen" />
     <script type="text/javascript">
-    var tb_pathToImage = "<?= get_bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/loadingAnimation.gif";
-    var tb_closeImage = "<?= get_bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/tb-close.png";
+    var tb_pathToImage = "<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/loadingAnimation.gif";
+    var tb_closeImage = "<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/tb-close.png";
 	var displayedGalleries = "";
+	var bwbpsAjaxURL = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax.php";
+	var bwbpsAjaxUpload = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax_upload.php";
 	</script>
 	<?php
+	}
+	
+	//Add Javascript variables to Admin header
+	function injectAdminJS()
+	{
+		?>
+		<script type="text/javascript">
+		//<![CDATA[
+			var bwbpsAjaxURL = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax.php";
+			var bwbpsAjaxUpload = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax_upload.php";
+		//]]>
+		</script>
+		<?php	
 	}
 	
 	
@@ -552,6 +567,8 @@ $bwbPS = new BWB_PhotoSmash();
 //Call the Function that will Add the Options Page
 add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));
 
+//Inject Admin Javascript
+add_action('admin_print_scripts', array(&$bwbPS, 'injectAdminJS') );
 
 
 //Call the INIT function whenever the Plugin is activated

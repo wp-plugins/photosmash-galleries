@@ -17,6 +17,13 @@ class BWBPS_Init{
 				
 			require_once(WINABSPATH . 'wp-admin/includes/upgrade.php');
 			
+			if ( $wpdb->has_cap( 'collation' ) ) {
+				if ( ! empty($wpdb->charset) )
+					$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
+				if ( ! empty($wpdb->collate) )
+					$charset_collate .= " COLLATE $wpdb->collate";
+			}
+			
 			//Create the Images table
 			$sql = "CREATE TABLE " . $table_name . " (
 				image_id BIGINT(20) NOT NULL AUTO_INCREMENT,
@@ -37,7 +44,7 @@ class BWBPS_Init{
 				rating_cnt BIGINT(11) NOT NULL,
 				PRIMARY KEY   (image_id),
 				INDEX (gallery_id)
-				)  DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;";
+				)  $charset_collate;";
 			dbDelta($sql);
 			
 			//Create the Image Ratings table (future use)
@@ -52,7 +59,7 @@ class BWBPS_Init{
 				status TINYINT(1) NOT NULL,
 				PRIMARY KEY   (rating_id),
 				INDEX (image_id)
-				)  DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;";
+				)  $charset_collate;";
 			dbDelta($sql);
 			
 			//Create the Gallery Table
@@ -75,7 +82,7 @@ class BWBPS_Init{
 				updated_date TIMESTAMP NOT NULL,
 				status TINYINT(1),
 				PRIMARY KEY   (gallery_id))
-				DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci
+				$charset_collate
 				;";
 			dbDelta($sql);
 						

@@ -3,8 +3,6 @@ var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
 var bwbpsUploadStatus = false;
 
-var bwbpsAjaxURL = '/wp-content/plugins/photosmash-galleries/ajax.php';
-
 $j(document).ready(function() { 
 	//Show and hide the Loading icon on Ajax start/end
 	$j("#bwbps_loading")
@@ -27,7 +25,7 @@ $j(document).ready(function() {
 		beforeSubmit:  bwbpsVerifyUploadRequest,  
 		success:      bwbpsUploadSuccess , 
 		failure: function(){alert('failed');},
-		url:       '/wp-content/plugins/photosmash-galleries/ajax_upload.php',  // your upload script
+		url:       bwbpsAjaxUpload,
 		dataType:  'json'
 	}; 
 	$j('#bwbps_uploadform').submit(function() { 
