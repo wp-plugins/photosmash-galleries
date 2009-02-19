@@ -508,9 +508,9 @@ class BWBPS_Admin{
 			
 			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a>";
 			
-			$psTable .= "<td class='psgal_".$g['gallery_id']." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='/wp-content/uploads/bwbps/".$image->file_name."' rel='"
+			$psTable .= "<td class='psgal_".$g['gallery_id']." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='".PSIMAGESURL.$image->file_name."' rel='"
 				.$g['img_rel']."' title='".str_replace("'","",$image->image_caption)
-				."'><span id='psimage_".$image->image_id."'><img src='/wp-content/uploads/bwbps/thumbs/"
+				."'><span id='psimage_".$image->image_id."'><img src='".PSTHUMBSURL
 				.$image->image_name."' ".$modClass." />";
 				
 			$scaption = htmlentities($image->image_caption, ENT_QUOTES);

@@ -13,6 +13,11 @@ if(isset($_POST['action']) && $_POST['action']){
 	die(-1);
 }
 
+$bwbpsuploaddir = wp_upload_dir();
+define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
+define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
+define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+
 switch ($action){
 	case 'approve':
 		ps_approveImage();
@@ -74,8 +79,8 @@ function ps_deleteImage(){
 			$filename = $wpdb->get_var($wpdb->prepare("SELECT file_name FROM "
 				.$wpdb->prefix."bwbps_images WHERE image_id = %d", $imgid));
 			if($filename){
-				unlink("../../uploads/bwbps/".$filename);
-				unlink("../../uploads/bwbps/thumbs/".$filename);
+				unlink(PSIMAGESPATH.$filename);
+				unlink(PSTHUMBSPATH.$filename);
 				
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.$wpdb->prefix

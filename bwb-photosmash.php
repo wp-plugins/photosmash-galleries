@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.91
+Version: 0.1.92
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -23,6 +23,13 @@ define( 'SAFEMODE', ini_get('safe_mode') );
 define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
+
+$bwbpsuploaddir = wp_upload_dir();
+define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
+define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
+define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+define('PSIMAGESURL',$bwbpsuploaddir['baseurl']."/bwbps/");
+define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
 
 
 class BWB_PhotoSmash{
@@ -154,7 +161,7 @@ class BWB_PhotoSmash{
 		foreach($results as $row)
 		{
 			$ret .= "<td><a href='".get_bloginfo('url')
-		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".get_bloginfo('url')."/wp-content/uploads/bwbps/thumbs/".$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
+		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".PSTHUMBSURL.$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
 			$i++;
 			if($i==4){
 				$ret .="</tr><tr>";
@@ -400,9 +407,9 @@ function build_PhotoSmash($g)
 					break;
 			}
 			
-			$psTable .= "<li class='psgal_".$g['gallery_id']." $modClass' id='psimg_".$image->image_id."'><a href='/wp-content/uploads/bwbps/".$image->file_name."' rel='"
+			$psTable .= "<li class='psgal_".$g['gallery_id']." $modClass' id='psimg_".$image->image_id."'><a href='".PSIMAGESURL.$image->file_name."' rel='"
 				.$g['img_rel']."' title='".str_replace("'","",$image->image_caption)
-				."'><span id='psimage_".$image->image_id."'><img src='/wp-content/uploads/bwbps/thumbs/"
+				."'><span id='psimage_".$image->image_id."'><img src='".PSTHUMBSURL
 				.$image->image_name."' />";
 				
 			if($g['show_imgcaption'] && $image->image_caption){
@@ -413,7 +420,7 @@ function build_PhotoSmash($g)
 		}
 	} else {
 		$psTable .= "<li class='psgal_".$g['gallery_id']
-			."' style='height: ".($g['thumb_height'] + 15)."px; margin: 15px 0;'><img src='/wp-content/plugins/photosmash-galleries/images/"
+			."' style='height: ".($g['thumb_height'] + 15)."px; margin: 15px 0;'><img src='".WP_PLUGIN_URL."/photosmash-galleries/images/"
 			."ps_blank.gif' width='1' height='".$g['thumb_height']."' /></li>";
 	}
 	$ret .= "<ul id='bwbps_gal_".$g['gallery_id']."' class='bwbps_gallery'>".$psTable;
@@ -459,7 +466,7 @@ function getPhotoForm($g){
 	        		<input type="button" class="ps-submit" value="Done" onclick="tb_remove();return false;" />
 	        	</th>
 	        	<td>
-	        		<img id="bwbps_loading" src="/wp-content/plugins/photosmash-galleries/images/loading.gif" style="display:none;" />	
+	        		<img id="bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" />	
 	        	</td>
 	        </tr>
 	        <tr><th><span id="bwbps_message"></span></th>
@@ -499,11 +506,11 @@ function getPhotoForm($g){
 		wp_enqueue_script('thickbox');
 		
 		//enqueue jQuery Forms
-		wp_register_script('jquery_forms', get_bloginfo('wpurl') . '/wp-content/plugins/photosmash-galleries/js/jquery.form.js', array('jquery'), '2.17');
+		wp_register_script('jquery_forms', WP_PLUGIN_URL . '/photosmash-galleries/js/jquery.form.js', array('jquery'), '2.17');
 		wp_enqueue_script('jquery_forms');
 		
 		//enqueue BWB-PS Javascript
-		wp_register_script('bwbps_js', get_bloginfo('wpurl') . '/wp-content/plugins/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
+		wp_register_script('bwbps_js', WP_PLUGIN_URL . '/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
 		wp_enqueue_script('bwbps_js');
 	}
 	
@@ -511,13 +518,15 @@ function getPhotoForm($g){
 	function injectBWBPS_CSS(){
 	?>
 	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
-	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/wp-content/plugins/photosmash-galleries/bwbps.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/bwbps.css" type="text/css" media="screen" />
     <script type="text/javascript">
     var tb_pathToImage = "<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/loadingAnimation.gif";
     var tb_closeImage = "<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/tb-close.png";
 	var displayedGalleries = "";
-	var bwbpsAjaxURL = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax.php";
-	var bwbpsAjaxUpload = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax_upload.php";
+	var bwbpsAjaxURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax.php";
+	var bwbpsAjaxUpload = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_upload.php";
+	var bwbpsImagesURL = "<?php echo PSIMAGESURL; ?>";
+	var bwbpsThumbsURL = "<?php echo PSTHUMBSURL; ?>";
 	</script>
 	<?php
 	}
@@ -528,8 +537,10 @@ function getPhotoForm($g){
 		?>
 		<script type="text/javascript">
 		//<![CDATA[
-			var bwbpsAjaxURL = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax.php";
-			var bwbpsAjaxUpload = "<?php bloginfo( 'wpurl' ); ?>/wp-content/plugins/photosmash-galleries/ajax_upload.php";
+			var bwbpsAjaxURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax.php";
+			var bwbpsAjaxUpload = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_upload.php";
+			var bwbpsImagesURL = "<?php echo PSIMAGESURL; ?>";
+			var bwbpsThumbsURL = "<?php echo PSTHUMBSURL; ?>";
 		//]]>
 		</script>
 		<?php	

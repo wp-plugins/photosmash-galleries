@@ -87,19 +87,19 @@ function bwbpsUploadSuccess(data, statusText)  {
 		
 		if (data.img != '') {
 			//We got an image back...show it
-			$j('#bwbps_result').html('<img src="/wp-content/uploads/bwbps/thumbs/'+data.img+'" />'); 
+			$j('#bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
 			$j('#bwbps_message').html('<b>Upload successful!</b>'); 
 			
 
 			
 			var li = $j('<li></li>').attr('class','psgal_' + data.gallery_id).appendTo('#bwbps_gal_' + data.gallery_id);
 			
-			var caption = '<img src="/wp-content/uploads/bwbps/thumbs/'+data.img+'" />';
+			var caption = '<img src="' + bwbpsThumbsURL + data.img+'" />';
 					
 			if(data.show_imgcaption == 1){
 				caption += "<br/><span>" + data.image_caption + "</span>";
 			}
-			var ahref = $j('<a></a>').attr('href', "/wp-content/uploads/bwbps/"+data.img).attr('rel',data.imgrel).html(caption).appendTo(li);
+			var ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel).html(caption).appendTo(li);
 			
 			bwbps_equalHeight($j(".psgal_" + data.gallery_id));
 			

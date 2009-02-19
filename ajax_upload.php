@@ -8,9 +8,7 @@ if (!function_exists('add_action'))
 
 check_ajax_referer( "bwb_upload_photos" );
 
-// required for Windows & XAMPP
-define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
-
+//Set the Upload Path
 $bwbpsuploaddir = wp_upload_dir();
 $_psuploadpath = $bwbpsuploaddir['basedir'];
 define('PSUPLOADPATH', $_psuploadpath);
