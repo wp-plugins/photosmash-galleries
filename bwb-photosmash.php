@@ -503,12 +503,15 @@ function getPhotoForm($g){
 	//Add JS libraris
 	function enqueueBWBPS(){		
 		wp_enqueue_script('jquery');
+		wp_enqueue_script('jquery-form');
 		wp_enqueue_script('thickbox');
 		
+		
+		/*
 		//enqueue jQuery Forms
 		wp_register_script('jquery_forms', WP_PLUGIN_URL . '/photosmash-galleries/js/jquery.form.js', array('jquery'), '2.17');
 		wp_enqueue_script('jquery_forms');
-		
+		*/
 		//enqueue BWB-PS Javascript
 		wp_register_script('bwbps_js', WP_PLUGIN_URL . '/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
 		wp_enqueue_script('bwbps_js');
