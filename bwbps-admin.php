@@ -27,7 +27,7 @@ class BWBPS_Admin{
 			$this->saveGallerySettings($this->psOptions);
 		}
 		
-		//Delete field
+		//Delete Gallery
 		if(isset($_POST['deletePhotoSmashGallery'])){
 			check_admin_referer( 'update-gallery');
 			$this->deleteGallery($this->options);
@@ -201,16 +201,16 @@ class BWBPS_Admin{
 		?>
 		<h3>Gallery Settings</h3>
 <table class="form-table"><tr>
-<th><input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" /></th><td><a href='admin.php?page=bwb-photosmash.php'>PhotoSmash General Settings</a></td>
+<th><input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" /></th><td><a href='admin.php?page=bwb-photosmash.php'>PhotoSmash General Settings</a>
+<?php if($galleryID){
+	echo "&nbsp;|&nbsp;<a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=".(int)$galleryID."'>Manage photos</a>";
+}
+?>
+</td>
 </tr>
 <tr>
 <th>Select Gallery to edit:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
 <input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'suppleLang') ?>" />
-<?php if($galleryID){
-	echo "<br/><a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=".(int)$galleryID."'>Manage photos</a>";
-}
-?>
-
 </td></tr>
 
 <?php if($galleryID){
@@ -427,20 +427,42 @@ class BWBPS_Admin{
 		global $wpdb;
 		$psOptions = $this->psOptions;
 		
-		if(isset($_POST['gal_gallery_id'])){
-			$galleryID = (int)$_POST['gal_gallery_id'];
-		} else { 
-			if(isset($_GET['psget_gallery_id'])){
-				$galleryID = (int)$_GET['psget_gallery_id'];
-			}else{
-				$galleryID = 0; 
+		if(isset($_POST['showModerationImages'])){
+			//Getting images needing moderation
+			$galleryID ='moderation';
+			$ddlID = 0;
+			$caption = " > Images for Moderation";
+		} else {
+			if(isset($_POST['showAllImages'])){
+				//Getting all images
+				$galleryID ='all';
+				$ddlID = 0;
+				$caption = " > All Images";
+			} else {
+				//We're getting a specific Gallery	
+				if(isset($_POST['gal_gallery_id'])){
+					$galleryID = (int)$_POST['gal_gallery_id'];
+				} else { 
+					if(isset($_GET['psget_gallery_id'])){
+						$galleryID = (int)$_GET['psget_gallery_id'];
+					}else{
+						$galleryID = 0; 
+					}
+				}
+				$ddlID = $galleryID;
 			}
 		}
 		
-		$galleryDDL = $this->getGalleryDDL($galleryID);
+		if(!$galleryID){
+			$galleryID ='moderation';
+		}
 		
-		if($galleryID){
-			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$galleryID), ARRAY_A);
+		$result = $this->getGalleryImages($galleryID);
+		$galleryDDL = $this->getGalleryDDL($ddlID);
+		
+		if($ddlID){
+			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$ddlID), ARRAY_A);
+			$caption = " > ".$galOptions['gallery_name'];
 		}
 
 		?>
@@ -455,12 +477,13 @@ class BWBPS_Admin{
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
 		?>		
-		<h3>Photo Manager</h3>
+		<h3>Photo Manager<?php echo $caption;?></h3>
 		<?php 
-			echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />		
+			echo $galleryDDL;
+		?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
+			&nbsp;<input type="submit" name="showModerationImages" value="<?php _e('In Moderation', 'bwbPS') ?>" />
+			&nbsp;<input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') ?>" />		
 		<?php
-		if($galleryID){
-			$result = $this->getGalleryImages($galleryID);
 			
 			if($result){
 				$nonce = wp_create_nonce( 'bwbps_moderate_images' );
@@ -469,7 +492,6 @@ class BWBPS_Admin{
 				';
 			}
 			echo $result;
-		}
 	?>
 	</form>
 
@@ -508,18 +530,18 @@ class BWBPS_Admin{
 			
 			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a>";
 			
-			$psTable .= "<td class='psgal_".$g['gallery_id']." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='".PSIMAGESURL.$image->file_name."' rel='"
+			$psTable .= "<td class='psgal_".$image->gallery_id." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='".PSIMAGESURL.$image->file_name."' rel='"
 				.$g['img_rel']."' title='".str_replace("'","",$image->image_caption)
 				."'><span id='psimage_".$image->image_id."'><img src='".PSTHUMBSURL
-				.$image->image_name."' ".$modClass." />";
+				.$image->image_name."' ".$modClass." /></span></a></td>";
 				
-			$scaption = htmlentities($image->image_caption, ENT_QUOTES);
+			$psCaption = htmlentities($image->image_caption, ENT_QUOTES);
 			
-			$scaption = "</a><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption". $image->image_id."' value='".$scaption."' style='width: 100px !important;' />";
-			$psTable .= "<br/><span>".$scaption."</span>";
+			$psTable .= "<span><td><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption"
+					. $image->image_id."' value='$psCaption' style='width: 165px !important;' /></span>";
 
-			$psTable .= "</span>$modMenu</td>";
-			if($i == 4){
+			$psTable .= "$modMenu</td>";
+			if($i == 1){
 				$psTable .= "</tr><tr>";
 				$i = 0;
 			} else {$i++;}
@@ -538,12 +560,25 @@ class BWBPS_Admin{
 		global $wpdb;
 		global $user_ID;
 		if(current_user_can('level_10')){
-			$images = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-				. 'bwbps_images WHERE gallery_id = %d ORDER BY file_name', $gallery_id));
+			switch ($gallery_id){
+				case "all" :
+					$sql = $wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
+					. 'bwbps_images ORDER BY file_name');
+					break;
+				case "moderation" :
+					$sql = $wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
+					. 'bwbps_images WHERE status = -1 ORDER BY seq, file_name');
+					break;
+				default:
+					$gallery_id = (int)$gallery_id;
+					$sql = $wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
+					. 'bwbps_images WHERE gallery_id = %d ORDER BY seq, file_name', $gallery_id);			
+			}
+			$images = $wpdb->get_results($sql);
 		} else {
 				$uid = $user_ID ? $user_ID : -1;
 				$images = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-				. 'bwbps_images WHERE gallery_id = %d AND (status > 0 OR user_id = '.$uid.')ORDER BY file_name', $gallery_id));
+				. 'bwbps_images WHERE gallery_id = %d AND (status > 0 OR user_id = '.$uid.')ORDER BY seq, file_name', $gallery_id));
 		}
 		return $images;
 	}
