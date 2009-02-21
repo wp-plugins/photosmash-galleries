@@ -8,6 +8,8 @@ if (!function_exists('add_action'))
 
 check_ajax_referer( "bwb_upload_photos" );
 
+require("classes/JSON.php");
+
 //Set the Upload Path
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
