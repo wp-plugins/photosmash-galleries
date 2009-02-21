@@ -9,9 +9,11 @@ if (!function_exists('add_action'))
 check_ajax_referer( "bwb_upload_photos" );
 
 //Set the Upload Path
-$bwbpsuploaddir = wp_upload_dir();
-$_psuploadpath = $bwbpsuploaddir['basedir'];
-define('PSUPLOADPATH', $_psuploadpath);
+define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
+define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
+define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
+define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
 
 $json['gallery_id'] = (int)$_POST['gallery_id'];
 
