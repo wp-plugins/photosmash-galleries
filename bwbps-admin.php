@@ -458,7 +458,7 @@ class BWBPS_Admin{
 		}
 		
 		$result = $this->getGalleryImages($galleryID);
-		$galleryDDL = $this->getGalleryDDL($ddlID);
+		$galleryDDL = $this->getGalleryDDL($ddlID, "Select");
 		
 		if($ddlID){
 			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$ddlID), ARRAY_A);
@@ -536,11 +536,13 @@ class BWBPS_Admin{
 				.$image->image_name."' ".$modClass." /></span></a></td>";
 				
 			$psCaption = htmlentities($image->image_caption, ENT_QUOTES);
-			
-			$psTable .= "<span><td><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption"
+			if($i==0){$border = " style='border-right: 1px solid #999;'";} else {$border = '';}
+			$psTable .= "<td $border><span><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption"
 					. $image->image_id."' value='$psCaption' style='width: 165px !important;' /></span>";
 
-			$psTable .= "$modMenu</td>";
+			$psTable .= $modMenu;
+			
+			$psTable .= "<br/><b>Details:</b><br/>Uploaded by: ".$image->user_nicename."<br/>Date: ".$image->created_date."</td>";
 			if($i == 1){
 				$psTable .= "</tr><tr>";
 				$i = 0;
@@ -562,33 +564,38 @@ class BWBPS_Admin{
 		if(current_user_can('level_10')){
 			switch ($gallery_id){
 				case "all" :
-					$sql = $wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-					. 'bwbps_images ORDER BY file_name');
+					$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
+					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id ORDER BY file_name');
 					break;
 				case "moderation" :
-					$sql = $wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-					. 'bwbps_images WHERE status = -1 ORDER BY seq, file_name');
+					$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
+					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE status = -1 ORDER BY seq, file_name');
 					break;
 				default:
 					$gallery_id = (int)$gallery_id;
-					$sql = $wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-					. 'bwbps_images WHERE gallery_id = %d ORDER BY seq, file_name', $gallery_id);			
+					$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
+					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d ORDER BY seq, file_name', $gallery_id);			
 			}
+			
 			$images = $wpdb->get_results($sql);
 		} else {
 				$uid = $user_ID ? $user_ID : -1;
-				$images = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-				. 'bwbps_images WHERE gallery_id = %d AND (status > 0 OR user_id = '.$uid.')ORDER BY seq, file_name', $gallery_id));
+				$images = $wpdb->get_results($wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
+					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d AND (status > 0 OR user_id = '.$uid.')ORDER BY seq, file_name', $gallery_id));
 		}
 		return $images;
 	}
 	
 	//Returns markup for a DropDown List of existing Galleries
-	function getGalleryDDL($selectedGallery = 0)
+	function getGalleryDDL($selectedGallery = 0, $newtag= "New")
  	{
  		global $wpdb;
  		 
-		$ret = "<option value='0'>&lt;New&gt;</value>";
+		$ret = "<option value='0'>&lt;$newtag&gt;</value>";
 		
 		$query = $wpdb->get_results("SELECT ".PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, ".$wpdb->prefix."posts.post_title FROM ".PSGALLERIESTABLE." LEFT OUTER JOIN ".$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = ".$wpdb->prefix."posts.ID WHERE ".PSGALLERIESTABLE.".status = 1 ORDER BY ".PSGALLERIESTABLE.".gallery_id");
 		if(is_array($query)){
