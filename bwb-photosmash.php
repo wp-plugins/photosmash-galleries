@@ -3,24 +3,30 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.97
+Version: 0.1.98
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
 
-// SafeMode code Borrow from NextGen gallery
-// get value for safe mode
-if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
-	// if sever did in in a other way
-	if ( ini_get('safe_mode') == 'off' ) define('SAFEMODE', FALSE);
-	else define( 'SAFEMODE', ini_get('safe_mode') );
-} else{
-define( 'SAFEMODE', ini_get('safe_mode') );
-}
-
+/** LICENSE: GPL
+ *
+ * This work is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License 
+ * as published by the Free Software Foundation; either version 
+ * 2 of the License, or any later version.
+ *
+ * This work is distributed in the hope that it will be useful, 
+ * but without any warranty; without even the implied warranty 
+ * of merchantability or fitness for a particular purpose. See 
+ * Version 2 and version 3 of the GNU General Public License for
+ * more details. You should have received a copy of the GNU General 
+ * Public License along with this program; if not, write to the 
+ * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, 
+ * Boston, MA 02110-1301 USA
+*/
 
 // required for Windows & XAMPP
-define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
+//define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
 
@@ -43,9 +49,11 @@ class BWB_PhotoSmash{
 	
 	var $psOptions;
 	
+	var $shortCoded;
+	
 	//Constructor
 	function BWB_PhotoSmash(){
-	
+		$this->psOptions = $this->getPSDefaultOptions();
 	}
 	
 	//Called when plugin is activated
@@ -188,14 +196,47 @@ class BWB_PhotoSmash{
 /* ******************   End of Admin Section ******************************** */
 	
 /*	****************************************  Gallery Code  *************************************** */
+//	AutoAdd Galleries
+function autoAddGallery($content='')
+{
+	global $post;
+
+	if(is_array($this->shortCoded) && in_array($post->ID, $this->shortCoded)){
+		return $content;
+	}
+	if(is_array($this->shortCoded)){
+	print_r($this->shortCoded);}
+	
+	//Determine if Auto-add is set up...add it to top or bottom if so
+	$psoptions = $this->psOptions;// Get PhotoSmash defaults
+	if($psoptions['auto_add']){
+		//Auto-add is set..but first, see if there is a skip tag:  [ps-skip]
+		if(strpos($content, "[ps-skip]") === false){}else{return str_replace("[ps-skip]","",$content);}
+		$galparms = array("gallery_id" => false);
+		$g = $this->getGallery($galparms);	//Get the Gallery params
+		$loadedGalleries[] = $g['gallery_id'];
+		$gallery = $this->build_PhotoSmash($g);
+		$gallery .= "
+			<script type='text/javascript'>
+				displayedGalleries += '|".$g['gallery_id']."';
+			</script>
+		";
+		if($psoptions['auto_add'] == 1){
+			$content = $gallery . $content;
+		} else  {
+			$content = $content.$gallery;
+		}
+	}
+	return $content;	
+}
 
 
 //  Loop through Content and inject Gallery where [photosmash=###] is found
 //  Called by add_action filter
-function injectPhotoSmash($content=''){
-		//Get the Class level psOptions variable..contains Options defaults and the Alert message psuedo-cron
-		$this->psOptions = $this->getPSDefaultOptions();
-		
+function shortCodeGallery($atts, $content=null){
+		global $post;
+		//Get the Class level psOptions variable..contains Options defaults and the Alert message psuedo-cron	
+		//This is the timer for sending Alerts 
 		if($this->psOptions['img_alerts'] >0 ){
 			$time = time();
 			if($time - $this->psOptions['last_alert'] > $this->psOptions['img_alerts'])
@@ -203,75 +244,43 @@ function injectPhotoSmash($content=''){
 				$this->sendNewImageAlerts();
 			}
 		}
+
+		$galparms = $atts;
+
+		if(!$atts['id'] && $atts[0])
+		{
+			$maybeid = str_replace("=", "", trim($atts[0]));
+			//Backwards compatibility with old shortcodes
+			if(is_numeric($maybeid)){$atts['id'] = (int)$maybeid;}
+		}
 		
-		//Regex to see if [photosmash=...] tag is in Content
-		if(preg_match_all('/\[photosmash[0-9a-zA-Z=_ \-&amp;]+\]/',$content, $matches, PREG_SET_ORDER))
-		{						
-			foreach($matches as $matcharr){
-				$match = $matcharr[0];
-				$ret = str_replace("&amp;","&",$match);
-				$ret = str_replace(array("[","]"),array("",""),$ret);
-				//If so, get the GalleryID
-				$tag = explode('&',$ret);
-			
-				foreach ($tag as $t){
-					$parm = explode('=',$t);
-					if(count($parm) > 1){
-						$galparms[trim($parm[0])] = trim($parm[1]);
-					} else {
-						$galparms[trim($parm[0])] = false;
-					}
-				}
-				
-				$galparms['gallery_id'] = (int)$galparms['photosmash'];
-				
-				$g = $this->getGallery($galparms);	//Get the Gallery params
-				
-				if(!$g['gallery_id']){
-					$content = str_replace($match, "Missing PhotoSmash gallery: ".
-						$g['photosmash'], $content); //Bad Gallery ID was provided.
-				}else{		
-					//Check duplicate gallery on page...only allow once
-					if(is_array($loadedGalleries) && in_array($g['gallery_id'], $loadedGalleries)){
-						$content = str_replace($match, "Duplicate gallery: ".
-						$g['photosmash'], $content); //Bad Gallery ID was provided.	
-					}else{
-						$loadedGalleries[] = $g['gallery_id'];
-						$gallery = $this->build_PhotoSmash($g);
-						$gallery .= "
-							<script type='text/javascript'>
-								displayedGalleries += '|".$g['gallery_id']."';
-							</script>
-						";
-						$content = str_replace($match, $gallery, $content);
-					}
-				}
-				unset($galparms);
-			
-			}
-		} else {
-			//Determine if Auto-add is set up...add it to top or bottom if so
-			$psoptions = $this->psOptions;// Get PhotoSmash defaults
-			if($psoptions['auto_add']){
-				//Auto-add is set..but first, see if there is a skip tag:  [ps-skip]
-				if(strpos($content, "[ps-skip]") === false){}else{return str_replace("[ps-skip]","",$content);}
-				$galparms = array("gallery_id" => false);
-				$g = $this->getGallery($galparms);	//Get the Gallery params
-				$loadedGalleries[] = $g['gallery_id'];
-				$gallery = $this->build_PhotoSmash($g);
-				$gallery .= "
+		$galparms['gallery_id'] = (int)$atts['id'];
+		$galparms['photosmash'] = $galparms['gallery_id'];
+	
+
+		$g = $this->getGallery($galparms);	//Get the Gallery params
+		
+		if(!$g['gallery_id']){
+			$content = "Missing PhotoSmash gallery: ".
+				$g['photosmash']; //Bad Gallery ID was provided.
+		}else{		
+			//Check duplicate gallery on page...only allow once
+			if(is_array($this->loadedGalleries) && in_array($post->ID."-".$g['gallery_id'], $this->loadedGalleries)){
+				$content = "Duplicate gallery: ".
+				$g['photosmash']; //Bad Gallery ID was provided.	
+			}else{
+				$this->loadedGalleries[] = $post->ID."-".$g['gallery_id'];
+				$this->shortCoded[] = $post->ID;
+				$content = $this->build_PhotoSmash($g);
+				$content .= "
 					<script type='text/javascript'>
 						displayedGalleries += '|".$g['gallery_id']."';
 					</script>
 				";
-				if($psoptions['auto_add'] == 1){
-					$content = $gallery . $content;
-				} else  {
-					$content = $content.$gallery;
-				}
 			}
 		}
-	
+		unset($galparms);
+
 	return $content;
 }
 
@@ -449,7 +458,6 @@ function getPhotoForm($g){
         	<table class="ps-form-table">
 			<tr><th>Select image to upload:<br/>(Max. allowed size: 400k)';
 	
-	if(SAFEMODE) {$retForm .= '<br/>Safe Mode is <b>ON</b>.';} 
 	$retForm .= '
 			</th>
 				<td>
@@ -595,5 +603,7 @@ add_action('init', array(&$bwbPS, 'enqueueBWBPS'), 1);
 
 add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
 
-add_filter('the_content',array(&$bwbPS, 'injectPhotoSmash'), 1);
+add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
+
+add_shortcode('photosmash', array(&$bwbPS, 'shortCodeGallery'));
 ?>

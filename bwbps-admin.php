@@ -215,7 +215,7 @@ class BWBPS_Admin{
 
 <?php if($galleryID){
 ?>
-<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash=<?php echo $galleryID;?>]</span>
+<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash id=<?php echo $galleryID;?>]</span>
 <br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)</td></tr>
 <?php }?>
 	<tr>

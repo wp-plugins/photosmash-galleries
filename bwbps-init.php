@@ -15,7 +15,7 @@ class BWBPS_Init{
 		
 		$table_name = $wpdb->prefix . "bwbps_images";
 				
-			require_once(WINABSPATH . 'wp-admin/includes/upgrade.php');
+			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 			
 			if ( $wpdb->has_cap( 'collation' ) ) {
 				if ( ! empty($wpdb->charset) )
