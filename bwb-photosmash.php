@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.1.98
+Version: 0.1.99
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -204,9 +204,7 @@ function autoAddGallery($content='')
 	if(is_array($this->shortCoded) && in_array($post->ID, $this->shortCoded)){
 		return $content;
 	}
-	if(is_array($this->shortCoded)){
-	print_r($this->shortCoded);}
-	
+		
 	//Determine if Auto-add is set up...add it to top or bottom if so
 	$psoptions = $this->psOptions;// Get PhotoSmash defaults
 	if($psoptions['auto_add']){
@@ -528,11 +526,11 @@ function getPhotoForm($g){
 	//Add CSS
 	function injectBWBPS_CSS(){
 	?>
-	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
 	<link rel="stylesheet" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/bwbps.css" type="text/css" media="screen" />
     <script type="text/javascript">
-    var tb_pathToImage = "<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/loadingAnimation.gif";
-    var tb_closeImage = "<?php bloginfo('wpurl'); ?>/<?= WPINC; ?>/js/thickbox/tb-close.png";
+    var tb_pathToImage = "<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/loadingAnimation.gif";
+    var tb_closeImage = "<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/tb-close.png";
 	var displayedGalleries = "";
 	var bwbpsAjaxURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax.php";
 	var bwbpsAjaxUpload = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_upload.php";

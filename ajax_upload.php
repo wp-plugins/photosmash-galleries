@@ -128,6 +128,8 @@ if ($handle->processed) {
 	$data['updated_by'] = $current_user->ID;
 	$data['created_date'] = $date;
 	$data['seq'] = -1;
+	$data['avg_rating'] = 0;
+	$data['rating_cnt'] = 0;
 	
 	
 	//Insert the image into the Images table

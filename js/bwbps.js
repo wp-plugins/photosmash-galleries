@@ -51,8 +51,8 @@ function psSetGalleryHts(){
 }
 
 function bwbpsVerifyUploadRequest(formData, jqForm, options) { 
-	var fileToUploadValue = $j('input[@name=bwbps_uploadfile]').fieldValue();
-	if (!fileToUploadValue[0]) { 
+	var fileToUploadValue = $j('#bwbps_uploadfile').val();
+	if (!fileToUploadValue) { 
 		$j('#bwbps_message').html('Please select a file.'); 
 		return false; 
 	} 
