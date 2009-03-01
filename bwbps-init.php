@@ -64,7 +64,7 @@ class BWBPS_Init{
 			
 			//Create the Gallery Table
 			$table_name = $wpdb->prefix . "bwbps_galleries";
-			$sql = "CREATE TABLE IF NOT EXISTS " . $table_name . " (
+			$sql = "CREATE TABLE " . $table_name . " (
 				gallery_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				post_id BIGINT(20),
 				gallery_name VARCHAR(250),
@@ -73,6 +73,7 @@ class BWBPS_Init{
 				contrib_role TINYINT(1) NOT NULL,
 				img_rel VARCHAR(255),
 				img_class VARCHAR(255),
+				thumb_aspect TINYINT(1),
 				thumb_width INT(4),
 				thumb_height INT(4),
 				show_caption TINYINT(1),

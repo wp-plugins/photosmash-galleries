@@ -80,9 +80,13 @@ if($g['thumb_width'] || $g['thumb_height']){
 		$g['thumb_height'] = $handle->image_src_y;
 	}
 	
-	
+	//Figure out whether aspect is to be kept or cropped
 	$handle->image_resize = true;
-	$handle->image_ratio_crop = true;
+	if($g['thumb_aspect'] == 1){
+		$handle->image_ratio = true;
+	} else {
+		$handle->image_ratio_crop = true;	
+	}
 	
 	if($g['thumb_width']){
 		$handle->image_x = $g['thumb_width'];

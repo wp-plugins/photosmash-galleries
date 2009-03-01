@@ -55,6 +55,7 @@ class BWBPS_Admin{
 		//get some defaults if nothing is in the database
 		return array(
 				'auto_add' => 0,
+				'thumb_aspect' => 0,
 				'thumb_width' => 110,
 				'thumb_height' => 110,
 				'img_rel' => 'lightbox',
@@ -96,6 +97,13 @@ class BWBPS_Admin{
 			if(isset($_POST['ps_auto_add'])){
 				$ps['auto_add'] = (int)$_POST['ps_auto_add'];
 			}
+
+			if(isset($_POST['ps_thumb_aspect'])){
+				$ps['thumb_aspect'] = (int)$_POST['ps_thumb_aspect'];
+			} else {
+				$ps['thumb_aspect'] = 0;
+			}
+			
 			if(isset($_POST['ps_thumb_width'])){
 				$ps['thumb_width'] = (int)$_POST['ps_thumb_width'];
 			}
@@ -119,6 +127,7 @@ class BWBPS_Admin{
 			} else {
 				$ps['show_imgcaption'] = 0;
 			}
+			
 			if(isset($_POST['ps_image_alert_schedule'])){
 				$ps['img_alerts'] = (int)$_POST['ps_image_alert_schedule'];
 			}
@@ -144,6 +153,7 @@ class BWBPS_Admin{
 		//This section saves Gallery specific settings
 			$gallery_id = (int)$_POST['gal_gallery_id'];
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
+			$d['thumb_aspect'] = (int)$_POST['gal_thumb_aspect'];
 			$d['thumb_width'] = (int)$_POST['gal_thumb_width'];
 			$d['thumb_height'] = (int)$_POST['gal_thumb_height'];
 			$d['img_rel'] = $_POST['gal_img_rel'];
@@ -224,7 +234,13 @@ class BWBPS_Admin{
 					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>'/>
 				</td>
 	</tr>
-
+			<tr>
+				<th>Thumbnail style:</th>
+				<td>
+					<input type="radio" name="gal_thumb_aspect" value="0" <?php if($galOptions['thumb_aspect'] == 0) echo 'checked'; ?>>Crop<br/>
+					<input type="radio" name="gal_thumb_aspect" value="1" <?php if($galOptions['thumb_aspect'] == 1) echo 'checked'; ?>>Maintain Aspect
+				</td>
+			</tr>
 	<tr>
 				<th>Thumbnail width (px):</th>
 				<td>
@@ -335,6 +351,13 @@ class BWBPS_Admin{
 						<option value="86400" <?php if($psOptions['img_alerts'] == 86400) echo 'selected=selected'; ?>>every day</option>
 					</select>
 					<input type='hidden' name='ps_last_alert' value='<?php echo (int)$psOptions['last_alert'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Default thumb style:</th>
+				<td>
+					<input type="radio" name="ps_thumb_aspect" value="0" <?php if($psOptions['thumb_aspect'] == 0) echo 'checked'; ?>>Crop<br/>
+					<input type="radio" name="ps_thumb_aspect" value="1" <?php if($psOptions['thumb_aspect'] == 1) echo 'checked'; ?>>Maintain Aspect
 				</td>
 			</tr>
 			<tr>
