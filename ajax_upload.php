@@ -12,6 +12,7 @@ require("classes/JSON.php");
 
 //Set the Upload Path
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
+define('PSTEMPPATH', PSUPLOADPATH .'/bwbpstemp/');
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
 define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
@@ -23,7 +24,11 @@ $table_name = $wpdb->prefix . "bwbps_galleries";
 $g = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".$table_name." WHERE gallery_id = %d", $json['gallery_id']), ARRAY_A);
 
 $json['size'] = $_POST['MAX_FILE_SIZE'];
-$json['image_caption'] = escapeJS(stripslashes($_POST['bwbps_imgcaption']));
+if(isset($_POST['bwbps_fileorurl']) && $_POST['bwbps_fileorurl'] == 1){
+	$json['image_caption'] = escapeJS(stripslashes($_POST['bwbps_imgcaptionInput']));
+} else {
+	$json['image_caption'] = escapeJS(stripslashes($_POST['bwbps_imgcaption']));
+}
 $json['image_caption'] = htmlentities($json['image_caption']);
 $json['url'] = ''; //stripslashes($_POST['bwbps_imgurl']);
 $json['img'] = '';
@@ -46,10 +51,51 @@ if(!$user_level){
 
 $user_level = current_user_can('level_1');
 
+//Create new name for Image
+$newname = strtotime("now");
+
 include('classes/upload/class.upload.php');
 
+//Determine if using Select From URL
+if(isset($_POST['bwbps_fileorurl']) && $_POST['bwbps_fileorurl'] == 1){
+	
+	if(!file_exists(PSTEMPPATH)){
+		if(!mkdir(PSTEMPPATH, 0777)){
+			$json['message'] = "Unable to create the Temp directory for storing URL files: ".PSTEMPPATH.".";
+			echo json_encode($json);
+			exit();		
+		}
+		
+	}
+	
+	chmod(PSTEMPPATH, 0777);
+	
+	$image_url = $_POST['bwbps_uploadurl'];		
+	$basename = basename($image_url);
+	$tempname = PSTEMPPATH.$basename;
+	
+	$ch = curl_init();
+	$timeout = 0;
+	curl_setopt ($ch, CURLOPT_URL, $image_url);
+	curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);	
+	
+	// Getting binary data
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);	
+	
+	$image = curl_exec($ch);
+	curl_close($ch);
+	
+	$fp = fopen($tempname,'w');
+	fwrite($fp, $image);
+	fclose($fp);
+	
+	$handle = new upload($tempname);	
+} else {
+	$handle = new upload($_FILES['bwbps_uploadfile']);
+}
+
 $handle->file_max_size = 5000000;
-$handle = new upload($_FILES['bwbps_uploadfile']);
 
 $handle->file_auto_rename = true;
 $handle->dir_auto_chmod = true;
@@ -60,7 +106,6 @@ $handle->forbidden = array('application/*');
 $handle->mime_magic_check = true;
 
 //change image name
-$newname = strtotime("now");
 $handle->file_new_name_body = $newname;
 sleep(3);
 $json['img'] = $newname.".".$handle->file_src_name_ext;

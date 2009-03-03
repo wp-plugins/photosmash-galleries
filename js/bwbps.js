@@ -32,7 +32,10 @@ $j(document).ready(function() {
 		$j('#bwbps_message').html(''); 
 		$j(this).ajaxSubmit(options); 
 		return false; 
-	}); 
+	});
+	
+	//make sure the upload form radio button is on Select file
+	$j("#bwbpsSelectFileRadio").attr("checked","checked");
 }); 
 
 $j(window).bind("load",  psSetGalleryHts);
@@ -51,7 +54,15 @@ function psSetGalleryHts(){
 }
 
 function bwbpsVerifyUploadRequest(formData, jqForm, options) { 
-	var fileToUploadValue = $j('#bwbps_uploadfile').val();
+	var fileToUploadValue;
+	
+	if($j('#bwbpsSelectURLRadio').attr("checked")){
+		$j('#bwbps_uploadfile').val("");
+		fileToUploadValue = true;
+	} else {
+		fileToUploadValue = $j('#bwbps_uploadfile').val();		
+	}
+	
 	if (!fileToUploadValue) { 
 		$j('#bwbps_message').html('Please select a file.'); 
 		return false; 
@@ -119,6 +130,18 @@ function bwbpsUploadSuccess(data, statusText)  {
 function bwbpsShowPhotoUpload(gal_id){
 	bwbpsActiveGallery = gal_id;
 	$j('#bwbps_galleryid').val(gal_id);
+}
+
+//Toggle File or URL field in upload
+function bwbpsToggleFileOrURL(bShowUrl){
+	if(bShowUrl){
+		$j("#bwbps_uploadfile").hide();
+		$j("#bwbps_uploadurlspan").fadeIn("slow");
+	}else{
+		$j("#bwbps_uploadurlspan").hide();
+		$j("#bwbps_uploadfile").fadeIn("slow");
+	}
+	return false;
 }
 
 
