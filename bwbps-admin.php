@@ -283,6 +283,7 @@ class BWBPS_Admin{
 						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						<br/>
 						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
@@ -412,6 +413,7 @@ class BWBPS_Admin{
 						<input type="radio" name="ps_show_imgcaption"  value="2" <?php if($psOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="3" <?php if($psOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="4" <?php if($psOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="5" <?php if($psOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						<br/>
 						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links

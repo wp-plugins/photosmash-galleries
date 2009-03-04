@@ -29,6 +29,7 @@ Author URI: http://www.whypad.com/
 //define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
+define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
 
 //Set the Upload Path
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
@@ -86,6 +87,7 @@ class BWB_PhotoSmash{
 				'show_caption' => 1,
 				'img_alerts' => 3600,
 				'show_imgcaption' => 1,
+				'nofollow_caption' => 1,
 				'contrib_role' => 10,
 				'img_status' => 0,
 				'last_alert' => 0
@@ -157,7 +159,7 @@ class BWB_PhotoSmash{
 	{
 		global $wpdb;
 		
-		$sql = "SELECT * FROM ".$wpdb->prefix."bwbps_images WHERE alerted = 0 AND status = -1;";
+		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 AND status = -1;";
 		$results = $wpdb->get_results($sql);
 		if(!$results) return;
 		
@@ -189,7 +191,7 @@ class BWB_PhotoSmash{
 		
 		$data['alerted'] = 1;
 		$where['alerted'] = 0;
-		$wpdb->update($wpdb->prefix."bwbps_images", $data, $where);
+		$wpdb->update(PSIMAGESTABLE, $data, $where);
 		
 	}
 		
@@ -230,7 +232,7 @@ function autoAddGallery($content='')
 }
 
 
-//  Loop through Content and inject Gallery where [photosmash=###] is found
+//  Loop through Content and inject Gallery where [photosmash id=###] is found
 //  Called by add_action filter
 function shortCodeGallery($atts, $content=null){
 		global $post;
@@ -353,6 +355,7 @@ function getGallery($g){
 			$data['thumb_width'] = (int)$g['thumb_width'] ? (int)$g['thumb_width'] : (int)$psoptions['thumb_width'];
 			$data['thumb_height'] =  $g['thumb_height'] ? (int)$g['thumb_height'] : (int)$psoptions['thumb_height'];
 			$data['show_caption'] =  $g['show_caption'] ? (int)$g['show_caption'] : (int)$psoptions['show_caption'];
+			$data['nofollow_caption'] =  $g['nofollow_caption'] ? (int)$g['nofollow_caption'] : (int)$psoptions['nofollow_caption'];
 			$data['show_imgcaption'] =  $g['show_imgcaption'] ? (int)$g['show_imgcaption'] : (int)$psoptions['show_imgcaption'];
 			$data['created_date'] = date( 'Y-m-d H:i:s');
 			$data['status'] = 1;
@@ -397,6 +400,19 @@ function build_PhotoSmash($g)
 		<table><tr><td>";
 	
 	$images = $this->getGalleryImages($g['gallery_id']);
+	
+	//Set up some defaults:  caption width, image class name, etc
+	if(!$g['thumb_width'] || $g['thumb_width'] < 60){
+		$captionwidth = "style='width: 100px'";
+	} else {
+		$captionwidth = "style='width: ".$g['thumb_width']."px'";
+	}
+	//image class
+	if($g['img_class']){$imgclass = " class='".$g['img_class']."'";} else {$imgclass="";}
+	//image rel
+	if($g['img_rel']){$imgrel = " rel='".$g['img_rel']."'";} else {$imgrel="";}
+	if($g['nofollow_caption']){$nofollow = " rel='external nofollow'";}else {$nofollow='';}
+	
 	if($images){
 		foreach($images as $image){
 			$modMenu = "";
@@ -415,16 +431,75 @@ function build_PhotoSmash($g)
 					break;
 			}
 			
-			$psTable .= "<li class='psgal_".$g['gallery_id']." $modClass' id='psimg_".$image->image_id."'><a href='".PSIMAGESURL.$image->file_name."' rel='"
-				.$g['img_rel']."' title='".str_replace("'","",$image->image_caption)
-				."'><span id='psimage_".$image->image_id."'><img src='".PSTHUMBSURL
-				.$image->image_name."' />";
-				
-			if($g['show_imgcaption'] && $image->image_caption){
-				$scaption = strlen($image->image_caption) > 16 ? substr($image->image_caption,0,15).'&hellip;' : $image->image_caption;
-				$psTable .= "<br/><span>".$scaption."</span>";
+			$imgurl = "<a href='".PSIMAGESURL.$image->file_name."'"
+				.$imgrel." title='".str_replace("'","",$image->image_caption)
+				."'>";
+			
+			$psTable .= "<li class='psgal_".$g['gallery_id']
+				." $modClass' id='psimg_".$image->image_id."'>".$imgurl
+				."<span id='psimage_".$image->image_id."'>
+				<img src='".PSTHUMBSURL.$image->image_name."'$imgclass />";
+			
+			//Build caption
+			switch ($g['show_imgcaption']){
+				case 0:	//no caption
+					$scaption = "</a>";	//Close out the link from above
+					break;
+				case 1: //caption - link to image
+					
+					$scaption = "<div $captionwidth>".$image->image_caption."</div></a>";
+					break;
+				case 2: //contributor's name - link to image
+					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
+					$scaption = "<div $captionwidth>$captionurl".$nicename."</div></a>";
+					break;
+				case 3: //contributor's name - link to website
+					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
+					if($this->validURL($image->user_url)){
+						$theurl = $image->user_url;
+						$captionurl = "<a href='".$theurl."'"
+							." title='".str_replace("'","",$image->image_caption)
+							."' $nofollow>";
+						$closeUserURL = "</a>";
+						$closePictureURL1 = "</a>";
+						$closePictureURL2 = "";
+					}else{
+						$captionurl = "";
+						$closeUserURL = "";
+						$closePictureURL1 = "";
+						$closePictureURL2 = "</a>";
+					}
+					$scaption = $closePictureURL1."<div $captionwidth>$captionurl"
+						.$nicename.$closeUserURL."</div>".$closePictureURL2;
+					break;
+				case 4: //caption [by] contributor's name - link to website
+					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
+					if($this->validURL($image->user_url)){
+						$theurl = $image->user_url;
+						$captionurl = "<a href='".$theurl."'"
+							." title='".str_replace("'","",$image->image_caption)
+							."' $nofollow>";
+						$closeUserURL = "</a>";
+						$closePictureURL1 = "</a>";
+						$closePictureURL2 = "";
+					}else{
+						$captionurl = "";
+						$closeUserURL = "";
+						$closePictureURL1 = "";
+						$closePictureURL2 = "</a>";
+					}
+					$scaption = $closePictureURL1."<div $captionwidth>$captionurl"
+						.$image->image_caption." by "
+						.$nicename.$closeUserURL."</div>".$closePictureURL2;
+					break;
+				case 5: //caption [by] contributor's name - link to image
+					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
+					$scaption = "<div>"
+						.$image->image_caption." by "
+						.$nicename.$closeUserURL."</div></a>";
+					break;
 			}
-			$psTable .= "</a></span>$modMenu</li>";
+			$psTable .= $scaption."</span>$modMenu</li>";
 		}
 	} else {
 		$psTable .= "<li class='psgal_".$g['gallery_id']
@@ -440,6 +515,11 @@ function build_PhotoSmash($g)
 	";
 	
 	return $ret;
+}
+
+function validURL($str)
+{
+	return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $str)) ? FALSE : TRUE;
 }
 
 
@@ -507,12 +587,24 @@ function getPhotoForm($g){
 		global $user_ID;
 
 		if(current_user_can('level_10')){
-			$images = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-				. 'bwbps_images WHERE gallery_id = %d ORDER BY file_name', $gallery_id));
+			$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename,'
+				.$wpdb->users.'.user_nicename FROM '
+				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+				.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d ORDER BY seq, file_name', $gallery_id);			
+					
+			$images = $wpdb->get_results($sql);
 		} else {
-				$uid = $user_ID ? $user_ID : -1;
-				$images = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . $wpdb->prefix 
-				. 'bwbps_images WHERE gallery_id = %d AND (status > 0 OR user_id = '.$uid.')ORDER BY file_name', $gallery_id));
+			$uid = $user_ID ? $user_ID : -1;
+				
+			$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename,'
+				.$wpdb->users.'.user_nicename FROM '
+				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
+				.$wpdb->users.'.ID = '. $wpdb->prefix
+				.'bwbps_images.user_id WHERE gallery_id = %d AND (status > 0 OR user_id = '
+				.$uid.')ORDER BY seq, file_name'
+				, $gallery_id);			
+				
+			$images = $wpdb->get_results($sql);
 		}
 		return $images;
 	}
