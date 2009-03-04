@@ -30,7 +30,7 @@ if(isset($_POST['bwbps_fileorurl']) && $_POST['bwbps_fileorurl'] == 1){
 	$json['image_caption'] = escapeJS(stripslashes($_POST['bwbps_imgcaption']));
 }
 $json['image_caption'] = htmlentities($json['image_caption']);
-$json['url'] = ''; //stripslashes($_POST['bwbps_imgurl']);
+$json['url'] = ''; //stripslashes($_POST['bwbps_imgcaptionURL']);
 $json['img'] = '';
 $json['imgrel'] = $g['img_rel'];
 $json['show_imgcaption'] = $g['show_imgcaption'];

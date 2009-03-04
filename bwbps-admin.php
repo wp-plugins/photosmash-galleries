@@ -64,6 +64,7 @@ class BWBPS_Admin{
 				'upload_form_caption' => 'Select an image to upload:',
 				'img_class' => 'ps_images',
 				'show_caption' => 1,
+				'nofollow_caption' => 1,
 				'img_alerts' => 3600,
 				'show_imgcaption' => 1,
 				'contrib_role' => 10,
@@ -128,6 +129,8 @@ class BWBPS_Admin{
 				$ps['show_imgcaption'] = 0;
 			}
 			
+			$ps['nofollow_caption'] = isset($_POST['ps_nofollow_caption']) ? 1 : 0;
+			
 			if(isset($_POST['ps_image_alert_schedule'])){
 				$ps['img_alerts'] = (int)$_POST['ps_image_alert_schedule'];
 			}
@@ -160,6 +163,7 @@ class BWBPS_Admin{
 			$d['upload_form_caption'] = $_POST['gal_upload_form_caption'];
 			$d['img_class'] = $_POST['gal_img_class'];
 			$d['show_imgcaption'] = (int)$_POST['gal_show_imgcaption'];
+			$d['nofollow_caption'] = isset($_POST['gal_nofollow_caption']) ? 1 : 0;
 			$d['img_status'] = (int)$_POST['gal_img_status'];
 			$d['contrib_role'] = (int)$_POST['gal_contrib_role'];
 			
@@ -272,12 +276,16 @@ class BWBPS_Admin{
 				</td>
 			</tr>
 			<tr>
-				<th>Show image caption:</th>
+				<th>Image caption style:</th>
 				<td>
-					<select name="gal_show_imgcaption">
-						<option value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'selected=selected'; ?>>No</option>
-						<option value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'selected=selected'; ?>>Yes</option>
-					</select>
+						<input type="radio" name="gal_show_imgcaption" value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
+						(Website links will be the website in the user's WordPress profile)<br/>
+						<br/>
+						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
 			<tr>
@@ -397,12 +405,16 @@ class BWBPS_Admin{
 				</td>
 			</tr>
 			<tr>
-				<th>Show image caption:</th>
+				<th>Image caption style:</th>
 				<td>
-					<select name="ps_show_imgcaption">
-						<option value="0" <?php if($psOptions['show_imgcaption'] == 0) echo 'selected=selected'; ?>>No</option>
-						<option value="1" <?php if($psOptions['show_imgcaption'] == 1) echo 'selected=selected'; ?>>Yes</option>
-					</select>
+						<input type="radio" name="ps_show_imgcaption" value="0" <?php if($psOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="1" <?php if($psOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="2" <?php if($psOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="3" <?php if($psOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="4" <?php if($psOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
+						(Website links will be the website in the user's WordPress profile)<br/>
+						<br/>
+						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
 			<tr>

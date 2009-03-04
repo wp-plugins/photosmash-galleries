@@ -78,7 +78,7 @@ class BWBPS_Init{
 				thumb_width INT(4),
 				thumb_height INT(4),
 				show_caption TINYINT(1),
-				show_userdata TINYINT(1),
+				nofollow_caption TINYINT(1),
 				caption_template VARCHAR(255),
 				show_imgcaption TINYINT(1),
 				img_status TINYINT(1),
