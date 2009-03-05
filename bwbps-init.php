@@ -1,8 +1,6 @@
 <?php 
 
 //Code for initializing BWB-PhotoSmash plugin when it is activated in Wordpress Plugins admin page
-
-
 class BWBPS_Init{
 	
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";

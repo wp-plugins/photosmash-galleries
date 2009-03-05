@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.11
+Version: 0.2.2
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -79,7 +79,7 @@ class BWB_PhotoSmash{
 				'thumb_aspect' => 0,
 				'thumb_width' => 125,
 				'thumb_height' => 125,
-				'img_rel' => 'lightbox',
+				'img_rel' => 'lightbox[album]',
 				'add_text' => 'Add Photo',
 				'gallery_caption' => 'PhotoSmash Gallery',
 				'upload_form_caption' => 'Select an image to upload:',
@@ -412,6 +412,8 @@ function build_PhotoSmash($g)
 	//image rel
 	if($g['img_rel']){$imgrel = " rel='".$g['img_rel']."'";} else {$imgrel="";}
 	if($g['nofollow_caption']){$nofollow = " rel='external nofollow'";}else {$nofollow='';}
+	//caption class
+	$captionclass= ' class="bwbps_caption"';
 	
 	if($images){
 		foreach($images as $image){
@@ -436,9 +438,14 @@ function build_PhotoSmash($g)
 				."'>";
 			
 			$psTable .= "<li class='psgal_".$g['gallery_id']
-				." $modClass' id='psimg_".$image->image_id."'>".$imgurl
-				."<span id='psimage_".$image->image_id."'>
+				." $modClass' id='psimg_".$image->image_id."'>
+				<span id='psimage_".$image->image_id."'>".$imgurl."
 				<img src='".PSTHUMBSURL.$image->image_name."'$imgclass />";
+				
+			$captionurl = "";
+			$closeUserURL = "";
+			$closePictureURL1 = "";
+			$closePictureURL2 = "";
 			
 			//Build caption
 			switch ($g['show_imgcaption']){
@@ -447,7 +454,7 @@ function build_PhotoSmash($g)
 					break;
 				case 1: //caption - link to image
 					
-					$scaption = "<div $captionwidth>".$image->image_caption."</div></a>";
+					$scaption = "<div $captionwidth $captionclass>".$image->image_caption."</div></a>";
 					break;
 				case 2: //contributor's name - link to image
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
@@ -457,11 +464,14 @@ function build_PhotoSmash($g)
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
 					if($this->validURL($image->user_url)){
 						$theurl = $image->user_url;
-						$captionurl = "<a href='".$theurl."'"
+						$captionurl = "
+						<a href='".$theurl."'"
 							." title='".str_replace("'","",$image->image_caption)
 							."' $nofollow>";
-						$closeUserURL = "</a>";
-						$closePictureURL1 = "</a>";
+						$closeUserURL = "</a>
+						";
+						$closePictureURL1 = "</a>
+						";
 						$closePictureURL2 = "";
 					}else{
 						$captionurl = "";
@@ -469,7 +479,7 @@ function build_PhotoSmash($g)
 						$closePictureURL1 = "";
 						$closePictureURL2 = "</a>";
 					}
-					$scaption = $closePictureURL1."<div $captionwidth>$captionurl"
+					$scaption = $closePictureURL1."<div $captionwidth $captionclass>$captionurl"
 						.$nicename.$closeUserURL."</div>".$closePictureURL2;
 					break;
 				case 4: //caption [by] contributor's name - link to website
@@ -488,15 +498,14 @@ function build_PhotoSmash($g)
 						$closePictureURL1 = "";
 						$closePictureURL2 = "</a>";
 					}
-					$scaption = $closePictureURL1."<div $captionwidth>$captionurl"
+					$scaption = $closePictureURL1."<div $captionwidth $captionclass>$captionurl"
 						.$image->image_caption." by "
 						.$nicename.$closeUserURL."</div>".$closePictureURL2;
 					break;
 				case 5: //caption [by] contributor's name - link to image
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
-					$scaption = "<div>"
-						.$image->image_caption." by "
-						.$nicename.$closeUserURL."</div></a>";
+					$scaption = "<div $captionwidth $captionclass>".$image->image_caption." by "
+						.$nicename."</div></a>";
 					break;
 			}
 			$psTable .= $scaption."</span>$modMenu</li>";

@@ -58,7 +58,7 @@ class BWBPS_Admin{
 				'thumb_aspect' => 0,
 				'thumb_width' => 110,
 				'thumb_height' => 110,
-				'img_rel' => 'lightbox',
+				'img_rel' => 'lightbox[album]',
 				'add_text' => 'Add Photo',
 				'gallery_caption' => 'PhotoSmash Gallery',
 				'upload_form_caption' => 'Select an image to upload:',

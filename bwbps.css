@@ -16,7 +16,7 @@ ul.bwbps_gallery li{
 }
 
 .bwbps_gallery_div{
-	background:#333;
+	background:#222;
 	border:1px solid #ddd;
 	border-color:#888 #000 #000 #888;
 	margin: 15px;
@@ -50,6 +50,9 @@ ul.bwbps_gallery li{
 	color: #0066ff !important;
 }
 
+.bwbps_caption{
+	font-size: 11px;
+}
 
 
 .ps-submit input, .ps-submit {
