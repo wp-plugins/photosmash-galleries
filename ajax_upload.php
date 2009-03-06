@@ -34,6 +34,7 @@ $json['url'] = ''; //stripslashes($_POST['bwbps_imgcaptionURL']);
 $json['img'] = '';
 $json['imgrel'] = $g['img_rel'];
 $json['show_imgcaption'] = $g['show_imgcaption'];
+$json['thumb_width'] = $g['thumb_width'] < 50 ? 50 : $g['thumb_width'] + 4;
 
 $json['succeed'] = 'false'; 
 if($g['contrib_role'] == -1){

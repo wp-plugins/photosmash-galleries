@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.2
+Version: 0.2.21
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -385,6 +385,7 @@ function build_PhotoSmash($g)
 		{
 			$nonce = wp_create_nonce( 'bwbps_moderate_images' );
 			$ret .= '<input type="hidden" id="_moderate_nonce" name="_moderate_nonce" value="'.$nonce.'" />';
+			$this->moderateNonceCount++;
 		}
 
 
@@ -403,9 +404,9 @@ function build_PhotoSmash($g)
 	
 	//Set up some defaults:  caption width, image class name, etc
 	if(!$g['thumb_width'] || $g['thumb_width'] < 60){
-		$captionwidth = "style='width: 100px'";
+		$captionwidth = "style='width: 80px'";
 	} else {
-		$captionwidth = "style='width: ".$g['thumb_width']."px'";
+		$captionwidth = "style='width: ".($g['thumb_width'] + 4)."px'";
 	}
 	//image class
 	if($g['img_class']){$imgclass = " class='".$g['img_class']."'";} else {$imgclass="";}
@@ -432,15 +433,15 @@ function build_PhotoSmash($g)
 					$modClass = '';
 					break;
 			}
-			
+			$imgtitle = str_replace("'","",$image->image_caption);
 			$imgurl = "<a href='".PSIMAGESURL.$image->file_name."'"
-				.$imgrel." title='".str_replace("'","",$image->image_caption)
+				.$imgrel." title='".$imgtitle
 				."'>";
 			
 			$psTable .= "<li class='psgal_".$g['gallery_id']
 				." $modClass' id='psimg_".$image->image_id."'>
-				<span id='psimage_".$image->image_id."'>".$imgurl."
-				<img src='".PSTHUMBSURL.$image->image_name."'$imgclass />";
+				<div id='psimage_".$image->image_id."' $captionwidth>".$imgurl."
+				<img src='".PSTHUMBSURL.$image->image_name."'$imgclass alt='$imgtitle' />";
 				
 			$captionurl = "";
 			$closeUserURL = "";
@@ -454,11 +455,11 @@ function build_PhotoSmash($g)
 					break;
 				case 1: //caption - link to image
 					
-					$scaption = "<div $captionwidth $captionclass>".$image->image_caption."</div></a>";
+					$scaption = "<br/><span $captionclass>".$image->image_caption."</span></a>";
 					break;
 				case 2: //contributor's name - link to image
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
-					$scaption = "<div $captionwidth>$captionurl".$nicename."</div></a>";
+					$scaption = "<br/><span >$captionurl".$nicename."</span></a>";
 					break;
 				case 3: //contributor's name - link to website
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
@@ -479,8 +480,8 @@ function build_PhotoSmash($g)
 						$closePictureURL1 = "";
 						$closePictureURL2 = "</a>";
 					}
-					$scaption = $closePictureURL1."<div $captionwidth $captionclass>$captionurl"
-						.$nicename.$closeUserURL."</div>".$closePictureURL2;
+					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
+						.$nicename.$closeUserURL."</span>".$closePictureURL2;
 					break;
 				case 4: //caption [by] contributor's name - link to website
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
@@ -498,21 +499,21 @@ function build_PhotoSmash($g)
 						$closePictureURL1 = "";
 						$closePictureURL2 = "</a>";
 					}
-					$scaption = $closePictureURL1."<div $captionwidth $captionclass>$captionurl"
+					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
 						.$image->image_caption." by "
-						.$nicename.$closeUserURL."</div>".$closePictureURL2;
+						.$nicename.$closeUserURL."</span>".$closePictureURL2;
 					break;
 				case 5: //caption [by] contributor's name - link to image
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
-					$scaption = "<div $captionwidth $captionclass>".$image->image_caption." by "
-						.$nicename."</div></a>";
+					$scaption = "<br/><span $captionclass>".$image->image_caption." by "
+						.$nicename."</span></a>";
 					break;
 			}
-			$psTable .= $scaption."</span>$modMenu</li>";
+			$psTable .= $scaption."</div>$modMenu</li>";
 		}
 	} else {
 		$psTable .= "<li class='psgal_".$g['gallery_id']
-			."' style='height: ".($g['thumb_height'] + 15)."px; margin: 15px 0;'><img src='".WP_PLUGIN_URL."/photosmash-galleries/images/"
+			."' style='height: ".($g['thumb_height'] + 15)."px; margin: 15px 0;'><img alt='' src='".WP_PLUGIN_URL."/photosmash-galleries/images/"
 			."ps_blank.gif' width='1' height='".$g['thumb_height']."' /></li>";
 	}
 	$ret .= "<ul id='bwbps_gal_".$g['gallery_id']."' class='bwbps_gallery'>".$psTable;
@@ -566,7 +567,7 @@ function getPhotoForm($g){
 			<tr><th>Caption:</th>
 				<td>
 					<input type="text" name="bwbps_imgcaptionInput" id="bwbps_imgcaptionInput" />
-					<input type="Submit" class="ps-submit" value="Submit" id="bwbps_submitBtn" />
+					<input type="submit" class="ps-submit" value="Submit" id="bwbps_submitBtn" />
 				</td>
 			</tr>
 	        <tr><th>

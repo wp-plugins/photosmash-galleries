@@ -105,12 +105,20 @@ function bwbpsUploadSuccess(data, statusText)  {
 			
 			var li = $j('<li></li>').attr('class','psgal_' + data.gallery_id).appendTo('#bwbps_gal_' + data.gallery_id);
 			
-			var caption = '<img src="' + bwbpsThumbsURL + data.img+'" />';
+			var imgdiv = $j('<div></div>').css('width', data.thumb_width);
+			
+			var ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel);
+			
+			$j('<img src="' + bwbpsThumbsURL + data.img+'" />').appendTo(ahref);
 					
-			if(data.show_imgcaption == 1){
-				caption += "<br/><span>" + data.image_caption + "</span>";
+			if(data.show_imgcaption > 0){
+				$j('<br />').appendTo(ahref);
+				$j('<span>' + data.image_caption + '</span>').attr('class','bwbps_caption').appendTo(ahref);
 			}
-			var ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel).html(caption).appendTo(li);
+			
+			ahref.appendTo(imgdiv);
+			
+			imgdiv.appendTo(li);
 			
 			bwbps_equalHeight($j(".psgal_" + data.gallery_id));
 			
