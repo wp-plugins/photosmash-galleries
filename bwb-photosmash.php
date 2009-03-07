@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.21
+Version: 0.2.22
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -379,7 +379,7 @@ function build_PhotoSmash($g)
 	$admin = current_user_can('level_10');
 	
 	if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role'])){		
-		$ret .= '<span style="margin-left: 10px;"><a href="#TB_inline?height=375&width=530&inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].');" title="'.$blogname.' - Gallery Upload" class="thickbox">Add Photos</a></span>';
+		$ret .= '<span style="margin-left: 10px;"><a href="#TB_inline?height=375&amp;width=530&amp;inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].');" title="'.$blogname.' - Gallery Upload" class="thickbox">Add Photos</a></span>';
 		
 		if($this->moderateNonceCount < 1)
 		{
@@ -574,7 +574,7 @@ function getPhotoForm($g){
 	        		<input type="button" class="ps-submit" value="Done" onclick="tb_remove();return false;" />
 	        	</th>
 	        	<td>
-	        		<img id="bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" />	
+	        		<img id="bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />	
 	        	</td>
 	        </tr>
 	        <tr><th><span id="bwbps_message"></span></th>
