@@ -72,6 +72,8 @@ class BWBPS_Init{
 				contrib_role TINYINT(1) NOT NULL,
 				img_rel VARCHAR(255),
 				img_class VARCHAR(255),
+				img_perrow TINYINT(1),
+				img_perpage TINYINT(1),
 				thumb_aspect TINYINT(1),
 				thumb_width INT(4),
 				thumb_height INT(4),
@@ -105,6 +107,8 @@ class BWBPS_Init{
 		}else{
 			$psAdminOptions = array(
 				'auto_add' => 0,
+				'img_perrow' => 0,
+				'img_perpage' => 0,
 				'thumb_width' => 110,
 				'thumb_height' => 110,
 				'img_rel' => 'lightbox',

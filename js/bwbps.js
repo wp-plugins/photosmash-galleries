@@ -105,7 +105,13 @@ function bwbpsUploadSuccess(data, statusText)  {
 			
 			var li = $j('<li></li>').attr('class','psgal_' + data.gallery_id).appendTo('#bwbps_gal_' + data.gallery_id);
 			
-			var imgdiv = $j('<div></div>').css('width', data.thumb_width);
+			if (data.li_width > 0) {
+				li.css('width', data.li_width + '%');
+			}else{
+				li.css('margin','15px');	
+			}	
+			
+			var imgdiv = $j('<div></div>').css('width', data.thumb_width).css('margin','auto');
 			
 			var ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel);
 			

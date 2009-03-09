@@ -55,6 +55,8 @@ class BWBPS_Admin{
 		//get some defaults if nothing is in the database
 		return array(
 				'auto_add' => 0,
+				'img_perpage' => 0,
+				'img_perrow' => 0,
 				'thumb_aspect' => 0,
 				'thumb_width' => 110,
 				'thumb_height' => 110,
@@ -104,6 +106,9 @@ class BWBPS_Admin{
 			} else {
 				$ps['thumb_aspect'] = 0;
 			}
+			
+			$ps['img_perpage'] = (int)$_POST['ps_img_perpage'];
+			$ps['img_perrow'] = (int)$_POST['ps_img_perrow'];
 			
 			if(isset($_POST['ps_thumb_width'])){
 				$ps['thumb_width'] = (int)$_POST['ps_thumb_width'];
@@ -156,6 +161,8 @@ class BWBPS_Admin{
 		//This section saves Gallery specific settings
 			$gallery_id = (int)$_POST['gal_gallery_id'];
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
+			$d['img_perpage'] = (int)$_POST['gal_img_perpage'];
+			$d['img_perrow'] = (int)$_POST['gal_img_perrow'];
 			$d['thumb_aspect'] = (int)$_POST['gal_thumb_aspect'];
 			$d['thumb_width'] = (int)$_POST['gal_thumb_width'];
 			$d['thumb_height'] = (int)$_POST['gal_thumb_height'];
@@ -238,6 +245,20 @@ class BWBPS_Admin{
 					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>'/>
 				</td>
 	</tr>
+			<tr>
+				<th>Images per page:</th>
+				<td>
+					<input type='text' name="gal_img_perpage" value='<?php echo (int)$galOptions['img_perpage'];?>' style='width: 40px !important;'/>
+					 <em>0 turns off paging and shows all images in gallery</em>
+				</td>
+			</tr>
+			<tr>
+				<th>Images per row in gallery:</th>
+				<td>
+					<input type='text' name="gal_img_perrow" value='<?php echo (int)$galOptions['img_perrow'];?>' style='width: 40px !important;'/>
+					 <em>0 places as many images per row as theme's width allows</em>
+				</td>
+			</tr>
 			<tr>
 				<th>Thumbnail style:</th>
 				<td>
@@ -360,6 +381,20 @@ class BWBPS_Admin{
 						<option value="86400" <?php if($psOptions['img_alerts'] == 86400) echo 'selected=selected'; ?>>every day</option>
 					</select>
 					<input type='hidden' name='ps_last_alert' value='<?php echo (int)$psOptions['last_alert'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Default Images per page:</th>
+				<td>
+					<input type='text' name="ps_img_perpage" value='<?php echo (int)$psOptions['img_perpage'];?>' style='width: 40px !important;'/>
+					 <em>0 turns off paging and shows all images in galleries</em>
+				</td>
+			</tr>
+			<tr>
+				<th>Default Images per row in galleries:</th>
+				<td>
+					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/>
+					 <em>0 places as many images per row as theme's width allows</em>
 				</td>
 			</tr>
 			<tr>

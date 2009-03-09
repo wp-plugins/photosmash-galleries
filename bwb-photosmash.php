@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.22
+Version: 0.2.3
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -76,6 +76,8 @@ class BWB_PhotoSmash{
 		}else{
 			$psAdminOptions = array(
 				'auto_add' => 0,
+				'img_perrow' => 0,
+				'img_perpage' => 0,
 				'thumb_aspect' => 0,
 				'thumb_width' => 125,
 				'thumb_height' => 125,
@@ -351,6 +353,8 @@ function getGallery($g){
 			} else {
 				$data['img_status'] = (int)$psoptions['img_status'];
 			}
+			$data['img_perrow'] = (int)$g['img_perrow'] ? (int)$g['img_perrow'] : (int)$psoptions['img_perrow'];
+			$data['img_perpage'] = (int)$g['img_perpage'] ? (int)$g['img_perpage'] : (int)$psoptions['img_perpage'];
 			$data['thumb_aspect'] = (int)$g['thumb_aspect'] ? (int)$g['thumb_aspect'] : (int)$psoptions['thumb_aspect'];
 			$data['thumb_width'] = (int)$g['thumb_width'] ? (int)$g['thumb_width'] : (int)$psoptions['thumb_width'];
 			$data['thumb_height'] =  $g['thumb_height'] ? (int)$g['thumb_height'] : (int)$psoptions['thumb_height'];
@@ -415,6 +419,13 @@ function build_PhotoSmash($g)
 	if($g['nofollow_caption']){$nofollow = " rel='external nofollow'";}else {$nofollow='';}
 	//caption class
 	$captionclass= ' class="bwbps_caption"';
+
+	//Image per row
+	if($g['img_perrow'] && $g['img_perrow']>0){
+		$imgsPerRowHTML = " style='width: ".floor((1/((int)$g['img_perrow']))*100)."%;'";
+	} else {
+		$imgsPerRowHTML = " style='margin: 15px;'";
+	}
 	
 	if($images){
 		foreach($images as $image){
@@ -439,7 +450,7 @@ function build_PhotoSmash($g)
 				."'>";
 			
 			$psTable .= "<li class='psgal_".$g['gallery_id']
-				." $modClass' id='psimg_".$image->image_id."'>
+				." $modClass' id='psimg_".$image->image_id."'$imgsPerRowHTML>
 				<div id='psimage_".$image->image_id."' $captionwidth>".$imgurl."
 				<img src='".PSTHUMBSURL.$image->image_name."'$imgclass alt='$imgtitle' />";
 				

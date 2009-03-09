@@ -36,6 +36,13 @@ $json['imgrel'] = $g['img_rel'];
 $json['show_imgcaption'] = $g['show_imgcaption'];
 $json['thumb_width'] = $g['thumb_width'] < 50 ? 50 : $g['thumb_width'] + 4;
 
+//Image per row
+if($g['img_perrow'] && $g['img_perrow']>0){
+		$json['li_width'] = floor((1/((int)$g['img_perrow']))*100);
+} else {
+		$json['li_width'] = 0;
+}
+
 $json['succeed'] = 'false'; 
 if($g['contrib_role'] == -1){
 	$user_level = true;
