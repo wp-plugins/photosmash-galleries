@@ -636,8 +636,8 @@ function getPhotoForm($g){
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-form');
 		wp_enqueue_script('thickbox');
-		
-		
+		wp_enqueue_script('jquery-ui-tabs');
+				
 		/*
 		//enqueue jQuery Forms
 		wp_register_script('jquery_forms', WP_PLUGIN_URL . '/photosmash-galleries/js/jquery.form.js', array('jquery'), '2.17');
@@ -680,6 +680,11 @@ function getPhotoForm($g){
 		<?php	
 	}
 	
+	function injectAdminStyles()
+	{
+		wp_enqueue_style( 'bwbpstabs', WP_PLUGIN_URL.'/photosmash-galleries/bwbps.css', false, '1.0', 'screen' );		
+	}
+	
 	
 	//PhotoSmash Database Interactions
 	function getPostGallery($post_id, $gallery_string)
@@ -713,9 +718,9 @@ $bwbPS = new BWB_PhotoSmash();
 //Call the Function that will Add the Options Page
 add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));
 
-//Inject Admin Javascript
+//Inject Admin Javascript & Styles
 add_action('admin_print_scripts', array(&$bwbPS, 'injectAdminJS') );
-
+add_action('admin_print_styles', array(&$bwbPS, 'injectAdminStyles') );
 
 //Call the INIT function whenever the Plugin is activated
 add_action('activate_photosmash-galleries/bwb-photosmash.php',

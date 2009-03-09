@@ -220,6 +220,7 @@ class BWBPS_Admin{
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
 		?>
+		
 		<h3>Gallery Settings</h3>
 <table class="form-table"><tr>
 <th><input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" /></th><td><a href='admin.php?page=bwb-photosmash.php'>PhotoSmash General Settings</a>
@@ -233,12 +234,24 @@ class BWBPS_Admin{
 <th>Select Gallery to edit:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
 <input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'suppleLang') ?>" />
 </td></tr>
+</table>
+<div id="slider" class="wrap">
 
-<?php if($galleryID){
-?>
-<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash id=<?php echo $galleryID;?>]</span>
-<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)</td></tr>
-<?php }?>
+<ul id="tabs">
+
+			<li><a href="#bwbps_galleryoptions">Gallery Options</a></li>
+			<li><a href="#bwbps_thumbnails">Thumbnails</a></li>
+			<li><a href="#bwbps_viewing">Viewing</a></li>
+
+</ul>
+
+<div id='bwbps_galleryoptions'>
+	<table class="form-table">
+	<?php if($galleryID){
+	?>
+		<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash id=<?php echo $galleryID;?>]</span>
+		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)</td></tr>
+	<?php }?>
 	<tr>
 				<th>Gallery name:</th>
 				<td>
@@ -246,19 +259,35 @@ class BWBPS_Admin{
 				</td>
 	</tr>
 			<tr>
-				<th>Images per page:</th>
+				<th>Minimum role to upload photos:</th>
 				<td>
-					<input type='text' name="gal_img_perpage" value='<?php echo (int)$galOptions['img_perpage'];?>' style='width: 40px !important;'/>
-					 <em>0 turns off paging and shows all images in gallery</em>
+					<select name="gal_contrib_role">
+						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
+						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
+						<option value="1" <?php if($galOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
+						<option value="10" <?php if($galOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
+					</select>
 				</td>
 			</tr>
 			<tr>
-				<th>Images per row in gallery:</th>
+				<th>Default image status:</th>
 				<td>
-					<input type='text' name="gal_img_perrow" value='<?php echo (int)$galOptions['img_perrow'];?>' style='width: 40px !important;'/>
-					 <em>0 places as many images per row as theme's width allows</em>
+					<select name="gal_img_status">
+						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
+						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+					</select>
 				</td>
 			</tr>
+			<tr>
+				<th>Upload form caption:</th>
+				<td>
+					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
+				</td>
+			</tr>
+	</table>
+</div>
+<div id='bwbps_thumbnails'>
+	<table class="form-table">
 			<tr>
 				<th>Thumbnail style:</th>
 				<td>
@@ -278,16 +307,28 @@ class BWBPS_Admin{
 					<input type='text' name="gal_thumb_height" value='<?php echo $galOptions['thumb_height'];?>'/>
 				</td>
 			</tr>
+	</table>
+</div>
+<div id='bwbps_viewing'>
+	<table class="form-table">
+			<tr>
+				<th>Images per page:</th>
+				<td>
+					<input type='text' name="gal_img_perpage" value='<?php echo (int)$galOptions['img_perpage'];?>' style='width: 40px !important;'/>
+					 <em>0 turns off paging and shows all images in gallery</em>
+				</td>
+			</tr>
+			<tr>
+				<th>Images per row in gallery:</th>
+				<td>
+					<input type='text' name="gal_img_perrow" value='<?php echo (int)$galOptions['img_perrow'];?>' style='width: 40px !important;'/>
+					 <em>0 places as many images per row as theme's width allows</em>
+				</td>
+			</tr>
 			<tr>
 				<th>"Rel" parameter for image links:</th>
 				<td>
 					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Upload form caption:</th>
-				<td>
-					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
 				</td>
 			</tr>
 			<tr>
@@ -310,32 +351,19 @@ class BWBPS_Admin{
 						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
-			<tr>
-				<th>Minimum role to upload photos:</th>
-				<td>
-					<select name="gal_contrib_role">
-						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
-						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
-						<option value="1" <?php if($galOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
-						<option value="10" <?php if($galOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<th>Default image status:</th>
-				<td>
-					<select name="gal_img_status">
-						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
-					</select>
-				</td>
-			</tr>
-
-</table>
+	</table>
+</div>
+</div>
 <p class="submit">
 	<input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" />
 </p>
 </form>
+<script type="text/javascript">
+	jQuery(function() {
+	jQuery("#tabs").tabs();
+	});
+</script>
+
 <?php
 	}
 	
