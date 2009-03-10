@@ -241,7 +241,7 @@ class BWBPS_Admin{
 
 			<li><a href="#bwbps_galleryoptions">Gallery Options</a></li>
 			<li><a href="#bwbps_thumbnails">Thumbnails</a></li>
-			<li><a href="#bwbps_viewing">Viewing</a></li>
+			<li><a href="#bwbps_display">Displaying</a></li>
 
 </ul>
 
@@ -270,7 +270,7 @@ class BWBPS_Admin{
 				</td>
 			</tr>
 			<tr>
-				<th>Default image status:</th>
+				<th>Default moderation status:</th>
 				<td>
 					<select name="gal_img_status">
 						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
@@ -309,7 +309,7 @@ class BWBPS_Admin{
 			</tr>
 	</table>
 </div>
-<div id='bwbps_viewing'>
+<div id='bwbps_display'>
 	<table class="form-table">
 			<tr>
 				<th>Images per page:</th>
@@ -346,8 +346,8 @@ class BWBPS_Admin{
 						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
-						(Website links will be the website in the user's WordPress profile)<br/>
 						<br/>
+						(Website links will be the website in the user's WordPress profile)<br/>
 						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
@@ -358,6 +358,7 @@ class BWBPS_Admin{
 	<input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" />
 </p>
 </form>
+</div>
 <script type="text/javascript">
 	jQuery(function() {
 	jQuery("#tabs").tabs();
@@ -386,6 +387,21 @@ class BWBPS_Admin{
 			}
 		?>		
 		<h3>PhotoSmash Default Settings</h3>
+		
+		
+		
+	<table class="form-table">
+	</table>
+	<div id="slider" class="wrap">
+
+	<ul id="tabs">
+
+		<li><a href="#bwbps_galleryoptions">Gallery Defaults</a></li>
+		<li><a href="#bwbps_thumbnails">Thumbnails</a></li>
+		<li><a href="#bwbps_display">Displaying</a></li>
+
+	</ul>
+	<div id='bwbps_galleryoptions'>
 		<table class="form-table">
 			<tr><th><input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" /></th><td><a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a></td></tr>
 			<tr>
@@ -412,19 +428,42 @@ class BWBPS_Admin{
 				</td>
 			</tr>
 			<tr>
-				<th>Default Images per page:</th>
+				<th>Default Minimum role to upload photos:</th>
 				<td>
-					<input type='text' name="ps_img_perpage" value='<?php echo (int)$psOptions['img_perpage'];?>' style='width: 40px !important;'/>
-					 <em>0 turns off paging and shows all images in galleries</em>
+					<select name="ps_contrib_role">
+						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
+						<option value="0" <?php if($psOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
+						<option value="1" <?php if($psOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
+						<option value="10" <?php if($psOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
+					</select>
+					<br/>Authors/Contributors and Admins will not need moderation, even if selected below.
 				</td>
 			</tr>
 			<tr>
-				<th>Default Images per row in galleries:</th>
+				<th>Default moderation status:</th>
 				<td>
-					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/>
-					 <em>0 places as many images per row as theme's width allows</em>
+					<select name="ps_img_status">
+						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
+						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+					</select>
 				</td>
 			</tr>
+			<tr>
+				<th>Text for Add Photo link:</th>
+				<td>
+					<input type='text' name="ps_add_text" value='<?php echo $psOptions['add_text'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Upload form caption:</th>
+				<td>
+					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="bwbps_thumbnails">
+		<table class="form-table">
 			<tr>
 				<th>Default thumb style:</th>
 				<td>
@@ -444,22 +483,28 @@ class BWBPS_Admin{
 					<input type='text' name="ps_thumb_height" value='<?php echo $psOptions['thumb_height'];?>'/>
 				</td>
 			</tr>
+		</table>
+	</div>
+	<div id="bwbps_display">
+		<table class="form-table">
+			<tr>
+				<th>Default Images per page:</th>
+				<td>
+					<input type='text' name="ps_img_perpage" value='<?php echo (int)$psOptions['img_perpage'];?>' style='width: 40px !important;'/>
+					 <em>0 turns off paging and shows all images in galleries</em>
+				</td>
+			</tr>
+			<tr>
+				<th>Default Images per row in galleries:</th>
+				<td>
+					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/>
+					 <em>0 places as many images per row as theme's width allows</em>
+				</td>
+			</tr>
 			<tr>
 				<th>"Rel" parameter for image links:</th>
 				<td>
 					<input type='text' name="ps_img_rel" value='<?php echo $psOptions['img_rel'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Text for Add Photo link:</th>
-				<td>
-					<input type='text' name="ps_add_text" value='<?php echo $psOptions['add_text'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Upload form caption:</th>
-				<td>
-					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>
 				</td>
 			</tr>
 			<tr>
@@ -482,33 +527,18 @@ class BWBPS_Admin{
 						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
-			<tr>
-				<th>Default Minimum role to upload photos:</th>
-				<td>
-					<select name="ps_contrib_role">
-						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
-						<option value="0" <?php if($psOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
-						<option value="1" <?php if($psOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
-						<option value="10" <?php if($psOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
-					</select>
-					<br/>Authors/Contributors and Admins will not need moderation, even if selected below.
-				</td>
-			</tr>
-			<tr>
-				<th>Default moderation status:</th>
-				<td>
-					<select name="ps_img_status">
-						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
-					</select>
-				</td>
-			</tr>
 		</table>
+	</div>
+	</div>
 	<p class="submit">
 		<input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" />
 	</p>
 </form>
-
+<script type="text/javascript">
+	jQuery(function() {
+	jQuery("#tabs").tabs();
+	});
+</script>
 </div>
 <?php 
 	

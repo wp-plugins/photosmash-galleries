@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.3
+Version: 0.2.31
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -368,7 +368,7 @@ function getGallery($g){
 			$g = $data;
 			$g['gallery_id'] = $wpdb->insert_id;
 	}
-	
+	$g['add_text'] = $psoptions['add_text'] ? $psoptions['add_text'] : "Add Photos";
 	return $g;
 	
 }
@@ -377,13 +377,15 @@ function getGallery($g){
 //  Build the Markup that gets inserted into the Content...$g == the gallery data
 function build_PhotoSmash($g)
 {
+	global $post;
+	global $wpdb;
 	$blogname = str_replace('"',"",get_bloginfo("blogname"));
 	
 	$ret = '<div class="photosmash_gallery">';
 	$admin = current_user_can('level_10');
 	
 	if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role'])){		
-		$ret .= '<span style="margin-left: 10px;"><a href="#TB_inline?height=375&amp;width=530&amp;inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].');" title="'.$blogname.' - Gallery Upload" class="thickbox">Add Photos</a></span>';
+		$ret .= '<span style="margin-left: 10px;"><a href="#TB_inline?height=375&amp;width=530&amp;inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
 		
 		if($this->moderateNonceCount < 1)
 		{
@@ -405,6 +407,15 @@ function build_PhotoSmash($g)
 		<table><tr><td>";
 	
 	$images = $this->getGalleryImages($g['gallery_id']);
+	$totRows = $wpdb->num_rows;
+	
+	$perma = get_permalink($post->ID);
+	$pagenum = (int)$_REQUEST['supple_page'];
+	if(!$pagenum){$pagenum = 1;}
+	
+	if($totRows){
+		$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g['img_perpage']);
+	} else {$nav = "";}
 	
 	//Set up some defaults:  caption width, image class name, etc
 	if(!$g['thumb_width'] || $g['thumb_width'] < 60){
@@ -532,7 +543,7 @@ function build_PhotoSmash($g)
 	
 	$ret .= "</ul>
 		</td></tr></table>
-	</div></div>\n<div class='bwbps_clear'></div>
+	</div></div>".$nav."\n<div class='bwbps_clear'></div>
 	";
 	
 	return $ret;
@@ -549,14 +560,13 @@ function getPhotoForm($g){
 	
 	$retForm = '
       <div id="bwbps-formcont" class="thickbox" style="display:none;">
-        	'.$g["upload_form_caption"].'
         <form id="bwbps_uploadform" name="bwbps_uploadform" method="post" action="" style="margin:0px;">
         	<input type="hidden" id="_ajax_nonce" name="_ajax_nonce" value="'.$nonce.'" />
         	<input type="hidden" name="MAX_FILE_SIZE" value="'.$g["max_file_size"].'" />
         	<input type="hidden" name="bwbps_imgcaption" id="bwbps_imgcaption" />
         	<input type="hidden" name="gallery_id" id="bwbps_galleryid" value="'.$g["gallery_id"].'" />
         	<table class="ps-form-table">
-			<tr><th>Select image to upload:<br/>(Max. allowed size: 400k)';
+			<tr><th>'.$g["upload_form_caption"].'<br/>(Max. allowed size: 400k)';
 			
 			/*  Caption URL...for later date
 			<tr><th>Caption URL (leave blank for img url):</th>
@@ -704,6 +714,33 @@ function getPhotoForm($g){
 		}
 	}
 	
+	function getPagingNavigation($url, $page, $totalRows, $rowsPerPage){
+		if((int)$rowsPerPage < 1){return false;}
+				
+		$total_pages = ceil($totalRows / $rowsPerPage);
+		
+		//use split on ? to get the url broken between ? and rest
+		
+		//Build PREVIOUS link
+		if($page > 1){
+			$nav[] = "<a href='".$url."?supple_page=".($page-1)."'>&#9668;</a>";
+		}
+		
+		if($total_pages > 1){
+			
+			for($page_num = 1; $page_num <= $total_pages; $page_num++){
+				if($page == $page_num){ 
+					$nav[] = "<span>".$page."</span>";
+				}else{
+					$nav[] = "<a href='".$url."?supple_page=".$page_num."'>".$page_num."</a>";
+				}
+			}
+			
+		}
+		$ret = implode("|", $nav);
+		return $ret;
+		
+	}
 	
 
 } //End of BWB_PhotoSmash Class
