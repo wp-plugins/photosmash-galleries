@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.31
+Version: 0.2.4
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -26,7 +26,6 @@ Author URI: http://www.whypad.com/
 */
 
 // required for Windows & XAMPP
-//define('WINABSPATH', str_replace("\\", "/", ABSPATH) );
 
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
@@ -406,16 +405,29 @@ function build_PhotoSmash($g)
 	$ret .= "
 		<table><tr><td>";
 	
-	$images = $this->getGalleryImages($g['gallery_id']);
-	$totRows = $wpdb->num_rows;
+	$images = $this->getGalleryImages($g);
 	
-	$perma = get_permalink($post->ID);
-	$pagenum = (int)$_REQUEST['supple_page'];
-	if(!$pagenum){$pagenum = 1;}
+	//Calculate Pagination variables
+	$totRows = $wpdb->num_rows;	// Total # of images (total rows returned in query)
 	
-	if($totRows){
-		$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g['img_perpage']);
-	} else {$nav = "";}
+	$perma = get_permalink($post->ID);	//The permalink for this post
+	$pagenum = (int)$_REQUEST['supple_page'];	//What Page # are we on?
+	if(!$pagenum || $pagenum < 1){$pagenum = 1;}	//Set to page 1 if not supplied in Get or Post
+	
+	//get the pagination navigation
+	if($totRows && $g['img_perpage']){
+		$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g['img_perpage']);	
+			//What image # do we begin page with?
+			$lastImg = $pagenum * $g['img_perpage'];
+			$startImg = $lastImg - $g['img_perpage'] + 1;
+			
+	} else {
+		$nav = "";
+		$startImg = 0;
+		$lastImg = $totRows + 1;
+	}
+	
+
 	
 	//Set up some defaults:  caption width, image class name, etc
 	if(!$g['thumb_width'] || $g['thumb_width'] < 60){
@@ -438,8 +450,13 @@ function build_PhotoSmash($g)
 		$imgsPerRowHTML = " style='margin: 15px;'";
 	}
 	
+	$imgNum = 0;
 	if($images){
 		foreach($images as $image){
+			$imgNum++;
+			//Pagination - not the most efficient, but there shouldn't be thousands of images in a gallery
+			if($startImg > $imgNum || $lastImg < $imgNum){ continue;}
+			
 			$modMenu = "";
 			switch ($image->status) {
 				case -1 :
@@ -543,7 +560,7 @@ function build_PhotoSmash($g)
 	
 	$ret .= "</ul>
 		</td></tr></table>
-	</div></div>".$nav."\n<div class='bwbps_clear'></div>
+	".$nav."</div></div>\n<div class='bwbps_clear'></div>
 	";
 	
 	return $ret;
@@ -613,7 +630,7 @@ function getPhotoForm($g){
 
 	
 	//Get the Gallery Images
-	function getGalleryImages($gallery_id){
+	function getGalleryImages($g){
 		global $wpdb;
 		global $user_ID;
 
@@ -621,7 +638,7 @@ function getPhotoForm($g){
 			$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.user_nicename FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-				.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d ORDER BY seq, file_name', $gallery_id);			
+				.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d ORDER BY seq, file_name', $g['gallery_id']);			
 					
 			$images = $wpdb->get_results($sql);
 		} else {
@@ -633,7 +650,7 @@ function getPhotoForm($g){
 				.$wpdb->users.'.ID = '. $wpdb->prefix
 				.'bwbps_images.user_id WHERE gallery_id = %d AND (status > 0 OR user_id = '
 				.$uid.')ORDER BY seq, file_name'
-				, $gallery_id);			
+				, $g['gallery_id']);			
 				
 			$images = $wpdb->get_results($sql);
 		}
@@ -721,9 +738,16 @@ function getPhotoForm($g){
 		
 		//use split on ? to get the url broken between ? and rest
 		
+		$arrURL = split("\?",$url);
+		if(count($arrURL)> 1){
+			$url .= "&";			
+		} else {
+			$url .= "?";
+		}
+		
 		//Build PREVIOUS link
 		if($page > 1){
-			$nav[] = "<a href='".$url."?supple_page=".($page-1)."'>&#9668;</a>";
+			$nav[] = "<a href='".$url."supple_page=".($page-1)."'>&#9668;</a>";
 		}
 		
 		if($total_pages > 1){
@@ -732,12 +756,17 @@ function getPhotoForm($g){
 				if($page == $page_num){ 
 					$nav[] = "<span>".$page."</span>";
 				}else{
-					$nav[] = "<a href='".$url."?supple_page=".$page_num."'>".$page_num."</a>";
+					$nav[] = "<a href='".$url."supple_page=".$page_num."'>".$page_num."</a>";
 				}
 			}
 			
 		}
-		$ret = implode("|", $nav);
+		
+		if($page < $total_pages){
+			$nav[] = "<a href='".$url."supple_page=".($page+1)."'>&#9658;</a>";
+		}
+		
+		$ret = "<div class='bwbps_pagination'>".implode("", $nav)."</div>";
 		return $ret;
 		
 	}

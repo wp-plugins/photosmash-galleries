@@ -211,8 +211,7 @@ class BWBPS_Admin{
 		
 		?>
 		<div class=wrap>
-		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
-		<?php bwbps_nonce_field('update-gallery'); ?>
+		
 		<h2>PhotoSmash Galleries</h2>
 		
 		<?php
@@ -220,42 +219,45 @@ class BWBPS_Admin{
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
 		?>
+<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">	
 		
-		<h3>Gallery Settings</h3>
+<h3>Gallery Settings</h3>
+
 <table class="form-table"><tr>
-<th><input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" /></th><td><a href='admin.php?page=bwb-photosmash.php'>PhotoSmash General Settings</a>
-<?php if($galleryID){
-	echo "&nbsp;|&nbsp;<a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=".(int)$galleryID."'>Manage photos</a>";
-}
-?>
-</td>
-</tr>
 <tr>
 <th>Select Gallery to edit:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
 <input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'suppleLang') ?>" />
 </td></tr>
 </table>
-<div id="slider" class="wrap">
+</form>
+<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+	<input type="hidden" id="bwbps_gallery_id" name="gal_gallery_id" value="<?php echo $galleryID;?>" />
 
+<div id="slider" class="wrap">
 <ul id="tabs">
 
 			<li><a href="#bwbps_galleryoptions">Gallery Options</a></li>
 			<li><a href="#bwbps_thumbnails">Thumbnails</a></li>
-			<li><a href="#bwbps_display">Displaying</a></li>
+			<li><a href="#bwbps_viewing">Viewing</a></li>
 
 </ul>
 
 <div id='bwbps_galleryoptions'>
+	<div style="float: right;">
+		<a href="admin.php?page=bwb-photosmash.php" title="PhotoSmash General Settings">PhotoSmash General Settings</a> | 
+		<a href="admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galleryID;?>">Manage Images</a>
+	</div>
+		<?php bwbps_nonce_field('update-gallery'); ?>
 	<table class="form-table">
 	<?php if($galleryID){
 	?>
-		<tr><th><b>Display code:</b></th><td><span style="color: red; font-weight: bold;">[photosmash id=<?php echo $galleryID;?>]</span>
+		<tr><th><b>Display code:</b></th><td>[photosmash id=<?php echo $galleryID;?>]
 		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)</td></tr>
 	<?php }?>
 	<tr>
 				<th>Gallery name:</th>
 				<td>
-					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>'/>
+					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
 				</td>
 	</tr>
 			<tr>
@@ -309,7 +311,7 @@ class BWBPS_Admin{
 			</tr>
 	</table>
 </div>
-<div id='bwbps_display'>
+<div id='bwbps_viewing'>
 	<table class="form-table">
 			<tr>
 				<th>Images per page:</th>
@@ -398,7 +400,7 @@ class BWBPS_Admin{
 
 		<li><a href="#bwbps_galleryoptions">Gallery Defaults</a></li>
 		<li><a href="#bwbps_thumbnails">Thumbnails</a></li>
-		<li><a href="#bwbps_display">Displaying</a></li>
+		<li><a href="#bwbps_viewing">Viewing</a></li>
 
 	</ul>
 	<div id='bwbps_galleryoptions'>
@@ -485,7 +487,7 @@ class BWBPS_Admin{
 			</tr>
 		</table>
 	</div>
-	<div id="bwbps_display">
+	<div id="bwbps_viewing">
 		<table class="form-table">
 			<tr>
 				<th>Default Images per page:</th>

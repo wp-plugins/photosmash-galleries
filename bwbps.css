@@ -21,6 +21,7 @@ ul.bwbps_gallery li{
 	border:1px solid #ddd;
 	border-color:#888 #000 #000 #888;
 	margin: 15px;
+	_margin-left: 0px;
 }
 
 .bwbps_gallery_div li{
@@ -29,6 +30,7 @@ ul.bwbps_gallery li{
 
 .bwbps_gallery_div div{
 	margin: auto;
+	*margin: 0px;
 	
 }
 
@@ -53,6 +55,35 @@ ul.bwbps_gallery li{
 
 .bwbps_caption{
 	font-size: 11px;
+}
+
+div.bwbps_pagination{
+	margin: 5px auto;
+	text-align: center;
+}
+
+.bwbps_pagination a {
+	color: #fff;
+	padding: 3px 7px;
+	border: 1px;
+	margin: 2px;
+	border: 1px solid #c5c5c5;	
+}
+
+
+.bwbps_pagination a:hover{
+	background-color: #0066ff;
+	color: #fff;
+	text-decoration: none;
+}
+
+
+.bwbps_pagination span {
+	color: #fff;
+	font-weight: bold;
+	padding: 3px 7px;
+	border: 1px;
+	margin: 2px;
 }
 
 
@@ -158,6 +189,8 @@ ul.bwbps_gallery li{
         display: none;
     }
 }
+
+/* *****  Styling for Tabls borrowed from NextGeneration Gallery http://wordpress.org/extend/plugins/nextgen-gallery/ */
 
 /* Skin */
 #slider {
