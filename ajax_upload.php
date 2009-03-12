@@ -47,7 +47,13 @@ $json['succeed'] = 'false';
 if($g['contrib_role'] == -1){
 	$user_level = true;
 } else {
-	$user_level = current_user_can('level_'.$g['contrib_role']);
+	$user_level = current_user_can('level_'.$g['contrib_role']) || current_user_can('upload_to_photosmash') 
+		? true : false;
+	if(!user_level){
+		if(current_user_can('upload_to_photosmash')){
+			$user_level = true;
+		}
+	}
 }
 
 if(!$user_level){

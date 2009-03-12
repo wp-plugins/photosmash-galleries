@@ -204,7 +204,7 @@ class BWB_PhotoSmash{
 function autoAddGallery($content='')
 {
 	global $post;
-
+	
 	if(is_array($this->shortCoded) && in_array($post->ID, $this->shortCoded)){
 		return $content;
 	}
@@ -383,7 +383,7 @@ function build_PhotoSmash($g)
 	$ret = '<div class="photosmash_gallery">';
 	$admin = current_user_can('level_10');
 	
-	if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role']) || current_user_can('Upload to PhotoSmash')){		
+	if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role']) || current_user_can('upload_to_photosmash')){		
 		$ret .= '<span style="margin-left: 10px;"><a href="#TB_inline?height=375&amp;width=530&amp;inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
 		
 		if($this->moderateNonceCount < 1)
@@ -392,8 +392,6 @@ function build_PhotoSmash($g)
 			$ret .= '<input type="hidden" id="_moderate_nonce" name="_moderate_nonce" value="'.$nonce.'" />';
 			$this->moderateNonceCount++;
 		}
-
-
 		
 		if($this->uploadFormCount < 1){
 			$ret .= $this->getPhotoForm($g);
