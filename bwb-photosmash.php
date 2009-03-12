@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.4
+Version: 0.2.41
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -383,7 +383,7 @@ function build_PhotoSmash($g)
 	$ret = '<div class="photosmash_gallery">';
 	$admin = current_user_can('level_10');
 	
-	if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role'])){		
+	if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role']) || current_user_can('Upload to PhotoSmash')){		
 		$ret .= '<span style="margin-left: 10px;"><a href="#TB_inline?height=375&amp;width=530&amp;inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
 		
 		if($this->moderateNonceCount < 1)
