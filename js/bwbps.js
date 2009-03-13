@@ -114,9 +114,9 @@ function bwbpsUploadSuccess(data, statusText)  {
 			var imgdiv;
 			
 			if ($j.browser.msie) {
-				imgdiv = $j('<div></div>').css('width', data.thumb_width).css('margin', 'auto');
-			} else {
 				imgdiv = $j('<div></div>').css('width', data.thumb_width);
+			} else {
+				imgdiv = $j('<div></div>').css('width', data.thumb_width).css('margin', 'auto');
 			}
 			
 			var ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel);
