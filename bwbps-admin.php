@@ -74,7 +74,7 @@ class BWBPS_Admin{
 				'last_alert' => 0
 		);
 	}
-	
+
 	function deleteGallery($options)
 	{
 		global $wpdb;

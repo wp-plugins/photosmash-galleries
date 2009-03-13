@@ -5,7 +5,7 @@ if (!function_exists('add_action'))
 {
 	require_once("../../../wp-load.php");
 }
-
+ 
 check_ajax_referer( "bwb_upload_photos" );
 
 require("classes/JSON.php");
@@ -48,7 +48,7 @@ if($g['contrib_role'] == -1){
 	$user_level = true;
 } else {
 	$user_level = current_user_can('level_'.$g['contrib_role']) || current_user_can('upload_to_photosmash') 
-		? true : false;
+		|| current_user_can('photosmash_'.$g['gallery_id']) ? true : false;
 	if(!user_level){
 		if(current_user_can('upload_to_photosmash')){
 			$user_level = true;
