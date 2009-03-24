@@ -7,7 +7,9 @@ if (!function_exists('add_action'))
 
 check_ajax_referer( "bwbps_moderate_images" );
 
-require("classes/JSON.php");
+if(!function_exists('json_encode')){
+	require("classes/JSON.php");
+}
 
 if(isset($_POST['action']) && $_POST['action']){
 	$action = $_POST['action'];
