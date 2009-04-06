@@ -29,7 +29,7 @@ class BWBPS_Admin{
 		
 		//Delete Gallery
 		if(isset($_POST['deletePhotoSmashGallery'])){
-			check_admin_referer( 'update-gallery');
+			check_admin_referer( 'delete-gallery');
 			$this->deleteGallery($this->options);
 		}
 	
@@ -220,7 +220,7 @@ class BWBPS_Admin{
 			}
 		?>
 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">	
-		
+<?php bwbps_nonce_field('delete-gallery'); ?>
 <h3>Gallery Settings</h3>
 
 <table class="form-table"><tr>
