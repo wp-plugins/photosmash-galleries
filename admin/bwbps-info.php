@@ -135,7 +135,7 @@ class BWBPS_Info{
 			$ret .= "<span style='color: green;'>Exists</span>".$aret[2]."</li>";
 			$aret[2] = '';
 		}
-		
+		/*
 		//Layouts Table
 		$table_name = $wpdb->prefix . "bwbps_layouts";
 		$ret .="
@@ -183,7 +183,7 @@ class BWBPS_Info{
 			$ret .= "<span style='color: green;'>Exists</span>".$aret[5]."</li>";
 			$aret[5] = '';
 		}
-		
+		*/
 		if(!$b){
 			require_once('bwbps-init.php');
 			$bwbpsinit = new BWBPS_Init();						
@@ -306,7 +306,7 @@ class BWBPS_Info{
 			$ret .= "<li>&nbsp;</li><li><span style='color: red;'>One or more of your folders has permissions of 0777.  This is a security risk.</span>  Click 'Set Permissions' to set to 0755, which should allow uploads and be safer. <input type='submit' name='bwbpsFix777' value='Set Permissions' /></li>";
 		}
 		
-		$ret .= "<li style='padding: 5px; border: 1px solid #999;'><input type='submit' name='bwbpsUse777' value='Use 0777' /> <input type='submit' name='bwbpsDontUse777' value='Do Not Use 0777' /><br/><br/>If your system requires 0777 permission to allow users to upload, this setting will cause PhotoSmash to switch the folder permission at upload time.<br/><br/>Current setting: ";
+		$ret .= "<li style='padding: 5px; border: 1px solid #999;'><b>Permissions for Upload Folders:</b><br/><input type='submit' name='bwbpsUse777' value='Use 0777' /> <input type='submit' name='bwbpsDontUse777' value='Do Not Use 0777' /><br/><br/><span style='color: red;'>Warning: setting folder permissions to 777 is a security risk.</span><br/>If your system requires 0777 permission to allow users to upload, the 'Use 0777' setting will cause PhotoSmash to switch the folder permission at upload time and switch it back after upload, thereby minimizing the risk.  <b>Only choose 'Use 0777' if absolutely necessary</b>.<br/><br/>Current setting: ";
 		
 		if(get_option('bwbps-use777') == '1'){$ret .= "<span style='color:red;'>Use 0777</span>";}else{$ret .= "<span style='color: green;'>Don't use 0777</span>";}
 		
@@ -316,6 +316,7 @@ class BWBPS_Info{
 		
 		return $ret;
 	}
+
 	
 	function getServerInfo(){
 		//Thanks to Alex Rabe (NextGen Gallery) for idea and code http://alexrabe.boelinger.com/

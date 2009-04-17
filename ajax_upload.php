@@ -12,13 +12,26 @@ if(!function_exists('json_encode')){
 	require("classes/JSON.php");
 }
 
+
 //Set the Upload Path
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
-define('PSTEMPPATH', PSUPLOADPATH .'/bwbpstemp/');
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
+define('PSIMAGESPATH2',PSUPLOADPATH."/bwbps");
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+define('PSTHUMBSPATH2',PSUPLOADPATH."/bwbps/thumbs");
 define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
 define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
+
+
+//Set SAFE_MODE constant
+if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
+	// if sever did in in a other way
+	if ( ini_get('safe_mode') == 'off' ) define('SAFE_MODE', FALSE);
+	else define( 'SAFE_MODE', ini_get('safe_mode') );
+} else {
+	define( 'SAFE_MODE', ini_get('safe_mode') );
+}
+
 
 $json['gallery_id'] = (int)$_POST['gallery_id'];
 
@@ -76,7 +89,7 @@ include('classes/upload/class.upload.php');
 if(isset($_POST['bwbps_fileorurl']) && $_POST['bwbps_fileorurl'] == 1){
 	
 	if(!file_exists(PSTEMPPATH)){
-		if(!mkdir(PSTEMPPATH, 0777)){
+		if(!mkdir(PSTEMPPATH, 0755)){
 			$json['message'] = "Unable to create the Temp directory for storing URL files: ".PSTEMPPATH.".";
 			echo json_encode($json);
 			exit();		
@@ -84,7 +97,7 @@ if(isset($_POST['bwbps_fileorurl']) && $_POST['bwbps_fileorurl'] == 1){
 		
 	}
 	
-	chmod(PSTEMPPATH, 0777);
+	chmod(PSTEMPPATH, 0755);
 	
 	$image_url = $_POST['bwbps_uploadurl'];		
 	$basename = basename($image_url);
@@ -115,11 +128,17 @@ $handle->file_max_size = 5000000;
 
 $handle->file_auto_rename = true;
 $handle->dir_auto_chmod = true;
+$handle->dir_chmod = 0755;
 $handle->auto_create_dir = true;
 $handle->jpeg_quality = 100;
 $handle->allowed = array('image/*');
 $handle->forbidden = array('application/*');
 $handle->mime_magic_check = true;
+
+if(get_option('bwbps-use777') == '1' && !SAFE_MODE){
+	chmod(PSIMAGESPATH2, 0777);
+	chmod(PSTHUMBSPATH2, 0777);
+}
 
 //change image name
 $handle->file_new_name_body = $newname;
@@ -202,6 +221,11 @@ if ($handle->processed) {
 } 
 
 $handle->clean();
+
+if(get_option('bwbps-use777') == '1' && !SAFE_MODE){
+	chmod(PSIMAGESPATH2, 0755);
+	chmod(PSTHUMBSPATH2, 0755);
+}
 
 function escapeJS($str){
 	return str_replace('"',"",$str);

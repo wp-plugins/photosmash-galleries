@@ -25,18 +25,29 @@ Author URI: http://www.whypad.com/
  * Boston, MA 02110-1301 USA
 */
 
-// required for Windows & XAMPP
-
+//Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
+define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
+define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
+define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
 
 //Set the Upload Path
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
+define('PSIMAGESPATH2',PSUPLOADPATH."/bwbps");
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+define('PSTHUMBSPATH2',PSUPLOADPATH."/bwbps/thumbs");
 define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
 define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
 
+if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
+	// if sever did in in a other way
+	if ( ini_get('safe_mode') == 'off' ) define('SAFE_MODE', FALSE);
+	else define( 'SAFE_MODE', ini_get('safe_mode') );
+} else {
+	define( 'SAFE_MODE', ini_get('safe_mode') );
+}
 
 class BWB_PhotoSmash{
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
