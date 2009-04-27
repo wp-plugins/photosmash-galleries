@@ -71,7 +71,8 @@ class BWBPS_Admin{
 				'show_imgcaption' => 1,
 				'contrib_role' => 10,
 				'img_status' => 0,
-				'last_alert' => 0
+				'last_alert' => 0,
+				'use_urlfield' => 0
 		);
 	}
 
@@ -148,6 +149,9 @@ class BWBPS_Admin{
 			if(isset($_POST['ps_last_alert'])){
 				$ps['last_alert'] = (int)$_POST['ps_last_alert'];
 			}
+			
+			$ps['use_urlfield'] = isset($_POST['ps_use_urlfield']) ? 1 : 0;
+			
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
 			
@@ -344,12 +348,16 @@ class BWBPS_Admin{
 				<td>
 						<input type="radio" name="gal_show_imgcaption" value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="7" <?php if($galOptions['show_imgcaption'] == 7) echo 'checked'; ?>>Caption (link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)<br/>
+						
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
+
 						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
@@ -462,6 +470,12 @@ class BWBPS_Admin{
 					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>
 				</td>
 			</tr>
+			<tr>
+				<th>Include URL field for alternate Caption link:</th>
+				<td>
+					<input type="checkbox" name="ps_use_urlfield" <?php if( $psOptions['use_urlfield'] == 1) echo 'checked'; ?>/> Includes a field for user to supply an alternate URL for caption links.
+				</td>
+			</tr>
 		</table>
 	</div>
 	<div id="bwbps_thumbnails">
@@ -520,10 +534,13 @@ class BWBPS_Admin{
 				<td>
 						<input type="radio" name="ps_show_imgcaption" value="0" <?php if($psOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="1" <?php if($psOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="7" <?php if($psOptions['show_imgcaption'] == 7) echo 'checked'; ?>>Caption (link to user submitted url)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="2" <?php if($psOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="3" <?php if($psOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="4" <?php if($psOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="5" <?php if($psOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="6" <?php if($psOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)<br/>
+
 						(Website links will be the website in the user's WordPress profile)<br/>
 						<br/>
 						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links

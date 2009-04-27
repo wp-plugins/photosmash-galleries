@@ -13,6 +13,15 @@ if(!function_exists('json_encode')){
 }
 
 
+
+//Set Database Table Constants
+define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
+define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
+define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
+define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
+define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
+define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
+
 //Set the Upload Path
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
@@ -21,6 +30,8 @@ define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
 define('PSTHUMBSPATH2',PSUPLOADPATH."/bwbps/thumbs");
 define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
 define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
+define("PSTABLEPREFIX", $wpdb->prefix."bwbps_");
+
 
 
 //Set SAFE_MODE constant
@@ -45,7 +56,15 @@ if(isset($_POST['bwbps_fileorurl']) && $_POST['bwbps_fileorurl'] == 1){
 	$json['image_caption'] = escapeJS(stripslashes($_POST['bwbps_imgcaption']));
 }
 $json['image_caption'] = htmlentities($json['image_caption']);
-$json['url'] = ''; //stripslashes($_POST['bwbps_imgcaptionURL']);
+
+$bwbps_url = trim(escapeJS(stripslashes($_POST['bwbps_url'])));
+
+if(psValidateURL($bwbps_url)){
+	$json['url'] = $bwbps_url;
+} else {
+	$json['url'] = '';//$bwbps_url;
+}
+
 $json['img'] = '';
 $json['imgrel'] = $g['img_rel'];
 $json['show_imgcaption'] = $g['show_imgcaption'];
@@ -230,4 +249,13 @@ if(get_option('bwbps-use777') == '1' && !SAFE_MODE){
 function escapeJS($str){
 	return str_replace('"',"",$str);
 }
+
+function psValidateURL($url){
+	if (preg_match("/^(http(s?):\\/\\/{1})((\w+\.)+)\w{2,}(\/?)$/i", $url)) {
+	return true; 
+	} else { 
+	return false;
+	} 
+}
+
 ?>

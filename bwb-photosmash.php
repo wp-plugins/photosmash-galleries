@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.55
+Version: 0.2.6
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -102,7 +102,8 @@ class BWB_PhotoSmash{
 				'nofollow_caption' => 1,
 				'contrib_role' => 10,
 				'img_status' => 0,
-				'last_alert' => 0
+				'last_alert' => 0,
+				'use_urlfield' => 0
 			);
 			update_option($this->adminOptionsName, $psAdminOptions);
 		}
@@ -565,6 +566,67 @@ function build_PhotoSmash($g)
 					$scaption = "<br/><span $captionclass>".$image->image_caption." by "
 						.$nicename."</span></a>";
 					break;
+				
+				case 6: //caption [by] contributor's name - link to user submitted url
+					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
+					$goturl = false;
+					if($this->validURL($image->url)){
+						$theurl = $image->url;
+						$goturl = true;
+					} else {
+						if($this->validURL($image->user_url)){
+							$theurl = $image->user_url;
+							$goturl = true;
+						}
+					}
+					
+					if($goturl){
+						$captionurl = "<a href='".$theurl."'"
+							." title='".str_replace("'","",$image->image_caption)
+							."' $nofollow>";
+						$closeUserURL = "</a>";
+						$closePictureURL1 = "</a>";
+						$closePictureURL2 = "";
+					}else{
+						$captionurl = "";
+						$closeUserURL = "";
+						$closePictureURL1 = "";
+						$closePictureURL2 = "</a>";
+					}
+					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
+						.$image->image_caption." by "
+						.$nicename.$closeUserURL."</span>".$closePictureURL2;
+					break;
+				case 7: //caption - link to user submitted url
+					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
+					$goturl = false;
+					if($this->validURL($image->url)){
+						$theurl = $image->url;
+						$goturl = true;
+					} else {
+						if($this->validURL($image->user_url)){
+							$theurl = $image->user_url;
+							$goturl = true;
+						}
+					}
+					
+					if($goturl){
+						$captionurl = "<a href='".$theurl."'"
+							." title='".str_replace("'","",$image->image_caption)
+							."' $nofollow>";
+						$closeUserURL = "</a>";
+						$closePictureURL1 = "</a>";
+						$closePictureURL2 = "";
+					}else{
+						$captionurl = "";
+						$closeUserURL = "";
+						$closePictureURL1 = "";
+						$closePictureURL2 = "</a>";
+					}
+					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
+						.$image->image_caption.$closeUserURL."</span>".$closePictureURL2;
+					break;
+
 			}
 			$psTable .= $scaption."</div>$modMenu</li>";
 		}
@@ -622,11 +684,25 @@ function getPhotoForm($g){
 			</tr>
 			<tr><th>Caption:</th>
 				<td>
-					<input type="text" name="bwbps_imgcaptionInput" id="bwbps_imgcaptionInput" />
-					<input type="submit" class="ps-submit" value="Submit" id="bwbps_submitBtn" />
+					<input tabindex="2" type="text" name="bwbps_imgcaptionInput" id="bwbps_imgcaptionInput" />
+					
 				</td>
 			</tr>
+			';
+					
+		//Alternate Caption URL
+		if($this->psOptions['use_urlfield']){
+		
+			$retForm .= '<tr><th>Caption URL:</th>
+				<td align="left">
+					<input tabindex="3" type="text" name="bwbps_url" id="bwbps_url" /> Ex: http://www.mysite.com
+				</td>
+				</tr>';
+		}
+		
+		$retForm .= '
 	        <tr><th>
+					<input type="submit" class="ps-submit" value="Submit" id="bwbps_submitBtn" /> &nbsp;
 	        		<input type="button" class="ps-submit" value="Done" onclick="tb_remove();return false;" />
 	        	</th>
 	        	<td>
