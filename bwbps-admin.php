@@ -198,6 +198,11 @@ class BWBPS_Admin{
 			}		
 	}
 	
+	function getGalleryDefaults(){
+			return $this->psOptions;
+		//No Gallery found...sending defaults for new galleries
+	}
+	
 	
 	//Disply the General Settings Page
 	function printGallerySettings(){
@@ -211,6 +216,8 @@ class BWBPS_Admin{
 		$galleryDDL = $this->getGalleryDDL($galleryID);
 		if($galleryID){
 			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.$wpdb->prefix.'bwbps_galleries WHERE gallery_id = %d',$galleryID), ARRAY_A);
+		} else {
+			$galOptions = $this->getGalleryDefaults();
 		}
 		
 		?>
@@ -378,6 +385,7 @@ class BWBPS_Admin{
 <?php
 	}
 	
+
 
 	//Disply the General Settings Page
 	function printGeneralSettings(){

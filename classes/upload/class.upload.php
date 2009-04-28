@@ -2,9 +2,9 @@
 // +------------------------------------------------------------------------+
 // | class.upload.php                                                       |
 // +------------------------------------------------------------------------+
-// | Copyright (c) Colin Verot 2003-2008. All rights reserved.              |
-// | Version       0.26                                                     |
-// | Last modified 13/11/2008                                               |
+// | Copyright (c) Colin Verot 2003-2009. All rights reserved.              |
+// | Version       0.27RC2                                                  |
+// | Last modified 02/01/2009                                               |
 // | Email         colin@verot.net                                          |
 // | Web           http://www.verot.net                                     |
 // +------------------------------------------------------------------------+
@@ -31,7 +31,7 @@
 /**
  * Class upload
  *
- * @version   0.26
+ * @version   0.27RC2
  * @author    Colin Verot <colin@verot.net>
  * @license   http://opensource.org/licenses/gpl-license.php GNU Public License
  * @copyright Colin Verot
@@ -299,6 +299,8 @@
  *  <pre>$handle->image_rotate = 90;</pre></li>
  *  <li><b>image_crop</b> crops image. accepts 4, 2 or 1 values as 'T R B L' or 'TB LR' or 'TBLR'. dimension can be 20, or 20px or 20% (default: null)<br>
  *  <pre>$handle->image_crop = array(50,40,30,20); OR '-20 20%'...</pre></li>
+ *  <li><b>image_precrop</b> crops image, before an eventual resizing. accepts 4, 2 or 1 values as 'T R B L' or 'TB LR' or 'TBLR'. dimension can be 20, or 20px or 20% (default: null)<br>
+ *  <pre>$handle->image_precrop = array(50,40,30,20); OR '-20 20%'...</pre></li>
  * </ul>
  * <ul>
  *  <li><b>image_bevel</b> adds a bevel border to the image. value is thickness in pixels (default: null)<br>
@@ -380,6 +382,9 @@
  *
  * <b>Changelog</b>
  * <ul>
+ *  <li><b>v 0.27</b> 01/02/2009<br>
+ *   - fixed error when using PECL Fileinfo extension in SAFE MODE<br>
+ *   - added {@link image_precrop} to crop the image before an eventual resizing</li>
  *  <li><b>v 0.26</b> 13/11/2008<br>
  *   - rewrote conversion from palette to true color to handle transparency better<br>
  *   - fixed imagecopymergealpha() when the overlayed image is of wrong dimensions<br>
@@ -1611,6 +1616,18 @@ class upload {
     var $image_crop;
 
     /**
+     * Crops an image, before an eventual resizing
+     *
+     * See {@link image_crop} for valid formats
+     *
+     * Default value is null (no cropping)
+     *
+     * @access public
+     * @var string OR array;
+     */
+    var $image_precrop;
+
+    /**
      * Adds a bevel border on the image
      *
      * Value is a positive integer, representing the thickness of the bevel
@@ -1933,6 +1950,7 @@ class upload {
         $this->image_flip               = null;
         $this->image_rotate             = null;
         $this->image_crop               = null;
+        $this->image_precrop            = null;
 
         $this->image_bevel              = null;
         $this->image_bevel_color1       = '#FFFFFF';
@@ -2031,7 +2049,7 @@ class upload {
      */
     function upload($file, $lang = 'en_GB') {
 
-        $this->version            = '0.26';
+        $this->version            = '0.27RC1';
 
         $this->file_src_name      = '';
         $this->file_src_name_body = '';
@@ -2265,9 +2283,9 @@ class upload {
             if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
                 if (getenv('MAGIC') === FALSE) {
                     if (substr(PHP_OS, 0, 3) == 'WIN') {
-                        putenv('MAGIC=' . realpath(ini_get('extension_dir') . '/../') . 'extras/magic');
+                        @putenv('MAGIC=' . realpath(ini_get('extension_dir') . '/../') . 'extras/magic');
                     } else {
-                        putenv('MAGIC=/usr/share/file/magic');
+                        @putenv('MAGIC=/usr/share/file/magic');
                     }
                 }
                 if (function_exists('finfo_open')) {
@@ -2885,6 +2903,7 @@ class upload {
                                  || is_numeric($this->jpeg_size)
                                  || !empty($this->image_flip)
                                  || !empty($this->image_crop)
+                                 || !empty($this->image_precrop)
                                  || !empty($this->image_border)
                                  || $this->image_frame > 0
                                  || $this->image_bevel > 0
@@ -3138,8 +3157,6 @@ class upload {
 
                     $this->image_src_x = imagesx($image_src);
                     $this->image_src_y = imagesy($image_src);
-                    $this->image_dst_x = $this->image_src_x;
-                    $this->image_dst_y = $this->image_src_y;
                     $gd_version = $this->gdversion();
                     $ratio_crop = null;
 
@@ -3173,6 +3190,65 @@ class upload {
                     }
 
 
+                    $image_dst = & $image_src;
+
+                    // pre-crop image, before resizing
+                    if ((!empty($this->image_precrop))) {
+                        if (is_array($this->image_precrop)) {
+                            $vars = $this->image_precrop;
+                        } else {
+                            $vars = explode(' ', $this->image_precrop);
+                        }
+                        if (sizeof($vars) == 4) {
+                            $ct = $vars[0]; $cr = $vars[1]; $cb = $vars[2]; $cl = $vars[3];
+                        } else if (sizeof($vars) == 2) {
+                            $ct = $vars[0]; $cr = $vars[1]; $cb = $vars[0]; $cl = $vars[1];
+                        } else {
+                            $ct = $vars[0]; $cr = $vars[0]; $cb = $vars[0]; $cl = $vars[0];
+                        }
+                        if (strpos($ct, '%')>0) $ct = $this->image_src_y * (str_replace('%','',$ct) / 100);
+                        if (strpos($cr, '%')>0) $cr = $this->image_src_x * (str_replace('%','',$cr) / 100);
+                        if (strpos($cb, '%')>0) $cb = $this->image_src_y * (str_replace('%','',$cb) / 100);
+                        if (strpos($cl, '%')>0) $cl = $this->image_src_x * (str_replace('%','',$cl) / 100);
+                        if (strpos($ct, 'px')>0) $ct = str_replace('px','',$ct);
+                        if (strpos($cr, 'px')>0) $cr = str_replace('px','',$cr);
+                        if (strpos($cb, 'px')>0) $cb = str_replace('px','',$cb);
+                        if (strpos($cl, 'px')>0) $cl = str_replace('px','',$cl);
+                        $ct = (int) $ct;
+                        $cr = (int) $cr;
+                        $cb = (int) $cb;
+                        $cl = (int) $cl;
+                        $this->log .= '- pre-crop image : ' . $ct . ' ' . $cr . ' ' . $cb . ' ' . $cl . ' <br />';
+                        $this->image_src_x = $this->image_src_x - $cl - $cr;
+                        $this->image_src_y = $this->image_src_y - $ct - $cb;
+                        if ($this->image_src_x < 1) $this->image_src_x = 1;
+                        if ($this->image_src_y < 1) $this->image_src_y = 1;
+                        $tmp = $this->imagecreatenew($this->image_src_x, $this->image_src_y);
+
+                        // we copy the image into the recieving image
+                        imagecopy($tmp, $image_dst, 0, 0, $cl, $ct, $this->image_src_x, $this->image_src_y);
+
+                        // if we crop with negative margins, we have to make sure the extra bits are the right color, or transparent
+                        if ($ct < 0 || $cr < 0 || $cb < 0 || $cl < 0 ) {
+                            // use the background color if present
+                            if (!empty($this->image_background_color)) {
+                                list($red, $green, $blue) = $this->getcolors($this->image_background_color);
+                                $fill = imagecolorallocate($tmp, $red, $green, $blue);
+                            } else {
+                                $fill = imagecolorallocatealpha($tmp, 0, 0, 0, 127);
+                            }
+                            // fills eventual negative margins
+                            if ($ct < 0) imagefilledrectangle($tmp, 0, 0, $this->image_src_x, -$ct, $fill);
+                            if ($cr < 0) imagefilledrectangle($tmp, $this->image_src_x + $cr, 0, $this->image_src_x, $this->image_src_y, $fill);
+                            if ($cb < 0) imagefilledrectangle($tmp, 0, $this->image_src_y + $cb, $this->image_src_x, $this->image_src_y, $fill);
+                            if ($cl < 0) imagefilledrectangle($tmp, 0, 0, -$cl, $this->image_src_y, $fill);
+                        }
+
+                        // we transfert tmp into image_dst
+                        $image_dst = $this->imagetransfer($tmp, $image_dst);
+                    }
+
+                    // resize image (and move image_src_x, image_src_y dimensions into image_dst_x, image_dst_y)
                     if ($this->image_resize) {
                         $this->log .= '- resizing...<br />';
 
@@ -3295,24 +3371,26 @@ class upload {
 
                         if ($this->image_dst_x < 1) $this->image_dst_x = 1;
                         if ($this->image_dst_y < 1) $this->image_dst_y = 1;
-                        $image_dst = $this->imagecreatenew($this->image_dst_x, $this->image_dst_y);
+                        $tmp = $this->imagecreatenew($this->image_dst_x, $this->image_dst_y);
 
                         if ($gd_version >= 2) {
-                            $res = imagecopyresampled($image_dst, $image_src, 0, 0, 0, 0, $this->image_dst_x, $this->image_dst_y, $this->image_src_x, $this->image_src_y);
+                            $res = imagecopyresampled($tmp, $image_src, 0, 0, 0, 0, $this->image_dst_x, $this->image_dst_y, $this->image_src_x, $this->image_src_y);
                         } else {
-                            $res = imagecopyresized($image_dst, $image_src, 0, 0, 0, 0, $this->image_dst_x, $this->image_dst_y, $this->image_src_x, $this->image_src_y);
+                            $res = imagecopyresized($tmp, $image_src, 0, 0, 0, 0, $this->image_dst_x, $this->image_dst_y, $this->image_src_x, $this->image_src_y);
                         }
 
                         $this->log .= '&nbsp;&nbsp;&nbsp;&nbsp;resized image object created<br />';
                         $this->log .= '&nbsp;&nbsp;&nbsp;&nbsp;image_src_x y        : ' . $this->image_src_x . ' x ' . $this->image_src_y . '<br />';
                         $this->log .= '&nbsp;&nbsp;&nbsp;&nbsp;image_dst_x y        : ' . $this->image_dst_x . ' x ' . $this->image_dst_y . '<br />';
+                        // we transfert tmp into image_dst
+                        $image_dst = $this->imagetransfer($tmp, $image_dst);
 
                     } else {
-                        // we only convert, so we link the dst image to the src image
-                        $image_dst = & $image_src;
+                        $this->image_dst_x = $this->image_src_x;
+                        $this->image_dst_y = $this->image_src_y;
                     }
 
-                    // crop imag (and also crops if image_ratio_crop is used)
+                    // crop image (and also crops if image_ratio_crop is used)
                     if ((!empty($this->image_crop) || !is_null($ratio_crop))) {
                         if (is_array($this->image_crop)) {
                             $vars = $this->image_crop;
@@ -3374,7 +3452,6 @@ class upload {
                         // we transfert tmp into image_dst
                         $image_dst = $this->imagetransfer($tmp, $image_dst);
                     }
-
 
                     // flip image
                     if ($gd_version >= 2 && !empty($this->image_flip)) {
