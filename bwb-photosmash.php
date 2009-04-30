@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.61
+Version: 0.2.62
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -471,6 +471,9 @@ function build_PhotoSmash($g)
 	
 	$imgNum = 0;
 	if($images){
+		if($this->psOptions['img_targetnew']){
+			$imagetargblank = " target='_blank' ";
+		}
 		foreach($images as $image){
 			$imgNum++;
 			//Pagination - not the most efficient, but there shouldn't be thousands of images in a gallery
@@ -492,9 +495,25 @@ function build_PhotoSmash($g)
 					break;
 			}
 			$imgtitle = str_replace("'","",$image->image_caption);
-			$imgurl = "<a href='".PSIMAGESURL.$image->file_name."'"
-				.$imgrel." title='".$imgtitle
-				."'>";
+			
+			//Deal with special cases where the caption style changes the thumbnail link.
+				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9){
+					if($this->validURL($image->url)){
+						$theurl = $image->url;
+					} else {
+						if($this->validURL($image->user_url)){
+							$theurl = $image->user_url;
+						} else {
+							$theurl = PSIMAGESURL.$image->file_name;
+						}
+					}
+					$imgurl = "<a href='".$theurl."'"
+						.$imgrel." title='".$g['imgtitle']."' ".$imagetargblank.">";
+				} else {
+					$imgurl = "<a href='".PSIMAGESURL.$image->file_name."'"
+						.$imgrel." title='".$g['imgtitle']."' ".$imagetargblank.">";
+				}
+			
 			
 			$psTable .= "<li class='psgal_".$g['gallery_id']
 				." $modClass' id='psimg_".$image->image_id."'$imgsPerRowHTML>
@@ -505,6 +524,10 @@ function build_PhotoSmash($g)
 			$closeUserURL = "";
 			$closePictureURL1 = "";
 			$closePictureURL2 = "";
+			
+			if($this->psOptions['caption_targetnew']){
+				$targblank = " target='_blank' ";
+			} else { $targblank = "";}
 			
 			//Build caption
 			switch ($g['show_imgcaption']){
@@ -517,7 +540,7 @@ function build_PhotoSmash($g)
 					break;
 				case 2: //contributor's name - link to image
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
-					$scaption = "<br/><span >$captionurl".$nicename."</span></a>";
+					$scaption = "<br/><span >".$captionurl.$nicename."</span></a>";
 					break;
 				case 3: //contributor's name - link to website
 					$nicename = $image->user_nicename ? $image->user_nicename : "anonymous";
@@ -526,7 +549,7 @@ function build_PhotoSmash($g)
 						$captionurl = "
 						<a href='".$theurl."'"
 							." title='".str_replace("'","",$image->image_caption)
-							."' $nofollow>";
+							."' $nofollow $targblank >";
 						$closeUserURL = "</a>
 						";
 						$closePictureURL1 = "</a>
@@ -547,7 +570,7 @@ function build_PhotoSmash($g)
 						$theurl = $image->user_url;
 						$captionurl = "<a href='".$theurl."'"
 							." title='".str_replace("'","",$image->image_caption)
-							."' $nofollow>";
+							."' $nofollow $targblank >";
 						$closeUserURL = "</a>";
 						$closePictureURL1 = "</a>";
 						$closePictureURL2 = "";
@@ -583,7 +606,7 @@ function build_PhotoSmash($g)
 					if($goturl){
 						$captionurl = "<a href='".$theurl."'"
 							." title='".str_replace("'","",$image->image_caption)
-							."' $nofollow>";
+							."' $nofollow $targblank > ";
 						$closeUserURL = "</a>";
 						$closePictureURL1 = "</a>";
 						$closePictureURL2 = "";
@@ -613,7 +636,7 @@ function build_PhotoSmash($g)
 					if($goturl){
 						$captionurl = "<a href='".$theurl."'"
 							." title='".str_replace("'","",$image->image_caption)
-							."' $nofollow>";
+							."' $nofollow $targblank > ";
 						$closeUserURL = "</a>";
 						$closePictureURL1 = "</a>";
 						$closePictureURL2 = "";
@@ -625,6 +648,14 @@ function build_PhotoSmash($g)
 					}
 					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
 						.$image->image_caption.$closeUserURL."</span>".$closePictureURL2;
+					break;
+				
+				case 8:	//no caption - Thumbnail links to User Submitted URL
+					$scaption = "</a>";	//Close out the link from above
+					break;
+				case 9: //caption - Thumbnail & Caption link to User Submitted URL
+					
+					$scaption = "<br/><span $captionclass>".$image->image_caption."</span></a>";
 					break;
 
 			}

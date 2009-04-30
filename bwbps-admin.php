@@ -72,7 +72,9 @@ class BWBPS_Admin{
 				'contrib_role' => 10,
 				'img_status' => 0,
 				'last_alert' => 0,
-				'use_urlfield' => 0
+				'use_urlfield' => 0,
+				'caption_targetnew' => 0,
+				'img_targetnew' => 0
 		);
 	}
 
@@ -151,7 +153,9 @@ class BWBPS_Admin{
 			}
 			
 			$ps['use_urlfield'] = isset($_POST['ps_use_urlfield']) ? 1 : 0;
-			
+			$ps['caption_targetnew'] = isset($_POST['ps_caption_targetnew']) ? 1 : 0;
+			$ps['img_targetnew'] = isset($_POST['ps_img_targetnew']) ? 1 : 0;
+
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
 			
@@ -351,7 +355,7 @@ class BWBPS_Admin{
 				</td>
 			</tr>
 			<tr>
-				<th>Image caption style:</th>
+				<th>Caption display style:</th>
 				<td>
 						<input type="radio" name="gal_show_imgcaption" value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
@@ -360,10 +364,13 @@ class BWBPS_Admin{
 						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)<br/>
-						
+						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)
+						<br/><hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
+						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
+						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
 
 						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
@@ -538,7 +545,14 @@ class BWBPS_Admin{
 				</td>
 			</tr>
 			<tr>
-				<th>Image caption style:</th>
+				<th>Thumbnail & Caption link targets:</th>
+				<td>
+					<input type="checkbox" name="ps_img_targetnew" <?php if($psOptions['img_targetnew'] == 1) echo 'checked'; ?>> Thumbnail links open in new window<br/>
+					<input type="checkbox" name="ps_caption_targetnew" <?php if($psOptions['caption_targetnew'] == 1) echo 'checked'; ?>> Caption links open in new window<br/>
+				</td>
+			</tr>
+			<tr>
+				<th>Default image caption style:</th>
 				<td>
 						<input type="radio" name="ps_show_imgcaption" value="0" <?php if($psOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="1" <?php if($psOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
@@ -548,9 +562,14 @@ class BWBPS_Admin{
 						<input type="radio" name="ps_show_imgcaption"  value="4" <?php if($psOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="5" <?php if($psOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="6" <?php if($psOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)<br/>
-
-						(Website links will be the website in the user's WordPress profile)<br/>
+						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
+						<input type="radio" name="ps_show_imgcaption"  value="8" <?php if($psOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="9" <?php if($psOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
 						<br/>
+						(Website links will be the website in the user's WordPress profile)<br/>
+						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
+						<br/>
+
 						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>

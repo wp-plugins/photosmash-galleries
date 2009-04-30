@@ -43,6 +43,10 @@ ul.bwbps_gallery li{
 	text-decoration: underline;
 }
 
+.bwbps_gallery_div table{
+	width: 100%;
+}
+
 .bwbps_galid {
 	float: right;
 	color: #fff;

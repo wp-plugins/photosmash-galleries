@@ -250,12 +250,11 @@ function escapeJS($str){
 	return str_replace('"',"",$str);
 }
 
-function psValidateURL($url){
-	if (preg_match("/^(http(s?):\\/\\/{1})((\w+\.)+)\w{2,}(\/?)$/i", $url)) {
-	return true; 
-	} else { 
-	return false;
-	} 
+
+
+function psValidateURL($url)
+{
+	return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $url)) ? FALSE : TRUE;
 }
 
 ?>
