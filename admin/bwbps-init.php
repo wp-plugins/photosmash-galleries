@@ -27,12 +27,14 @@ class BWBPS_Init{
 				image_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				gallery_id BIGINT(20) NOT NULL,
 				user_id BIGINT(20) NOT NULL,
+				post_id BIGINT(20),
 				comment_id BIGINT(20) NOT NULL,
 				image_name VARCHAR(250) NOT NULL,
 				image_caption TEXT,
 				file_name VARCHAR(255) NOT NULL,
 				file_url VARCHAR(255),
 				url VARCHAR(250) NOT NULL,
+				custom_fields TEXT,
 				updated_by BIGINT(20) NOT NULL,
 				created_date DATETIME NOT NULL,
 				updated_date TIMESTAMP NOT NULL,
@@ -45,6 +47,10 @@ class BWBPS_Init{
 				INDEX (gallery_id)
 				)  $charset_collate;";
 			dbDelta($sql);
+			
+			$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
+				"DROP INDEX image_id";
+			$wpdb->query($sql);
 			
 			//Create the Image Ratings table (future use)
 			$table_name = $wpdb->prefix . "bwbps_imageratings";
@@ -77,6 +83,9 @@ class BWBPS_Init{
 				thumb_aspect TINYINT(1),
 				thumb_width INT(4),
 				thumb_height INT(4),
+				image_aspect TINYINT(1),
+				image_width INT(4),
+				image_height INT(4),
 				show_caption TINYINT(1),
 				nofollow_caption TINYINT(1),
 				caption_template VARCHAR(255),
@@ -84,10 +93,79 @@ class BWBPS_Init{
 				img_status TINYINT(1),
 				created_date DATETIME NOT NULL,
 				updated_date TIMESTAMP NOT NULL,
+				layout_id INT(4),
+				use_customform TINYINT(1),
+				custom_formname VARCHAR(100),
+				use_customfields TINYINT(1),
+				cover_imageid BIGINT(20),
 				status TINYINT(1),
 				PRIMARY KEY   (gallery_id))
 				$charset_collate
 				;";
+			dbDelta($sql);
+			
+			/* Create the PhotoSmash HTML layouts table
+			* HTML layouts are templates that lets you
+			* create a predefined HTML layout with shortcodes to display
+			* galleries
+			*/
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_layouts (
+				layout_id INT(11) NOT NULL AUTO_INCREMENT,
+				layout_name VARCHAR(30) ,
+				layout TEXT ,
+				alt_layout TEXT ,
+				wrapper TEXT ,
+				cells_perrow TINYINT NOT NULL default '0',
+				css TEXT ,
+				lists VARCHAR(255) ,
+				PRIMARY KEY   (layout_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+						
+			//Create the Fields table
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_fields (
+				field_id INT(11) NOT NULL AUTO_INCREMENT,
+				form_id INT(4) NOT NULL default '0',
+				field_name VARCHAR(50) ,
+				label VARCHAR(255) ,
+				type INT(4) ,
+				numeric_field TINYINT(1) NOT NULL default '0',
+				multi_val TINYINT(1) NOT NULL,
+				default_val varchar(255),
+				html_filter TINYINT(1),
+				date_format TINYINT(1),
+				seq INT(4) ,
+				status TINYINT(1) NOT NULL ,
+				PRIMARY KEY  (field_id)
+				)  $charset_collate;";
+			
+			dbDelta($sql);
+			
+			$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_lookup ".
+				"DROP INDEX field_id";
+			$wpdb->query($sql);
+			
+			//Create the Supple Lookup Table
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_lookup (
+				id INT(11) NOT NULL AUTO_INCREMENT,
+				field_id INT(4) ,
+				value VARCHAR(255) ,
+				label VARCHAR(255) ,
+				seq INT(4) ,
+				PRIMARY KEY   (id),
+				INDEX (field_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+			//SQL for table creation & updating
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_customdata (
+				id INT(11) NOT NULL AUTO_INCREMENT,
+				image_id INT(11) NOT NULL,
+				updated_date TIMESTAMP NOT NULL, 
+				bwbps_status TINYINT(1) NOT NULL default '0',
+				PRIMARY KEY  (id)
+				)  $charset_collate;";
 			dbDelta($sql);
 						
 		//Neeed to Set PS Default Options
@@ -121,7 +199,9 @@ class BWBPS_Init{
 				'show_imgcaption' => 1,
 				'contrib_role' => 10,
 				'img_status' => 0,
-				'last_alert' => 0
+				'last_alert' => 0,
+				'use_advanced' => 0,
+				'use_customform' => 0
 			);
 			update_option($this->adminOptionsName, $psAdminOptions);
 		}

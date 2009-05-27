@@ -1,6 +1,7 @@
 <?php
 
 class BWBPS_Info{
+	
 	var $message;
 	var $msgclass;
 
@@ -37,22 +38,26 @@ class BWBPS_Info{
 	function printInfoPage(){
 		global $wpdb;
 		
-		$psOptions = $this->psOptions;
+		$psOptions = $this->psOptions;		
 		
 		//Start showing form info
 		?>
 		<div class=wrap>
 		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
-		<h2>PhotoSmash Info &amp; Debugging</h2>
+		<h2>PhotoSmash Info &amp; Trouble Shooting</h2>
 		
 		<?php
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
+			
+			//Add Nonce for security
+			bwbps_nonce_field('update-photosmashinfo');
 		?>
 		
 		
 		<h3>PhotoSmash Info</h3>
+		<?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
 		<ul>
 			<?php echo $this->getPhotoSmashInfo(); ?>
 		</ul>
@@ -75,17 +80,22 @@ class BWBPS_Info{
 		<?php
 		$this->getServerInfo();
 		?>
-
-		<?php
+		
+		<br/><br/>
+		<input type='submit' value="Show PHPInfo" name="bwbps_show_phpinfo" />
+		<br/>
+		<?php 
 		if(isset($_POST['bwbps_show_phpinfo'])){
-			echo"<div>";
+			check_admin_referer( 'update-photosmashinfo');
 			phpinfo();
-			echo "</div>";
+			
 		}
 		
 		//close out the Wrap Div
 		?>
 		</form>
+		<h3>Credits for Info Page</h3>
+		Thanks to the eminent <a href='http://wordpress.org/extend/plugins/nextgen-gallery/'>NextGen Gallery</a> and its author, Alex Rabe, for borrowed code and ideas for this page.  NextGen is a great gallery, and totally worth your time trying out if PhotoSmash isn't for you.
 		</div>
 		<?php
 	}
@@ -135,7 +145,7 @@ class BWBPS_Info{
 			$ret .= "<span style='color: green;'>Exists</span>".$aret[2]."</li>";
 			$aret[2] = '';
 		}
-		/*
+		
 		//Layouts Table
 		$table_name = $wpdb->prefix . "bwbps_layouts";
 		$ret .="
@@ -151,7 +161,8 @@ class BWBPS_Info{
 			$ret .= "<span style='color: green;'>Exists</span>".$aret[3]."</li>";
 			$aret[3] = '';
 		}
-		
+
+						
 		//Fields Table
 		$table_name = $wpdb->prefix . "bwbps_fields";
 		$ret .="
@@ -183,7 +194,7 @@ class BWBPS_Info{
 			$ret .= "<span style='color: green;'>Exists</span>".$aret[5]."</li>";
 			$aret[5] = '';
 		}
-		*/
+		
 		if(!$b){
 			require_once('bwbps-init.php');
 			$bwbpsinit = new BWBPS_Init();						
@@ -196,7 +207,7 @@ class BWBPS_Info{
 	}
 	
 	function getPhotoSmashInfo(){
-		
+
 		//IMAGE PATH		
 		$imgpath = PSIMAGESPATH2;
 		
@@ -208,7 +219,7 @@ class BWBPS_Info{
 			} else {
 				$ret .= "<span style='color: red;'>Exists - but not writeable.";
 				
-				$this->chmod($imgpath);
+				$this->chmod($imgpath, 0755);
 				
 				if(is_writable($imgpath)){
 					$ret.="<br/>CHMOD attempted and succeeded.";
@@ -228,6 +239,7 @@ class BWBPS_Info{
 				Set permissions to 755.
 				";
 			}
+			
 		}
 		$ret .= "</li>";
 		
@@ -251,14 +263,27 @@ class BWBPS_Info{
 				}
 			}
 			$b777 = substr(sprintf('%o', fileperms(PSTHUMBSPATH2)), -4);
+						
+			if($b777 <> "0755"){
+				$this->fixFilePerms();
+				$pmsg = " - originally set to: ".$b777.", but has been fixed";
+				sleep(3);
+				$b777 = substr(sprintf('%o', fileperms(PSTHUMBSPATH2)), -4);
+			}
 			if($b777 == "0777"){$has777 = true;}
-			$ret .= " - Permissions: " .$b777;
+			$ret .= " - Permissions: " .$b777 . $pmsg;
+			
+			
 
 		} else {
 			mkdir(PSTHUMBSPATH2, 0755);
 			if(file_exists($imgpath)){
 				$ret .= "<span style='color: red;'>Path originally missing.</span><span style='color: green;'> But has been added now.</span>";
 				$this->chmod(PSTHUMBSPATH2);
+				
+				sleep(3);
+				//$this->fixFilePerms();
+				
 			} else {
 				$ret .= "<span style='color: red;'>Does not exist - tried to create but failed.</span><br/>Manually create path:  wp-content/uploads/bwbps<br/>
 				Set permissions to 755.
@@ -278,7 +303,7 @@ class BWBPS_Info{
 			} else {
 				$ret .= "<span style='color: red;'>Exists - but not writeable.";
 				
-				$this->chmod($imgpath);
+				$this->chmod($imgpath, 0755);
 				
 				if(is_writable($imgpath)){
 					$ret.="<br/>CHMOD attempted and succeeded.";
@@ -293,13 +318,14 @@ class BWBPS_Info{
 			mkdir(PSUPLOADPATH, 0755);
 			if(file_exists($imgpath)){
 				$ret .= "<span style='color: red;'>Path originally missing.</span><span style='color: green;'> But has been added now.</span>";
-				$this->chmod(PSUPLOADPATH);
+				$this->chmod(PSUPLOADPATH, 0755);
 			} else {
 				$ret .= "<span style='color: red;'>Does not exist - tried to create but failed.</span><br/>Manually create path:  wp-content/uploads<br/>
 				Set permissions to 755.
 				";
 			}
 		}
+		
 		$ret .= "</li>";
 		
 		if($has777){
@@ -316,7 +342,6 @@ class BWBPS_Info{
 		
 		return $ret;
 	}
-
 	
 	function getServerInfo(){
 		//Thanks to Alex Rabe (NextGen Gallery) for idea and code http://alexrabe.boelinger.com/
@@ -384,11 +409,12 @@ class BWBPS_Info{
 }
 	
 	// **************************************************************
-	function chmod($filename = '') {
+	function chmod($filename = '', $perms = 0755) {
 		// Set correct file permissions (taken from wp core)
-		$stat = @ stat(dirname($filename));
+		/* $stat = @ stat(dirname($filename));
 		$perms = $stat['mode'] & 0007777;
 		$perms = $perms & 0000666;
+		*/
 		if ( @chmod($filename, $perms) )
 			return true;
 			
@@ -407,6 +433,13 @@ class BWBPS_Info{
 		
 		return "SAFE MODE is off.  You should be ok there.";
 	}
+}
+
+if ( !function_exists('wp_nonce_field') ) {
+        function bwbps_nonce_field($action = -1) { return; }
+        $bwbps_plugin_nonce = -1;
+} else {
+        function bwbps_nonce_field($action = -1) { return wp_nonce_field($action); }
 }
 
 ?>

@@ -2,6 +2,7 @@ var $j = jQuery.noConflict();
 var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
 var bwbpsUploadStatus = false;
+var bwbpsAddedImages =0;
 
 $j(document).ready(function() { 
 	//Show and hide the Loading icon on Ajax start/end
@@ -21,22 +22,30 @@ $j(document).ready(function() {
 	});
 
 	
-	var options = { 
-		beforeSubmit:  bwbpsVerifyUploadRequest,  
-		success:      bwbpsUploadSuccess , 
-		failure: function(){alert('failed');},
-		url:       bwbpsAjaxUpload,
-		dataType:  'json'
-	}; 
+	
 	$j('#bwbps_uploadform').submit(function() { 
-		$j('#bwbps_message').html(''); 
-		$j(this).ajaxSubmit(options); 
+		$j('#bwbps_message').html('');
+		ajaxLoadImage(this); 
+		//$j(this).ajaxSubmit(options); 
 		return false; 
 	});
 	
 	//make sure the upload form radio button is on Select file
 	$j("#bwbpsSelectFileRadio").attr("checked","checked");
-}); 
+});
+
+function ajaxLoadImage(myForm){
+	var options = { 
+		beforeSubmit:  bwbpsVerifyUploadRequest,
+		success:      bwbpsUploadSuccess , 
+		failure: function(){alert('failed');},
+		url:       bwbpsAjaxUpload,
+		dataType:  'json'
+	}; 
+	
+	$j(myForm).ajaxSubmit(options); 
+	return false;
+}
 
 $j(window).bind("load",  psSetGalleryHts);
 
@@ -56,6 +65,8 @@ function psSetGalleryHts(){
 function bwbpsVerifyUploadRequest(formData, jqForm, options) { 
 	var fileToUploadValue;
 	
+	$j("#bwbps_imgcaption").val($j("#bwbps_imgcaptionInput").val());
+			
 	if($j('#bwbpsSelectURLRadio').attr("checked")){
 		$j('#bwbps_uploadfile').val("");
 		fileToUploadValue = true;
@@ -63,22 +74,30 @@ function bwbpsVerifyUploadRequest(formData, jqForm, options) {
 		fileToUploadValue = $j('#bwbps_uploadfile').val();		
 	}
 	
+	
+
 	if (!fileToUploadValue) { 
 		$j('#bwbps_message').html('Please select a file.'); 
 		return false; 
 	} 
-	$j("#bwbps_imgcaption").val($j("#bwbps_imgcaptionInput").val());
+
 	$j("#bwbps_submitBtn").attr('disabled','disabled');
+
 	$j("#bwbps_imgcaptionInput").attr('disabled','disabled');
 	$j('#bwbps_result').html('');
-	
+
 	return true;
 } 
 
 
 // Callback for successful Ajax image upload
 // Displays the image or error messages
-function bwbpsUploadSuccess(data, statusText)  { 
+function bwbpsUploadSuccess(data, statusText)  {
+	
+	//This Alternate function is set in PhotoSmash Settings Advanced page
+	//If the alternate function returns false...continue with standard function
+	if(bwbpsAlternateUploadFunction(data, statusText)){ return false;}
+
 	$j("#bwbps_submitBtn").removeAttr('disabled');
 	$j("#bwbps_imgcaptionInput").removeAttr('disabled');
 	bwbpsUploadStatus = true;
@@ -101,9 +120,29 @@ function bwbpsUploadSuccess(data, statusText)  {
 			$j('#bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
 			$j('#bwbps_message').html('<b>Upload successful!</b>'); 
 			
-
+			//Add the New Images box for custom Layouts			
+			var adderdiv;
 			
-			var li = $j('<li></li>').attr('class','psgal_' + data.gallery_id).appendTo('#bwbps_gal_' + data.gallery_id);
+			if(bwbpsCustomLayout && bwbpsAddedImages < 1){
+				adderdiv = $j('<div></div>');
+				adderdiv.attr('id','bwbps_galcont_' + data.gallery_id).attr('class','bwbps_gallery_div');
+				
+				var bbtbl = $j('<table></table>');
+				var bbtr = $j('<tr></tr>');
+				bbtr.appendTo(bbtbl);
+				var bbtd = $j('<td></td>');
+				
+				bbtd.appendTo(bbtr);
+				
+				var newImgUL = $j('<ul></ul>').attr('class','bwbps_gallery').attr('id','bwbps_stdgal_' + data.gallery_id);
+				newImgUL.appendTo(bbtd);
+				bbtbl.appendTo(adderdiv);
+				adderdiv.insertAfter('#bwbpsAdderInsertionPoint');
+			}
+			
+			
+			
+			var li = $j('<li></li>').attr('class','psgal_' + data.gallery_id).appendTo('#bwbps_stdgal_' + data.gallery_id);
 			
 			if (data.li_width > 0) {
 				li.css('width', data.li_width + '%');
@@ -111,6 +150,12 @@ function bwbpsUploadSuccess(data, statusText)  {
 				li.css('margin','15px');	
 			}	
 			
+			//Manually set the LI height for Custom Layouts
+			if(bwbpsCustomLayout && bwbpsAddedImages < 1){
+				li.css('height', data.thumb_height + 20);
+			}
+			
+			bwbpsAddedImages++;
 			var imgdiv;
 			
 			if ($j.browser.msie) {
@@ -147,23 +192,52 @@ function bwbpsUploadSuccess(data, statusText)  {
 
 
 //Show the Photo Upload Form
-function bwbpsShowPhotoUpload(gal_id){
+function bwbpsShowPhotoUpload(gal_id, post_id){
+
 	bwbpsActiveGallery = gal_id;
 	$j('#bwbps_galleryid').val(gal_id);
+	$j('#bwbps_post_id').val(post_id);
+}
+
+function bwbpsShowPhotoUploadNoThickbox(gal_id, post_id){
+	bwbpsActiveGallery = gal_id;
+
+	$j('#bwbps_galleryid').val(gal_id);
+	$j('#bwbps_post_id').val(post_id);
+	$j('#bwbps-formcont').hide();
+	$j('#bwbps-formcont').appendTo('#bwbpsFormSpace_' + gal_id);
+	
+	$j('#bwbpsFormSpace_' + gal_id).show();
+	$j('#bwbps-formcont').show('slow');
+}
+
+function bwbpsHideUploadForm(gal_id){
+	$j('#bwbps-formcont').hide('slow');
+	$j('#bwbpsFormSpace_' + gal_id).hide('slow');
 }
 
 //Toggle File or URL field in upload
-function bwbpsToggleFileOrURL(bShowUrl){
+function bwbpsToggleFileOrURL(bShowUrl, uploadInstance){
+	if(!uploadInstance){uploadInstance = "";}
 	if(bShowUrl){
-		$j("#bwbps_uploadfile").hide();
-		$j("#bwbps_uploadurlspan").fadeIn("slow");
+		$j("#bwbps_uploadfile"+uploadInstance).hide();
+		$j("#bwbps_uploadurlspan"+uploadInstance).fadeIn("slow");
 	}else{
-		$j("#bwbps_uploadurlspan").hide();
-		$j("#bwbps_uploadfile").fadeIn("slow");
+		$j("#bwbps_uploadurlspan"+uploadInstance).hide();
+		$j("#bwbps_uploadfile"+uploadInstance).fadeIn("slow");
 	}
 	return false;
 }
 
+//Toggle Form Visible setting in PhotoSmash Default Settings Admin page
+function bwbpsToggleFormAlwaysVisible(){
+	if($j("#bwbps_use_thickbox").attr('checked')){
+		$j("#bwbps_formviz").fadeOut('slow');
+	} else {
+		$j("#bwbps_formviz").fadeIn('slow');
+	}
+	
+}
 
 //Reset the height of all the LI's to be the same
 function bwbps_equalHeight(group) {
@@ -177,9 +251,31 @@ function bwbps_equalHeight(group) {
     group.height(tallest);
 }
 
+function bwbpsConfirmResetDefaults(){
+	return confirm('Do you want to Reset all PhotoSmash Settings back to Default?');
+}
+
 function bwbpsConfirmDeleteGallery(){
 	var fieldname = jQuery("#bwbpsGalleryDDL option:selected").text();
 	return confirm('Do you want to delete Gallery: ' + fieldname + '?');
+}
+
+function bwbpsConfirmCustomForm(){
+	var fieldname = jQuery("#bwbpsCFDDL option:selected").text();
+	return confirm('Do you want to Custom Form: ' + fieldname + '?');
+}
+
+function bwbpsConfirmGenerateCustomTable(){
+	return confirm('Do you want to generate the Table with your Custom Fields?');
+}
+
+function bwbpsConfirmDeleteField(completeDelete){
+	var fieldname = jQuery("#supple_fieldDropDown option:selected").text();
+	if(completeDelete){
+		return confirm('Delete field and Drop from Custom Data table?\n\nComplete Delete will delete the field and remove it from the Custom Data Table.  Do you want to completely delete field: ' + fieldname + '?');
+	}else{
+		return confirm('Delete field (does not drop from table)?\n\nThis removes the field from your list of custom fields.  It does not remove from the Custom Data Table if you have generated the table already.  Do you want to delete field: ' + fieldname + '?');
+	}
 }
 
 //Moderate/Delete Image
@@ -198,7 +294,11 @@ function bwbpsModerateImage(action, image_id)
 	var _moderate_nonce = $j("#_moderate_nonce").val();
 	
 	var image_caption = '';
-	if(action == 'savecaption'){ image_caption = $j('#imgcaption_' + imgid).val(); }
+	var image_url = "";
+	if(action == 'savecaption'){ 
+		image_caption = $j('#imgcaption_' + imgid).val(); 
+		image_url = $j('#imgurl_' + imgid).val(); 
+	}
 	
 	try{
 		$j('#ps_savemsg').show();
@@ -210,7 +310,8 @@ function bwbpsModerateImage(action, image_id)
 		data: { 'action': myaction,
        'image_id': imgid,
        '_ajax_nonce' : _moderate_nonce,
-       'image_caption' : image_caption
+       'image_caption' : image_caption,
+       'image_url' : image_url
        },
 		dataType: 'json',
 		success: function(data) {
@@ -226,7 +327,7 @@ function bwbpsModerateSuccess(data, imgid)  {
 			$j('#ps_savemsg').hide();
 		}catch(err){}
 		if(data == -1){
-				alert('nonce');
+				alert('Failed due to security: invalid nonce');
 			//The nonce	 check failed
 			$j('#psmod_' + imgid).html("fail: security"); 
 			return false;

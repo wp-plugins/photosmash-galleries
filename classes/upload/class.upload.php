@@ -3,8 +3,8 @@
 // | class.upload.php                                                       |
 // +------------------------------------------------------------------------+
 // | Copyright (c) Colin Verot 2003-2009. All rights reserved.              |
-// | Version       0.27RC2                                                  |
-// | Last modified 02/01/2009                                               |
+// | Version       0.27                                                     |
+// | Last modified 14/05/2009                                               |
 // | Email         colin@verot.net                                          |
 // | Web           http://www.verot.net                                     |
 // +------------------------------------------------------------------------+
@@ -31,7 +31,7 @@
 /**
  * Class upload
  *
- * @version   0.27RC2
+ * @version   0.27
  * @author    Colin Verot <colin@verot.net>
  * @license   http://opensource.org/licenses/gpl-license.php GNU Public License
  * @copyright Colin Verot
@@ -172,7 +172,7 @@
  *  <li><b>file_max_size</b> sets maximum upload size (default: upload_max_filesize from php.ini)<br>
  *  <pre>$handle->file_max_size = '1024'; // 1KB</pre></li>
  *  <li><b>mime_check</b> sets if the class check the MIME against the {@link allowed} list (default: true)<br>
- *  <pre>$handle->mime_magic_check = true;</pre></li>
+ *  <pre>$handle->mime_check = true;</pre></li>
  *  <li><b>no_script</b> sets if the class turns scripts into text files (default: true)<br>
  *  <pre>$handle->no_script = false;</pre></li>
  *  <li><b>allowed</b> array of allowed mime-types. wildcard accepted, as in image/* (default: check {@link Init})<br>
@@ -359,7 +359,7 @@
  *  <li><b>image_src_bits</b> Source file color depth</li>
  * </ul>
  *
- * <b>Values that can be read before after {@link process}()</b>
+ * <b>Values that can be read after calling {@link process}()</b>
  * <ul>
  *  <li><b>file_dst_path</b> Destination file path</li>
  *  <li><b>file_dst_name_body</b> Destination file name body</li>
@@ -382,8 +382,12 @@
  *
  * <b>Changelog</b>
  * <ul>
- *  <li><b>v 0.27</b> 01/02/2009<br>
- *   - fixed error when using PECL Fileinfo extension in SAFE MODE<br>
+ *  <li><b>v 0.27</b> 14/05/2009<br>
+ *   - look for the language files directory from __FILE__<br>
+ *   - deactivate {@link file_auto_rename} if {@link file_overwrite} is set<br>
+ *   - improved transparency replacement for true color images<br>
+ *   - fixed calls to newer version of UNIX file utility<br>
+ *   - fixed error when using PECL Fileinfo extension in SAFE MODE, and when using the finfo class<br>
  *   - added {@link image_precrop} to crop the image before an eventual resizing</li>
  *  <li><b>v 0.26</b> 13/11/2008<br>
  *   - rewrote conversion from palette to true color to handle transparency better<br>
@@ -491,7 +495,7 @@
  *   - reworked the class file to allow parsing with phpDocumentor</li>
  *  <li><b>v 0.13</b> 07/03/2005<br>
  *   - fixed a bug with {@link image_ratio}. Thanks Justin.<br>
- *   - added {@link image_ratio_no_zoom_in} and {@link image_ratio_no_zoom_out}</li>
+ *   - added {@link image_ratio_no_zoom_in} and {@link image_ratio_no_zoom_out} </li>
  *  <li><b>v 0.12</b> 21/01/2005<br>
  *   - added {@link image_ratio} to resize within max values, keeping image ratio</li>
  *  <li><b>v 0.11</b> 22/08/2003<br>
@@ -786,16 +790,6 @@ class upload {
     var $mime_check;
 
     /**
-     * Set this variable to true if you want to check the MIME type against a mime_magic file
-     *
-     * This variable is set to false by default as many systems don't have mime_magic installed or properly set
-     *
-     * @access public
-     * @var boolean
-     */
-    var $mime_magic_check;
-
-    /**
      * Set this variable to false if you don't want to turn dangerous scripts into simple text files
      *
      * @access public
@@ -812,6 +806,8 @@ class upload {
      * For instance, on uploading foo.ext,<br>
      * if foo.ext already exists, upload will be renamed foo_1.ext<br>
      * and if foo_1.ext already exists, upload will be renamed foo_2.ext<br>
+     *
+     * Note that this option doesn't have any effect if {@link file_overwrite} is true
      *
      * @access public
      * @var bool
@@ -1866,7 +1862,6 @@ class upload {
         $this->dir_chmod                = 0777;     // default chmod to use
 
         $this->mime_check               = true;     // don't check the mime type against the allowed list
-        $this->mime_magic_check         = false;    // don't double check the MIME type with mime_magic
         $this->no_script                = true;     // turns scripts into test files
 
         $val = trim(ini_get('upload_max_filesize'));
@@ -2049,7 +2044,7 @@ class upload {
      */
     function upload($file, $lang = 'en_GB') {
 
-        $this->version            = '0.27RC1';
+        $this->version            = '0.27';
 
         $this->file_src_name      = '';
         $this->file_src_name_body = '';
@@ -2133,9 +2128,9 @@ class upload {
 
         // determines the language
         $this->lang               = $lang;
-        if ($this->lang != 'en_GB' && file_exists('lang/class.upload.' . $lang . '.php')) {
+        if ($this->lang != 'en_GB' && file_exists(dirname(__FILE__).'/lang/class.upload.' . $lang . '.php')) {
             $translation = null;
-            include('lang/class.upload.' . $lang . '.php');
+            include(dirname(__FILE__).'/lang/class.upload.' . $lang . '.php');
             if (is_array($translation)) {
                 $this->translation = array_merge($this->translation, $translation);
             } else {
@@ -2280,7 +2275,7 @@ class upload {
         if ($this->uploaded) {
             $this->file_src_mime = null;
             // checks MIME type with Fileinfo PECL extension
-            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
+            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime) || strpos($this->file_src_mime, '/') === FALSE) {
                 if (getenv('MAGIC') === FALSE) {
                     if (substr(PHP_OS, 0, 3) == 'WIN') {
                         @putenv('MAGIC=' . realpath(ini_get('extension_dir') . '/../') . 'extras/magic');
@@ -2298,26 +2293,34 @@ class upload {
                     }
                 } elseif (class_exists('finfo')) {
                     $f = new finfo( FILEINFO_MIME );
-                    $this->file_src_mime = $info->file(realpath($this->file_src_pathname));
-                    $this->log .= '- MIME type detected as ' . $this->file_src_mime . ' by Fileinfo PECL extension<br />';
+                    if ($f) {
+                        $this->file_src_mime = $f->file(realpath($this->file_src_pathname));
+                        $this->log .= '- MIME type detected as ' . $this->file_src_mime . ' by Fileinfo PECL extension<br />';
+                    }
                 }
             }
             // checks MIME type with shell if unix access is authorized
-            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
+            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime) || strpos($this->file_src_mime, '/') === FALSE) {
                 if (substr(PHP_OS, 0, 3) != 'WIN' && strlen($mime = @shell_exec("file -bi ".escapeshellarg($this->file_src_pathname))) != 0) {
-                    $this->file_src_mime = trim($mime);
+                    if (strpos($mime, ';') !== FALSE) {
+                        $temp = split(';', $mime);
+                        $this->file_src_mime = $temp[0];
+                    } else {
+                        $this->file_src_mime = trim($mime);
+                    }
                     $this->log .= '- MIME type detected as ' . $this->file_src_mime . ' by UNIX file() command<br />';
                 }
             }
+
             // checks MIME type with mime_magic
-            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
+            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime) || strpos($this->file_src_mime, '/') === FALSE) {
                 if (function_exists('mime_content_type')) {
                     $this->file_src_mime = mime_content_type($this->file_src_pathname);
                     $this->log .= '- MIME type detected as ' . $this->file_src_mime . ' by mime_content_type()<br />';
                 }
             }
             // checks MIME type with getimagesize()
-            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
+            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime) || strpos($this->file_src_mime, '/') === FALSE) {
                 $info = getimagesize($this->file_src_pathname);
                 if (is_array($info) && array_key_exists('mime', $info)) {
                     $this->file_src_mime = trim($info['mime']);
@@ -2336,7 +2339,7 @@ class upload {
             }
 
             // we need to work some magic if we upload via Flash
-            if ($this->file_src_mime == 'application/octet-stream' || !$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
+            if ($this->file_src_mime == 'application/octet-stream' || !$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime) || strpos($this->file_src_mime, '/') === FALSE) {
                 if ($this->file_src_mime == 'application/octet-stream') $this->log .= '- Flash may be rewriting MIME as application/octet-stream<br />';
                 $this->log .= ' - Try to guess MIME type from file extension (' . $this->file_src_name_ext . '): ';
                 switch($this->file_src_name_ext) {
@@ -2442,8 +2445,8 @@ class upload {
                 }
             }
 
-            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime)) {
-                $this->log .= '- MIME type couldn\'t be detected!<br />';
+            if (!$this->file_src_mime || !is_string($this->file_src_mime) || empty($this->file_src_mime) || strpos($this->file_src_mime, '/') === FALSE) {
+                $this->log .= '- MIME type couldn\'t be detected! (' . (string) $this->file_src_mime . ')<br />';
             }
 
             // determine whether the file is an image
@@ -2854,6 +2857,7 @@ class upload {
             $this->file_dst_name        = $this->file_src_name;
             $this->file_dst_name_body   = $this->file_src_name_body;
             $this->file_dst_name_ext    = $this->file_src_name_ext;
+            if ($this->file_overwrite) $this->file_auto_rename = false;
 
             if ($this->image_convert != '') { // if we convert as an image
                 $this->file_dst_name_ext  = $this->image_convert;
@@ -3827,9 +3831,9 @@ class upload {
                                   $this->image_dst_y,
                                   date('Y-m-d'),
                                   date('H:i:s'),
-                                  $_SERVER['HTTP_HOST'],
-                                  $_SERVER['SERVER_NAME'],
-                                  $_SERVER['REMOTE_ADDR'],
+                                  (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'n/a'),
+                                  (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'n/a'),
+                                  (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'n/a'),
                                   $this->gdversion(true)),
                             $this->image_text);
 
@@ -4117,27 +4121,35 @@ class upload {
                         case 'bmp':
                             // if the image doesn't support any transparency, then we merge it with the default color
                             $this->log .= '&nbsp;&nbsp;&nbsp;&nbsp;fills in transparency with default color<br />';
-                                list($red, $green, $blue) = $this->getcolors($this->image_default_color);
-                                $transparency = imagecolorallocate($image_dst, $red, $green, $blue);
-                                // make the transaparent areas transparent
-                                for ($x = 0; $x < $this->image_dst_x; $x++) {
-                                    for ($y = 0; $y < $this->image_dst_y; $y++) {
-                                        // we test wether we have some transparency, in which case we will merge the colors
+                            list($red, $green, $blue) = $this->getcolors($this->image_default_color);
+                            $transparency = imagecolorallocate($image_dst, $red, $green, $blue);
+                            // make the transaparent areas transparent
+                            for ($x = 0; $x < $this->image_dst_x; $x++) {
+                                for ($y = 0; $y < $this->image_dst_y; $y++) {
+                                    // we test wether we have some transparency, in which case we will merge the colors
+                                    if (imageistruecolor($image_dst)) {
+                                        $rgba = imagecolorat($image_dst, $x, $y);
+                                        $pixel = array('red' => ($rgba >> 16) & 0xFF,
+                                                       'green' => ($rgba >> 8) & 0xFF,
+                                                       'blue' => $rgba & 0xFF,
+                                                       'alpha' => ($rgba & 0x7F000000) >> 24);
+                                    } else {
                                         $pixel = imagecolorsforindex($image_dst, imagecolorat($image_dst, $x, $y));
-                                        if ($pixel['alpha'] == 127) {
-                                            // we have full transparency. we make the pixel transparent
-                                            imagesetpixel($image_dst, $x, $y, $transparency);
-                                        } else if ($pixel['alpha'] > 0) {
-                                            // we have some transparency. we combine the color with the default color
-                                            $alpha = ($pixel['alpha'] / 127);
-                                            $pixel['red'] = round(($pixel['red'] * (1 -$alpha) + $red * ($alpha)));
-                                            $pixel['green'] = round(($pixel['green'] * (1 -$alpha) + $green * ($alpha)));
-                                            $pixel['blue'] = round(($pixel['blue'] * (1 -$alpha) + $blue * ($alpha)));
-                                            $color = imagecolorclosest($image_dst, $pixel['red'], $pixel['green'], $pixel['blue']);
-                                            imagesetpixel($image_dst, $x, $y, $color);
-                                        }
+                                    }
+                                    if ($pixel['alpha'] == 127) {
+                                        // we have full transparency. we make the pixel transparent
+                                        imagesetpixel($image_dst, $x, $y, $transparency);
+                                    } else if ($pixel['alpha'] > 0) {
+                                        // we have some transparency. we combine the color with the default color
+                                        $alpha = ($pixel['alpha'] / 127);
+                                        $pixel['red'] = round(($pixel['red'] * (1 -$alpha) + $red * ($alpha)));
+                                        $pixel['green'] = round(($pixel['green'] * (1 -$alpha) + $green * ($alpha)));
+                                        $pixel['blue'] = round(($pixel['blue'] * (1 -$alpha) + $blue * ($alpha)));
+                                        $color = imagecolorclosest($image_dst, $pixel['red'], $pixel['green'], $pixel['blue']);
+                                        imagesetpixel($image_dst, $x, $y, $color);
                                     }
                                 }
+                            }
 
                             break;
                         default:

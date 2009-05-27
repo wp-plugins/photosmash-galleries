@@ -21,6 +21,8 @@ $bwbpsuploaddir = wp_upload_dir();
 define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
+define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
 
 switch ($action){
 	case 'approve':
@@ -44,9 +46,10 @@ function ps_saveCaption(){
 	if(current_user_can('level_1')){
 		
 		$data['image_caption'] = stripslashes($_POST['image_caption']);
+		$data['url'] = stripslashes($_POST['image_url']);
 		$json['image_id'] = (int)$_POST['image_id'];
 		$where['image_id'] = $json['image_id'];
-		$json['status'] = $wpdb->update($wpdb->prefix . "bwbps_images", $data, $where);
+		$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 		$json['action'] = 'saved';
 		$json['deleted'] = '';
 		
@@ -64,7 +67,7 @@ function ps_approveImage(){
 		$data['status'] = 1;
 		$json['image_id'] = (int)$_POST['image_id'];
 		$where['image_id'] = $json['image_id'];
-		$json['status'] = $wpdb->update($wpdb->prefix . "bwbps_images", $data, $where);
+		$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 		$json['action'] = 'approved';
 		$json['deleted'] = '';
 		
@@ -81,15 +84,18 @@ function ps_deleteImage(){
 		$json['image_id'] = $imgid;
 		if($imgid){
 			$filename = $wpdb->get_var($wpdb->prepare("SELECT file_name FROM "
-				.$wpdb->prefix."bwbps_images WHERE image_id = %d", $imgid));
+				.PSIMAGESTABLE. " WHERE image_id = %d", $imgid));
 			if($filename){
 				unlink(PSIMAGESPATH.$filename);
 				unlink(PSTHUMBSPATH.$filename);
 				
 			
-				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.$wpdb->prefix
-					.'bwbps_images WHERE image_id = %d', $imgid ));
-		
+				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
+					PSIMAGESTABLE.' WHERE image_id = %d', $imgid ));
+				
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
+					.' WHERE image_id = %d', $imgid));
+					
 				$json['action'] = 'deleted - '.$filename;
 				$json['deleted'] = 'deleted';
 			}

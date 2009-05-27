@@ -43,8 +43,12 @@ ul.bwbps_gallery li{
 	text-decoration: underline;
 }
 
-.bwbps_gallery_div table{
+.bwbps_gallery_div table {
 	width: 100%;
+}
+
+.bwbps_gallery_div{
+	color: #fff;
 }
 
 .bwbps_galid {
@@ -142,6 +146,7 @@ div.bwbps_pagination{
 	padding: 4px 10px 12px;
 	line-height: 20px;
 	font-size: 11px;
+	text-align: left;
 }
 
 .ps-form-table th {
@@ -157,8 +162,7 @@ div.bwbps_pagination{
 }
 
 .ps-form-table input{
-	border-width: 1px;
-	border-style: solid;
+	border:1px solid #999;
 }
 
 .ps-moderate img {
@@ -180,6 +184,17 @@ div.bwbps_pagination{
 	vertical-align: top;
 }
 
+.form-bwbps th{
+	vertical-align: top;
+	text-align: left;
+	padding: 10px;
+	width: 130px;
+}
+
+.form-bwbps td{
+	font-size: 12px;
+	padding-bottom: 10px;
+}
 /* Caution! Ensure accessibility in print and other media types... */
 @media projection, screen { /* Use class for showing/hiding tab content, so that visibility can be better controlled in different media types... */
     .ui-tabs-hide {
