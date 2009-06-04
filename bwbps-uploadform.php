@@ -261,6 +261,9 @@ class BWBPS_UploadForm{
 					<span id="bwbps_uploadurlspan2" style="display:none;"><input type="text" name="bwbps_uploadurl2" id="bwbps_uploadurl2" /> Image URL</span>';
 				break;
 
+			case '[allow_no_image]' :
+				$ret = "<input type='hidden' name='bwbps_allownoimg' id='bwbps_allownoimg' value='1' />";
+				break;
 			
 			case "[submit]":
 				if(is_array($atts) && array_key_exists('name', $atts)){
@@ -272,24 +275,30 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[done]":
+				
+				if(is_array($atts) && array_key_exists('name', $atts)){
+					$donename = $atts['name'];
+				} else {
+					$donename = 'Done';
+				}
 			
 				if(!$this->options['use_thickbox'] && !$g['use_thickbox']){
 				
 					if($this->options['use_donelink']){
-						$ret .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.$g["gallery_id"].');return false;">Done</a>';
+						$ret .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.$g["gallery_id"].');return false;">'.$donename.'</a>';
 					} else {			
 						$ret .= '
-		        		<input type="button" class="ps-submit" value="Done" onclick="bwbpsHideUploadForm('.$g['gallery_id'].');return false;" />
+		        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="bwbpsHideUploadForm('.$g['gallery_id'].');return false;" />
 	        		';
 		        	}
 
 	        	} else {
 	        	
 	        		if($this->options['use_donelink']){
-					$ret .= '<a href="javascript: void(0);" onclick="tb_remove();return false;">Done</a>';
+					$ret .= '<a href="javascript: void(0);" onclick="tb_remove();return false;">'.$donename.'</a>';
 					} else {
 						$ret .= '
-	        		<input type="button" class="ps-submit" value="Done" onclick="tb_remove();return false;" />
+	        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="tb_remove();return false;" />
 		        	';
 		        	}
 	        	}
@@ -628,7 +637,7 @@ class BWBPS_UploadForm{
 			$ret .= "<".$opts['opentag']." "
   				.$opts['name']." "
   				.$opts['type']." ".$opts['style']." "
-  				."value='".htmlentities($row->value, ENT_QUOTES)."'";
+  				."value='".str_replace("'","&#39;",$row->value)."'";
 			$sel = "";
 			if(is_array($opts['defval'])){
 				if($opts['multi_select']){

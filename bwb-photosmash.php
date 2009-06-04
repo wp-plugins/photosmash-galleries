@@ -2,8 +2,8 @@
 /*
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
-Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Auto-add galleries to posts or specify with simple tags.  Utilizes class.upload.php by Colin Verot at http://www.verot.net/php_class_upload.htm, licensed GPL.  PhotoSmash is licensed under the GPL.
-Version: 0.2.99
+Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
+Version: 0.2.990
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -64,7 +64,7 @@ if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 //include ('ajax_upload.php');
 class BWB_PhotoSmash{
 
-	var $customFieldVersion = 10;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 11;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount = 0;
@@ -198,7 +198,7 @@ class BWB_PhotoSmash{
 		
 		$cfOpts = get_option('bwbps_cf_stdfields');
 		
-		if(!$cfVer || $cfVer < $this->customFieldVersion || !$cfOpts || empty($cfOpts)){
+		if(!$cfVer || $cfVer < $this->customFormVersion || !$cfOpts || empty($cfOpts)){
 			$cfOpts = $this->getCFDefaultOptions();
 			if($cfOpts && !empty($cfOpts)){
 				update_option('bwbps_cf_stdfields',$cfOpts);				
@@ -207,9 +207,9 @@ class BWB_PhotoSmash{
 			}
 		}
 		
-		if(!$cfVer || $cfVer < $this->customFieldVersion){
+		if(!$cfVer || $cfVer < $this->customFormVersion){
 			delete_option('bwbps_custfield_ver');
-			add_option('bwbps_custfield_ver', $this->customFieldVersion);
+			add_option('bwbps_custfield_ver', $this->customFormVersion);
 		}
 		
 		return $cfOpts;
@@ -235,7 +235,8 @@ class BWB_PhotoSmash{
 			'category_name',
 			'category_link',
 			'category_id',
-			'post_id'
+			'post_id',
+			'allow_no_image'
 		);
 		return $ret;
 	}
@@ -1055,11 +1056,16 @@ function getPhotoForm($g, $formName=false){
 		//Admins can see all images
 		if(current_user_can('level_10')){
 			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, ".PSGALLERIESTABLE.".img_class,"
-					.PSGALLERIESTABLE.".img_rel". $custdata 
+					.PSGALLERIESTABLE.".img_rel, "
+					.$wpdb->users.".user_nicename,"
+					.$wpdb->users.".display_name,"
+					.$wpdb->users.".user_login,"
+					.$wpdb->users.".user_url". $custdata 
 					." FROM ".PSIMAGESTABLE
 					." LEFT OUTER JOIN ".PSGALLERIESTABLE." ON "
 					.  PSGALLERIESTABLE.".gallery_id = ".PSIMAGESTABLE
-					.".gallery_id ".$custDataJoin. " WHERE ".PSIMAGESTABLE
+					.".gallery_id ".$custDataJoin. " LEFT OUTER JOIN ".$wpdb->users." ON "
+				.$wpdb->users.".ID = ". PSIMAGESTABLE.".user_id WHERE ".PSIMAGESTABLE
 					.".image_id = %d", $image_id);
 			
 		} else {
@@ -1067,11 +1073,16 @@ function getPhotoForm($g, $formName=false){
 			$uid = $user_ID ? $user_ID : -1;
 			
 			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, ".PSGALLERIESTABLE.".img_class,"
-					.PSGALLERIESTABLE.".img_rel". $custdata 
+					.PSGALLERIESTABLE.".img_rel, "
+					.$wpdb->users.".user_nicename,"
+					.$wpdb->users.".display_name,"
+					.$wpdb->users.".user_login,"
+					.$wpdb->users.".user_url". $custdata 
 					." FROM ".PSIMAGESTABLE
 					." LEFT OUTER JOIN ".PSGALLERIESTABLE." ON "
 					.PSGALLERIESTABLE.".gallery_id = ".PSIMAGESTABLE
-					.".gallery_id ". $custDataJoin ."WHERE ".PSIMAGESTABLE
+					.".gallery_id ". $custDataJoin ." LEFT OUTER JOIN ".$wpdb->users." ON "
+				.$wpdb->users.".ID = ". PSIMAGESTABLE.".user_id WHERE ".PSIMAGESTABLE
 					.".image_id = %d AND (".PSIMAGESTABLE
 					.".status > 0 OR ".PSIMAGESTABLE
 					.".user_id = '"

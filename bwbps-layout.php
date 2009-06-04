@@ -35,6 +35,7 @@ class BWBPS_Layout{
 			, '[date_added]'
 			, '[file_name]'
 			, '[gallery_name]'
+			, '[eval]'
 		);
 	}
 	
@@ -81,28 +82,38 @@ class BWBPS_Layout{
 			$lastImg = $totRows + 1;
 		}
 	
-		//Set up some defaults:  caption width, image class name, etc
+		//Set up Attributes:  caption width, image class name, etc
 		if(!$g['thumb_width'] || $g['thumb_width'] < 60){
 			$g['captionwidth'] = "style='width: 80px'";
 		} else {
 			$g['captionwidth'] = "style='width: ".($g['thumb_width'] + 4)."px'";
 		}
 		//IMAGE CLASS
-		if($g['img_class']){$g['imgclass'] = " class='".$g['img_class']."'";} else {$g['imgclass']="";}
+		if($g['img_class']){$g['imgclass'] = 
+			" class='".$g['img_class']."'";} else {$g['imgclass']="";}
 		
 		//IMAGE REL
 		if($g['img_rel']){
-			$g['img_rel'] = str_ireplace("[album]","[album_".$g['gallery_id']."]",$g['img_rel']);
+			
+			$g['img_rel'] = str_replace("[album]","[album_"
+				.$g['gallery_id']."]",$g['img_rel']);
+			
 			$imgrel = " rel='".$g['img_rel']."'";
+			
 		} else {$imgrel="";}
-		if($g['nofollow_caption']){$nofollow = " rel='external nofollow'";}else {$nofollow='';}
+		
+		//NO FOLLOW
+		if($g['nofollow_caption']){
+			$nofollow = " rel='external nofollow'";
+		}else {$nofollow='';}
 
 		//CAPTION CLASS
 		$captionclass= ' class="bwbps_caption"';
 
 		//IMAGES PER ROW
 		if($g['img_perrow'] && $g['img_perrow']>0){
-			$g['imgsPerRowHTML'] = " style='width: ".floor((1/((int)$g['img_perrow']))*100)."%;'";
+			$g['imgsPerRowHTML'] = " style='width: "
+				.floor((1/((int)$g['img_perrow']))*100)."%;'";
 		} else {
 			$g['imgsPerRowHTML'] = " style='margin: 15px;'";
 		}
@@ -133,6 +144,7 @@ class BWBPS_Layout{
 			if($this->psOptions['img_targetnew']){
 				$imagetargblank = " target='_blank' ";
 			}
+					
 			foreach($images as $image){
 				$imgNum++;
 				//Pagination - not the most efficient, 
@@ -144,26 +156,38 @@ class BWBPS_Layout{
 					case -1 :
 						$g['modClass'] = 'ps-moderate';
 						if($admin){
-							$modMenu = "<br/><span class='ps-modmenu' id='psmod_"
+							$modMenu = 
+								"<br/><span class='ps-modmenu' id='psmod_"
 								.$image['image_id']
-								."'><input type='button' onclick='bwbpsModerateImage(\"approve\", "
+								."'><input type='button' "
+								."onclick='bwbpsModerateImage(\"approve\", "
 								.$image['image_id']
-								.");' value='approve' class='ps-modbutton'/><input type='button' onclick='bwbpsModerateImage(\"bury\", "
+								.");' value='approve' class='ps-modbutton'/>"
+								."<input type='button' onclick='bwbpsModerateImage(\"bury\", "
 								.$image['image_id']
 								.");' value='bury' class='ps-modbutton'/></span>";
 						}
-					break;
-				case -2 :
-					$g['modClass'] = 'ps-buried';
-					break;
-				default :
-					$g['modClass'] = '';
-					break;
+						break;
+	
+					case -2 :
+						$g['modClass'] = 'ps-buried';
+						break;
+					
+					case -10 :	//special status that will be cleaned out periodically
+						
+						break;
+					default :
+						$g['modClass'] = '';
+						break;
 				}
 				
 				$g['imgtitle'] = str_replace("'","",$image['image_caption']);
 				
+				
+				/*	***********		Set up the <a href....>		*************  */
+				
 				//Deal with cases where they only want links to images on Post Pages
+				$image['special_url'] = true;
 				if( !is_single() && $this->psOptions['imglinks_postpages_only'])
 				{
 					$g['imgurl'] = "<a href='".$perma."'>";
@@ -180,6 +204,7 @@ class BWBPS_Layout{
 								$theurl = $image['user_url'];
 							} else {
 								$theurl = PSIMAGESURL.$image['file_name'];
+								$image['special_url'] = false;
 							}
 						}
 						$g['imgurl'] = "<a href='".$theurl."'"
@@ -187,6 +212,8 @@ class BWBPS_Layout{
 					} else {
 						$g['imgurl'] = "<a href='".PSIMAGESURL.$image['file_name']."'"
 							.$imgrel." title='".$g['imgtitle']."' ".$imagetargblank.">";
+						
+						$image['special_url'] = false;
 					}
 				
 				}
@@ -201,8 +228,7 @@ class BWBPS_Layout{
 					$psTable .= $scaption."</div>$modMenu</li>";
 				} else {
 					//Custom Layout
-					
-					
+										
 					if($imgNum % 2 == 0){
 						$psTableRow .= $this->getCustomLayout($g, $image, $layout, true);	
 					} else {
@@ -224,13 +250,17 @@ class BWBPS_Layout{
 			}
 			
 		} else {
-			$psTable .= "<li class='psgal_".$g['gallery_id']
-				."' style='height: ".($g['thumb_height'] + 15)
-				."px; margin: 15px 0;'><img alt='' 	src='"
-				.WP_PLUGIN_URL."/photosmash-galleries/images/"
-				."ps_blank.gif' width='1' height='"
-				.$g['thumb_height']."' /></li>";
+			if(!$layout){
+				$psTable .= "<li class='psgal_".$g['gallery_id']
+					."' style='height: ".($g['thumb_height'] + 15)
+					."px; margin: 15px 0;'><img alt='' 	src='"
+					.WP_PLUGIN_URL."/photosmash-galleries/images/"
+					."ps_blank.gif' width='1' height='"
+					.$g['thumb_height']."' /></li>";
+			}
 		}
+		
+		
 		
 		//If using Cells Per Row (for tables in Custom Forms..a setting Advanced)
 		//then clean up any left over $psTableRows
@@ -285,7 +315,7 @@ class BWBPS_Layout{
 			}
 			
 			//Need the insertion point to create a holder for adding new images.			
-			$ret .= "<div id='bwbpsAdderInsertionPoint'></div>";
+			$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
 				
 			$ret .= "
 				<script type='text/javascript'>
@@ -306,7 +336,7 @@ class BWBPS_Layout{
 	 * @param (bool) $alt - alternating image or regular (even or odd)
 	 */
 	function getCustomLayout($g, $image, $layout, $alt){
-	
+		
 		if($alt){
 			//Use Alternate layout
 			if(trim($layout->alt_layout)){
@@ -321,8 +351,18 @@ class BWBPS_Layout{
 		
 		//Replace Standard Fields with values
 		foreach($this->stdFields as $fld){
-			if(!strpos($ret, $fld) === false){
-				$ret = str_replace($fld, $this->getStdFieldHTML($fld, $image, $g), $ret);
+			
+			if($fld == '[eval]'){
+				$atts = $this->getFieldsWithAtts($ret, 'eval');
+				
+				//$replace = eval($atts['f']);
+				$fname = $atts['bwbps_match'];
+				$ret = str_replace($fname, $replace, $ret);
+
+			} else {
+				if(!strpos($ret, $fld) === false){
+					$ret = str_replace($fld, $this->getStdFieldHTML($fld, $image, $g), $ret);
+				}
 			}
 		}
 		
@@ -382,26 +422,34 @@ class BWBPS_Layout{
 	function getStdFieldHTML($fld, $image, $g){
 		switch ($fld){
 			case '[image]' :
+				if($image['file_name']){
 				$ret = "<img src='".PSIMAGESURL.$image['file_name']."'".$g['imgclass']
 					." alt='".$g['imgtitle']."' />";
+				} else { $ret = ""; }
 				break;
 				
 			case '[linked_image]' :
+				if($image['file_name']){
 				$ret = $g['imgurl']."
 					<img src='".PSIMAGESURL.$image['file_name']."'".$g['imgclass']
 					." alt='".$g['imgtitle']."' /></a>";
+				} else { $ret = ""; }
 				break;
 				
 			case '[thumbnail]' :
+				if($image['file_name']){
 				$ret = $g['imgurl']."
 					<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
 					." alt='".$g['imgtitle']."' /></a>";
+				} else { $ret = ""; }
 				break;
 			
 			case '[thumb]' :
+				if($image['file_name']){
 				$ret = $g['imgurl']."
 					<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
 					." alt='".$g['imgtitle']."' /></a>";
+				} else { $ret = ""; }
 				break;
 				
 			case '[image_id]' :
@@ -436,31 +484,31 @@ class BWBPS_Layout{
 			
 			case '[user_name]' :
 				
-				$ret = $image['user_nicename'];
+				$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
 				
 				break;
 			
 			case '[contributor]' :
 				
-				$ret = $image['user_nicename'];
+				$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
 				break;
 			
 			case '[user_url]' :
 				$ret = "";
-				if($image['user_nicename']){
+				if($this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])){
 					if($image['user_url'] && $this->validURL($image['user_url'])){
 						$ret = "<a href='".$image['user_url']."' title=''>"
-							.$image['user_nicename']."</a>";
+							.$this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])."</a>";
 					}
 				}
 				break;
 			
 			case '[contributor_url]' :
 				$ret = "";
-				if($image['user_nicename']){
+				if($this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])){
 					if($image['user_url'] && $this->validURL($image['user_url'])){
 						$ret = "<a href='".$image['user_url']."' title=''>"
-							.$image['user_nicename']."</a>";
+							.$this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])."</a>";
 					}
 				}
 				break;			
@@ -486,23 +534,25 @@ class BWBPS_Layout{
 					.$g['modClass']." id='psimg_".$image['image_id']."'"
 					.$g['imgsPerRowHTML'].">
 					<div id='psimage_".$image['image_id']."' "
-					.$g['captionwidth'].">".$g['imgurl']."
+					.$g['captionwidth'].">";
+		
+		if($image['file_name']){
+		
+			$ret .= $g['imgurl']."
 					<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
 					." alt='".$g['imgtitle']."' />";
+		} else {
+			if($image['special_url']){
+				$ret .= $g['imgurl'];
+			} else {
+				$ret .= "<a href='javascript: void(0);'>";
+			}
+		}
 		
 		return $ret;
 	}
 	
-	/**
-	 * Get Standard Layout
-	 * @return (str) containing a single images block of code, using an LI wrapper
-	 *
-	 * @param (object) $g - gallery definition array; (object) $image - an image object
-	 */
-	function getFieldHTML($fld, $image){
 		
-	}
-	
 	/**
 	 * Get Caption
 	 * @return (str) containing html for an image's caption based on settings
@@ -514,20 +564,25 @@ class BWBPS_Layout{
 			if($this->psOptions['caption_targetnew']){
 				$captiontargblank = " target='_blank' ";
 			}
+			
+			$nicename = $this->calcUserName($image['user_login']
+				, $image['user_nicename'], $image['display_name']) 
+				? $this->calcUserName($image['user_login'], $image['user_nicename']
+				, $image['display_name']) : "anonymous";
+							
 			switch ($g['show_imgcaption']){
 				case 0:	//no caption
 					$scaption = "</a>";	//Close out the link from above
 					break;
 				case 1: //caption - link to image
 					
-					$scaption = "<br/><span $captionclass>".$image['image_caption']."</span></a>";
+					$scaption = "<br/><span $captionclass>"
+						.$image['image_caption']."</span></a>";
 					break;
 				case 2: //contributor's name - link to image
-					$nicename = $image['user_nicename'] ? $image['user_nicename'] : "anonymous";
 					$scaption = "<br/><span >$captionurl".$nicename."</span></a>";
 					break;
 				case 3: //contributor's name - link to website
-					$nicename = $image['user_nicename'] ? $image['user_nicename'] : "anonymous";
 					if($this->validURL($image['user_url'])){
 						$theurl = $image['user_url'];
 						$captionurl = "
@@ -549,7 +604,6 @@ class BWBPS_Layout{
 						.$nicename.$closeUserURL."</span>".$closePictureURL2;
 					break;
 				case 4: //caption [by] contributor's name - link to website
-					$nicename = $image['user_nicename'] ? $image['user_nicename'] : "anonymous";
 					if($this->validURL($image['user_url'])){
 						$theurl = $image['user_url'];
 						$captionurl = "<a href='".$theurl."'"
@@ -569,13 +623,11 @@ class BWBPS_Layout{
 						.$nicename.$closeUserURL."</span>".$closePictureURL2;
 					break;
 				case 5: //caption [by] contributor's name - link to image
-					$nicename = $image['user_nicename'] ? $image['user_nicename'] : "anonymous";
 					$scaption = "<br/><span $captionclass>".$image['image_caption']." by "
 						.$nicename."</span></a>";
 					break;
 					
 				case 6: //caption [by] contributor's name - link to user submitted url
-					$nicename = $image['user_nicename'] ? $image['user_nicename'] : "anonymous";
 					$goturl = false;
 					if($this->validURL($image['url'])){
 						$theurl = $image['url'];
@@ -605,7 +657,6 @@ class BWBPS_Layout{
 						.$nicename.$closeUserURL."</span>".$closePictureURL2;
 					break;
 				case 7: //caption - link to user submitted url
-					$nicename = $image['user_nicename'] ? $image['user_nicename'] : "anonymous";
 					$goturl = false;
 					if($this->validURL($image['url'])){
 						$theurl = $image['url'];
@@ -740,7 +791,7 @@ class BWBPS_Layout{
 	function getGalleryImages($g, $customFields=false){
 		global $wpdb;
 		global $user_ID;
-		
+				
 		//Set up SQL for Custom Data if in Use
 		if($customFields){
 			$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
@@ -754,10 +805,12 @@ class BWBPS_Layout{
 			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
+				.$wpdb->users.'.display_name,'
+				.$wpdb->users.'.user_login,'
 				.$wpdb->users.'.user_url'
 				.$custdata.' FROM '
-				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-				.'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
+				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
+				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
 				.' WHERE gallery_id = %d ORDER BY seq, file_name', $g['gallery_id']);			
 					
 			
@@ -767,18 +820,21 @@ class BWBPS_Layout{
 					
 			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
 				.$wpdb->users.'.user_nicename,'
+				.$wpdb->users.'.display_name,'
+				.$wpdb->users.'.user_login,'
 				.$wpdb->users.'.user_url'
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
-				.$wpdb->users.'.ID = '. $wpdb->prefix
-				.'bwbps_images.user_id'.$custDataJoin
+				.$wpdb->users.'.ID = '. PSIMAGESTABLE . '.user_id'.$custDataJoin
 				.' WHERE gallery_id = %d AND (status > 0 OR user_id = '
 				.$uid.')ORDER BY seq, file_name'
 				, $g['gallery_id']);			
 				
 		}
 		
+		
 		$images = $wpdb->get_results($sql, ARRAY_A);
+				
 		return $images;
 	}
 
@@ -791,6 +847,48 @@ class BWBPS_Layout{
 	function validURL($url)
 	{
 		return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $url)) ? FALSE : TRUE;
+	}
+	
+	function getFieldsWithAtts($content, $fieldname){
+				
+		$pattern = '\[('.$fieldname.')\b(.*?)(?:(\/))?\](?:(.+?)\[\/\1\])?';
+		
+		preg_match_all('/'.$pattern.'/s', $content,  $matches );
+		
+		$attr = $this->field_parse_atts($matches[2][0]);
+
+		$attr['bwbps_match'] = $matches[0][0];
+		return $attr;
+				
+	}
+		
+	function field_parse_atts($text) {
+		$atts = array();
+		$pattern = '/(\w+)\s*=\s*"([^"]*)"(?:\s|$)|(\w+)\s*=\s*\'([^\']*)\'(?:\s|$)|(\w+)\s*=\s*([^\s\'"]+)(?:\s|$)|"([^"]*)"(?:\s|$)|(\S+)(?:\s|$)/';
+		$text = preg_replace("/[\x{00a0}\x{200b}]+/u", " ", $text);
+		if ( preg_match_all($pattern, $text, $match, PREG_SET_ORDER) ) {
+			foreach ($match as $m) {
+				if (!empty($m[1]))
+					$atts[strtolower($m[1])] = stripcslashes($m[2]);
+				elseif (!empty($m[3]))
+					$atts[strtolower($m[3])] = stripcslashes($m[4]);
+				elseif (!empty($m[5]))
+					$atts[strtolower($m[5])] = stripcslashes($m[6]);
+				elseif (isset($m[7]) and strlen($m[7]))
+					$atts[] = stripcslashes($m[7]);
+				elseif (isset($m[8]))
+					$atts[] = stripcslashes($m[8]);
+			}
+		} else {
+			$atts = ltrim($text);
+		}	
+		return $atts;
+	}
+	
+	function calcUserName($loginname, $nicename = false, $displayname = false){
+		if($displayname) return $displayname;
+		if($nicename) return $nicename;
+		return $loginname;
 	}
 }
 ?>

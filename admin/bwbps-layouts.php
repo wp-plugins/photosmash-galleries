@@ -404,11 +404,8 @@ class BWBPS_LayoutsEditor{
 			case 30 :
 				$ret = "hidden field with image's Post ID";
 				break;
-			case 35 :
-				$ret = "*** not available here ***";
-				break;
 			case 40 :
-				$ret = "*** not implemented yet ***";
+				$ret = "Drop Down list of categories";
 				break;
 			default:
 				$ret = "custom field";

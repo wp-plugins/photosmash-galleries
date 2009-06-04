@@ -47,13 +47,13 @@ if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 }
 
 class BWBPS_Uploader{
-	var $bwbpsCF;
-	var $psOptions;
-	var $g;
-	var $json;
+	var $bwbpsCF;	//var to hold Save Custom Fields Class
+	var $psOptions;	//var for Standard PS Options
+	var $g;			//var for Gallery settings
+	var $json;		//var for JSON that gets returned to browser
 	var $user_level; //Does user have authorization to insert without moderation?
-	var $handle;
-	var $imageNumber = "";
+	var $handle;	//The magical object to handle uploads - the upload class
+	var $imageNumber = "";	//
 	var $imageData; //This gets populated with Image data on Image Save
 	var $customData; //This gets populated with the custom fields data on Custom Field Save
 	
@@ -69,9 +69,27 @@ class BWBPS_Uploader{
 			$this->json['gallery_id'] = (int)$gallery_id;
 		} else {
 			$this->json['gallery_id'] = (int)$_POST['gallery_id'];
-			$this->g = $this->getGallerySettings($this->json['gallery_id']);
+			if($this->json['gallery_id']){
+				$this->g = $this->getGallerySettings($this->json['gallery_id']);
+			}
+			
 		}
+		
+		$this->json['custom_callback'] = 0;
 	}
+	
+	/* 
+	 * Set Custom Callback in JSON - 
+	 * @param $useCustomCallback - true or false
+	 */
+	 function setCustomCallback($useCustomCallback){
+	 	
+	 	if($useCustomCallback){
+	 		$this->json['custom_callback'] = 1;	
+	 	} else {
+	 		$this->json['custom_callback'] = 0;
+	 	}
+	 }
 	
 	
 	/* 
@@ -85,7 +103,17 @@ class BWBPS_Uploader{
 		
 	function getGallerySettings($gallery_id){
 		global $wpdb;
-		return $wpdb->get_row($wpdb->prepare("SELECT * FROM ".PSGALLERIESTABLE." WHERE gallery_id = %d", $this->json['gallery_id']), ARRAY_A);
+		
+		if(!$gallery_id){
+			$gallery_id = (int)$this->json['gallery_id'];
+		}
+		
+		if($gallery_id){
+			$g = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".PSGALLERIESTABLE
+					." WHERE gallery_id = %d", $gallery_id), ARRAY_A);
+		}
+
+		return $g;
 	}
 
 	function psValidateURL($url)
@@ -166,9 +194,7 @@ class BWBPS_Uploader{
 		} else {
 			//Get uploaded file
 			$this->handle = new upload($_FILES['bwbps_uploadfile'.$fileFieldNumber]);
-		}
-		
-		
+		}		
 		return true;
 	}
 	
@@ -217,8 +243,8 @@ class BWBPS_Uploader{
 		$this->json['img'.$this->imageNumber] = '';
 		$this->json['imgrel'] = $g['img_rel'];
 		$this->json['show_imgcaption'] = $g['show_imgcaption'];
-		$this->json['thumb_width'] = $g['thumb_width'] < 25 ? 25 : $g['thumb_width'] + 4;
-		$this->json['thumb_height'] = $g['thumb_height'] < 25 ? 25 : $g['thumb_height'] +4;
+		$this->json['thumb_width'] = $g['thumb_width'] < 12 ? 12 : $g['thumb_width'] + 4;
+		$this->json['thumb_height'] = $g['thumb_height'] < 12 ? 12 : $g['thumb_height'] +4;
 		//Image per row
 		if($g['img_perrow'] && $g['img_perrow']>0){
 				$this->json['li_width'] = floor((1/((int)$g['img_perrow']))*100);
@@ -248,7 +274,7 @@ class BWBPS_Uploader{
 		return $val;
 	}
 	
-	function processMainImage($g, $newname){
+	function processMainImage($g, $newname, $allowNoImg=false){
 	
 		//Verify User rights...and leave if not sufficient
 		
@@ -259,18 +285,23 @@ class BWBPS_Uploader{
 			chmod(PSTHUMBSPATH2, 0777);
 		}
 		
+		if(!$this->handle->file_is_image){
+			$this->json['succeed'] = "true";
+			$this->json['img'.$this->imageNumber] = "0";
+			return $allowNoImg;
+		}
 		
 		//change image name
 		$this->handle->file_new_name_body = $newname;
-		sleep(2);
+		sleep(1);
 		$this->json['img'.$this->imageNumber] = $newname.".".$this->handle->file_src_name_ext;
 		
 		//image sizing
 		if($g['image_width'] || $g['image_height']){
-			if($g['image_width'] && $this->handle->image_src_x < $g['image_width']){
+			if(!$g['image_width'] || $this->handle->image_src_x < $g['image_width']){
 				$g['image_width'] = $this->handle->image_src_x;
 			}
-			if($g['image_height'] && $this->handle->image_src_y < $g['image_height']){
+			if(!$g['image_height'] || $this->handle->image_src_y < $g['image_height']){
 				$g['image_height'] = $this->handle->image_src_y;
 			}
 			
@@ -285,29 +316,48 @@ class BWBPS_Uploader{
 			if($g['image_width']){
 				$this->handle->image_x = $g['image_width'];
 			}
+			
 			if($g['image_height']){
 				$this->handle->image_y = $g['image_height'];
 			}
+			
 		}
 		
 		//process and save full sized image
 		$this->handle->process(PSUPLOADPATH."/bwbps/");
 		
+		if($this->handle->processed){
+			$this->json['succeed'] = "true";
+		} else {
+			$this->json['succeed'] = "false";
+			$this->json['message'] = "Image processing failed.";
+		}
+
+		$this->json['error'] = strip_tags($this->handle->error);
 		return $this->handle->processed;
 	}
 		
-	function processThumbnail($g, $newname){
+	function processThumbnail($g, $newname, $allowNoImg=false){
 		$this->verifyUserRights($g);	//will exit if not enough rights.
 		
-		
+		if(!$this->handle->file_is_image){
+			$this->json['succeed'] = "true";
+			$this->json['img'.$this->imageNumber] = "0";
+			return $allowNoImg;
+		}
+				
 		$this->handle->file_new_name_body = $newname;
+		
+		if(!$this->json['img'.$this->imageNumber]){
+			$this->json['img'.$this->imageNumber] = $newname.".".$this->handle->file_src_name_ext;
+		}
 
 		//image sizing
 		if($g['thumb_width'] || $g['thumb_height']){
-			if($g['thumb_width'] && $this->handle->image_src_x < $g['thumb_width']){
+			if(!$g['thumb_width'] || $this->handle->image_src_x < $g['thumb_width']){
 				$g['thumb_width'] = $this->handle->image_src_x;
 			}
-			if($g['thumb_height'] && $this->handle->image_src_y < $g['thumb_height']){
+			if(!$g['thumb_height'] || $this->handle->image_src_y < $g['thumb_height']){
 				$g['thumb_height'] = $this->handle->image_src_y;
 			}
 			

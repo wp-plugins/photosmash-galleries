@@ -217,7 +217,7 @@ class BWBPS_Info{
 			if(is_writable($imgpath)){
 				$ret .= "<span style='color: green;'>Exists.</span>";
 			} else {
-				$ret .= "<span style='color: red;'>Exists - but not writeable.";
+				$ret .= "<span style='color: red;'>Exists - but not writeable.</span>";
 				
 				$this->chmod($imgpath, 0755);
 				
@@ -252,7 +252,7 @@ class BWBPS_Info{
 			if(is_writable($imgpath)){
 				$ret .= "<span style='color: green;'>Exists.</span>";
 			} else {
-				$ret .= "<span style='color: red;'>Exists - but not writeable.";
+				$ret .= "<span style='color: red;'>Exists - but not writeable.</span>";
 				
 				$this->chmod($imgpath);
 				
@@ -301,7 +301,7 @@ class BWBPS_Info{
 			if(is_writable($imgpath)){
 				$ret .= "<span style='color: green;'>Exists.</span>";
 			} else {
-				$ret .= "<span style='color: red;'>Exists - but not writeable.";
+				$ret .= "<span style='color: red;'>Exists - but not writeable.</span>";
 				
 				$this->chmod($imgpath, 0755);
 				

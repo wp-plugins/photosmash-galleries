@@ -22,12 +22,24 @@ require_once("bwbps-uploader.php");
 class BWBPS_AJAXUpload{
 	
 	var $psUploader;
+	var $allowNoImg = false;
 	
-	function BWBPS_AJAXUpload($psOptions){
+	function BWBPS_AJAXUpload($psOptions, $_allowNoImg=false){
 		$this->psUploader = new BWBPS_Uploader($psOptions);	
+		$this->allowNoImg = $_allowNoImg;
 	}
 	
-	function processUpload($fileInputNumber=""){
+	
+	/*
+	 *	Following 3 functions are steps in the upload process.
+	 *	They're broken out so that developers can do stuff between them if needed
+	 *	Use processUpload() if you want to run all 3 steps automatically
+	*/
+	
+	/*	Step 1:		Prepare Upload - fills up the JSON variable with the image variables
+	 *				You should make any adjustments to the JSON variable after this
+	*/
+	function prepareUploadStep($fileInputNumber=""){
 		// Fills up JSON array with image settings
 		$this->psUploader->getImageSettings($this->psUploader->g);
 
@@ -36,22 +48,61 @@ class BWBPS_AJAXUpload{
 
 		//Sets Handle Settings
 		$this->psUploader->getHandleSettings();
-
+		
+	}
+	
+	/*	Step 2:		Process Upload file & thumb
+	*/
+	function processUploadStep($imagename = false, $processThumbnail = true){
 		//Sets the new Image Name - 
 		//Creates name as the time right now - takes a string param to append to name
-		$psNewImageName = $this->psUploader->getNewImageName();
-
-
-		if($this->psUploader->processMainImage($this->psUploader->g, $psNewImageName)){
 		
-			$ret = $this->psUploader->processThumbnail($this->psUploader->g, $psNewImageName);
-			if($ret){
-				return $this->psUploader->saveImageToDB($this->psUploader->g, true); //Will also call Save Custom Fields
-			}
+		if($imagename){
+			$psNewImageName = $imagename;
+		} else {
+			$psNewImageName = $this->psUploader->getNewImageName();
 		}
+		
+		$ret = $this->psUploader->processMainImage($this->psUploader->g, $psNewImageName, $this->allowNoImg);
+		if($ret && $processThumbnail){
+			$ret = $this->psUploader->processThumbnail($this->psUploader->g, $psNewImageName, $this->allowNoImg);
+		}
+		return $ret;
+	}
+	
+	
+	/*	Step 3:		Save Image/Upload to Database
+	 *				You should make any tweaks to database fields through the JSON variable before this
+	*/
+	function saveUploadToDBStep($saveCustomFields = true){
+		return $this->psUploader->saveImageToDB($this->psUploader->g, $saveCustomFields);
+	}
+	
+	
+	/*
+	 *  Process Upload File
+	 *	All-in-one function for Prepare Upload and Saving Image to Database
+	*/
+	function processUpload($fileInputNumber="", $imagename = false
+		, $processThumbnail = true, $saveCustomFields = true)
+	{
+		
+		//Step 1
+		$this->prepareUploadStep($fileInputNumber);
+		
+		//Step 2
+		$processStatus = $this->processUploadStep($imagename, $processThumbnail);
+		
+		//Step 3
+		if($processStatus || $this->allowNoImg){ return $this->saveUploadToDBStep($saveCustomFields); }
+		
 		return false;
 	}
 	
+	
+	/*	Send Ajax Result - back to the browser
+	 *	echos the JSON variable
+	*/	
 	function sendAjaxResult(){
 		$this->psUploader->echoJSON();
 	}
@@ -61,12 +112,13 @@ class BWBPS_AJAXUpload{
 	}
 }
 
+
 function getPhotoSmashOptions(){
-		$psOptions = get_option('BWBPhotosmashAdminOptions');
-		if($psOptions && !empty($psOptions))
+		$bwbpsOptions = get_option('BWBPhotosmashAdminOptions');
+		if($bwbpsOptions && !empty($bwbpsOptions))
 		{
 			//Options were found..add them to our return variable array
-			foreach ( $psOptions as $key => $option ){
+			foreach ( $bwbpsOptions as $key => $option ){
 				$opts[$key] = $option;
 			}
 		} else {
@@ -75,25 +127,30 @@ function getPhotoSmashOptions(){
 		return $opts;
 }
 
-$psOptions = getPhotoSmashOptions();
+$bwbpsOptions = getPhotoSmashOptions();
 
 
 
 //Check to see if Admin wants to use a custom script
-if($psOptions['use_alt_ajaxscript'] ){
+if($bwbpsOptions['use_alt_ajaxscript'] ){
 		
-	if(file_exists(WP_PLUGIN_DIR.'/'.$psOptions['alt_ajaxscript'])){
+	if(file_exists(WP_PLUGIN_DIR.'/'.$bwbpsOptions['alt_ajaxscript'])){
 		//Use Custom Script is turned on, and the file exist...load it...
 		//   Note:  custom script must instantiate itself
 		$bCustomScriptInUse = true;
-		include_once(WP_PLUGIN_DIR.'/'.$psOptions['alt_ajaxscript']);
+		include_once(WP_PLUGIN_DIR.'/'.$bwbpsOptions['alt_ajaxscript']);
 
 	}
 }
 
 if(!$bCustomScriptInUse){
 	
-	$bwbpsAjaxUpload = new BWBPS_AJAXUpload($psOptions);
+	if(isset($_POST['bwbps_allownoimg']) && (int)$_POST['bwbps_allownoimg'] == 1){
+		$bwbpsAllowNoImage = true;
+	} else { $bwbpsAllowNoImage = false; }
+	
+	
+	$bwbpsAjaxUpload = new BWBPS_AJAXUpload($bwbpsOptions, $bwbpsAllowNoImage);
 	
 	$bwbpsAjaxUpload->processUpload();
 	$bwbpsAjaxUpload->sendAjaxResult();

@@ -251,6 +251,8 @@ class BWBPS_FormEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_select] - <span style='font-size: 9px;'>image file selection field</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_select_2] - <span style='font-size: 9px;'>a 2nd image file selection field</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[allow_no_image] - <span style='font-size: 9px;'>allows you to upload without a selected image</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption]</li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption_2] - <span style='font-size: 9px;'>caption for the 2nd image</span></li>
 				

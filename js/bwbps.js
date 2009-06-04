@@ -76,7 +76,7 @@ function bwbpsVerifyUploadRequest(formData, jqForm, options) {
 	
 	
 
-	if (!fileToUploadValue) { 
+	if (!fileToUploadValue && !$j('#bwbps_allownoimg').val() == 1) { 
 		$j('#bwbps_message').html('Please select a file.'); 
 		return false; 
 	} 
@@ -137,7 +137,7 @@ function bwbpsUploadSuccess(data, statusText)  {
 				var newImgUL = $j('<ul></ul>').attr('class','bwbps_gallery').attr('id','bwbps_stdgal_' + data.gallery_id);
 				newImgUL.appendTo(bbtd);
 				bbtbl.appendTo(adderdiv);
-				adderdiv.insertAfter('#bwbpsAdderInsertionPoint');
+				adderdiv.insertAfter('#bwbpsInsertBox_' + data.gallery_id);
 			}
 			
 			

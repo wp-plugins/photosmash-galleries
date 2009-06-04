@@ -31,6 +31,7 @@ class BWBPS_Init{
 				comment_id BIGINT(20) NOT NULL,
 				image_name VARCHAR(250) NOT NULL,
 				image_caption TEXT,
+				file_type TINYINT(1),
 				file_name VARCHAR(255) NOT NULL,
 				file_url VARCHAR(255),
 				url VARCHAR(250) NOT NULL,

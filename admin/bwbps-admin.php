@@ -497,8 +497,8 @@ if($psOptions['use_advanced'] ==1){
 			<tr>
 				<th>Thumbnail style:</th>
 				<td>
-					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>>Crop<br/>
-					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>>Maintain aspect ratio
+					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
 	<tr>
@@ -517,8 +517,8 @@ if($psOptions['use_advanced'] ==1){
 			<tr>
 				<th>Image style:</th>
 				<td>
-					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>>Crop<br/>
-					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>>Maintain aspect ratio
+					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
 	<tr>
@@ -782,8 +782,8 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>Default thumb style:</th>
 				<td>
-					<input type="radio" name="ps_thumb_aspect" value="0" <?php if((int)$psOptions['thumb_aspect'] == 0) echo 'checked'; ?>>Crop<br/>
-					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>>Maintain Aspect
+					<input type="radio" name="ps_thumb_aspect" value="0" <?php if((int)$psOptions['thumb_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
 				</td>
 			</tr>
 			<tr>
@@ -802,8 +802,8 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>Default image style:</th>
 				<td>
-					<input type="radio" name="ps_image_aspect" value="0" <?php if((int)$psOptions['image_aspect'] == 0) echo 'checked'; ?>>Crop<br/>
-					<input type="radio" name="ps_image_aspect" value="1" <?php if((int)$psOptions['image_aspect'] == 1) echo 'checked'; ?>>Maintain Aspect
+					<input type="radio" name="ps_image_aspect" value="0" <?php if((int)$psOptions['image_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_image_aspect" value="1" <?php if((int)$psOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
 				</td>
 			</tr>
 			<tr>
@@ -1053,7 +1053,14 @@ if($psOptions['use_customform']){ ?>
 	{
 		$images = $this->getGalleryQuery($gallery_id);
 		$admin = current_user_can('level_10');
+		
+		$imgcnt =0;
 		if($images){
+		//Get image count
+		if(is_array($images)){
+			$imgcnt=count($images);
+		} 
+		
 		foreach($images as $image){
 			$modMenu = "";
 			switch ($image->status) {
@@ -1085,15 +1092,15 @@ if($psOptions['use_customform']){ ?>
 
 			$psTable .= $modMenu;
 			
-			$psTable .= "<br/><b>Details: </b>(image id: ".$image->image_id.")<br/>Gallery ID: <a href='admin.php?page=managePhotoSmashImages&amp;psget_gallery_id="
-			.$image->gallery_id."'>manage images - id(".$image->gallery_id.")</a><br/>Uploaded by: ".$image->user_nicename."<br/>Date: ".$image->created_date."</td>";
+			$psTable .= "<br/><b>Details: </b>(image id: ".$image->image_id.")<br/>Gallery: <a href='admin.php?page=managePhotoSmashImages&amp;psget_gallery_id="
+			.$image->gallery_id."'>id(".$image->gallery_id.") ".$image->gallery_name."</a><br/>Uploaded by: ".$this->calcUserName($image->user_login, $image->user_nicename, $image->display_name)."<br/>Date: ".$image->created_date."</td>";
 			if($i == 1){
 				$psTable .= "</tr><tr>";
 				$i = 0;
 			} else {$i++;}
 		}
 		
-		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span><table class="widefat fixed" cellspacing="0">'.$psTable.'</table></div>';
+		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span> <span>('.$imgcnt.') Images</span><br/><table class="widefat fixed" cellspacing="0">'.$psTable.'</table></div>';
 	} else {
 		return "<h3>No images in gallery yet...go to post page to load images.</h3>";
 	}
@@ -1108,28 +1115,62 @@ if($psOptions['use_customform']){ ?>
 		if(current_user_can('level_10')){
 			switch ($gallery_id){
 				case "all" :
-					$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
-					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id ORDER BY file_name');
+					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
+						.$wpdb->users.'.user_nicename,'
+						. $wpdb->users.'.display_name, '.$wpdb->users
+						. '.user_login, '.PSGALLERIESTABLE.'.gallery_name '
+						. 'FROM '.PSIMAGESTABLE 
+						. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+						. '.ID = '. PSIMAGESTABLE. '.user_id '
+						. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
+						. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
+						. PSIMAGESTABLE.'.gallery_id ORDER BY '
+						. PSIMAGESTABLE. '.file_name');
 					break;
+					
 				case "moderation" :
-					$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
-					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE status = -1 ORDER BY seq, file_name');
+					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE
+					. '.*, '.$wpdb->users.'.user_nicename,'
+					. $wpdb->users.'.display_name, '.$wpdb->users
+					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name '
+					. ' FROM '.PSIMAGESTABLE 
+					. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					. '.ID = '. PSIMAGESTABLE. '.user_id '
+					. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
+					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
+					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
+					. '.status = -1 ORDER BY '. PSIMAGESTABLE. '.seq, '
+					. PSIMAGESTABLE. '.file_name');
 					break;
+					
 				default:
 					$gallery_id = (int)$gallery_id;
-					$sql = $wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
-					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d ORDER BY seq, file_name', $gallery_id);			
+					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
+					. $wpdb->users.'.user_nicename,'
+					. $wpdb->users.'.display_name, '.$wpdb->users
+					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name '
+					. ' FROM '.PSIMAGESTABLE 
+					. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					. '.ID = '. PSIMAGESTABLE. '.user_id '
+					. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
+					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
+					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
+					. '.gallery_id = %d ORDER BY '. PSIMAGESTABLE. '.seq, '
+					. PSIMAGESTABLE. '.file_name', $gallery_id);			
 			}
 			
 			$images = $wpdb->get_results($sql);
+						
 		} else {
 				$uid = $user_ID ? $user_ID : -1;
-				$images = $wpdb->get_results($wpdb->prepare('SELECT *, '.$wpdb->users.'.user_nicename FROM '. $wpdb->prefix 
-					. 'bwbps_images LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-					.'.ID = '. $wpdb->prefix. 'bwbps_images.user_id WHERE gallery_id = %d AND (status > 0 OR user_id = '.$uid.')ORDER BY seq, file_name', $gallery_id));
+				$images = $wpdb->get_results($wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
+					. $wpdb->users.'.user_nicename,'
+					. $wpdb->users.'.display_name, '.$wpdb->users.'.user_login FROM '.PSIMAGESTABLE 
+					. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
+					. '.ID = '. PSIMAGESTABLE. '.user_id WHERE '. PSIMAGESTABLE
+					. '.gallery_id = %d AND ('. PSIMAGESTABLE. '.status > 0 OR '
+					. PSIMAGESTABLE. '.user_id = '.$uid.')ORDER BY '. PSIMAGESTABLE
+					. '.seq, '. PSIMAGESTABLE. '.file_name', $gallery_id));
 		}
 		return $images;
 	}
@@ -1229,6 +1270,13 @@ if($psOptions['use_customform']){ ?>
 		
 		return $ret;
 	
+	}
+	
+	
+	function calcUserName($loginname, $nicename = false, $displayname = false){
+		if($displayname) return $displayname;
+		if($nicename) return $nicename;
+		return $loginname;
 	}
 
 	
