@@ -29,7 +29,6 @@ class BWBPS_AJAXUpload{
 		$this->allowNoImg = $_allowNoImg;
 	}
 	
-	
 	/*
 	 *	Following 3 functions are steps in the upload process.
 	 *	They're broken out so that developers can do stuff between them if needed
@@ -40,6 +39,10 @@ class BWBPS_AJAXUpload{
 	 *				You should make any adjustments to the JSON variable after this
 	*/
 	function prepareUploadStep($fileInputNumber=""){
+		
+		//Verify User Rights
+		$this->psUploader->verifyUserRights($this->psUploader->g);	//will exit if not enough rights.
+		
 		// Fills up JSON array with image settings
 		$this->psUploader->getImageSettings($this->psUploader->g);
 
@@ -63,10 +66,43 @@ class BWBPS_AJAXUpload{
 			$psNewImageName = $this->psUploader->getNewImageName();
 		}
 		
-		$ret = $this->psUploader->processMainImage($this->psUploader->g, $psNewImageName, $this->allowNoImg);
-		if($ret && $processThumbnail){
-			$ret = $this->psUploader->processThumbnail($this->psUploader->g, $psNewImageName, $this->allowNoImg);
+		//Processing the Uploaded file - if file type is set then it's not an
+		//image, so you process it using the processDocument 
+		
+		$ftype = (int)$this->psUploader->json['file_type'];
+		
+		switch ( true ) {
+			
+			case ($ftype == 0 || $ftype == 1 ) :	// Image
+			
+				$ret = $this->psUploader->processMainImage($this->psUploader->g
+					, $psNewImageName, $this->allowNoImg);
+				
+				if($ret && $processThumbnail){
+					$ret = $this->psUploader->processThumbnail(
+						$this->psUploader->g, $psNewImageName, $this->allowNoImg);
+				}
+		
+				break;
+			
+			case ( $ftype == 2 || $ftype == 3 ) : //Direct Link, YouTube
+				
+				$ret = true;
+				
+				break;
+			
+			case ( $ftype == 4 || $ftype == 7 || $ftype == 10) : // Video file
+				
+				$ret = $this->psUploader->processDocument($this->psUploader->g
+					, $psNewImageName, $this->allowNoImg);
+				
+				break;
+			
+			default :
+				
+				break;
 		}
+			
 		return $ret;
 	}
 	

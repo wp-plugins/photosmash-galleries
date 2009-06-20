@@ -152,17 +152,14 @@ div.bwbps_pagination{
 .ps-form-table th {
 	font-weight: normal;
 	text-shadow: rgba(255,255,255,1) 0 1px 0;
-}
-
-.ps-form-table th{
-	vertical-align: top;
+	vertical-align: middle;
 	text-align: left;
-	padding: 10px;
+	padding: 4px 6px;
 	width: 200px;
 }
 
 .ps-form-table input{
-	border:1px solid #999;
+	border:1px solid #777;
 }
 
 .ps-moderate img {
@@ -262,7 +259,7 @@ div.bwbps_pagination{
 .ui-tabs-nav .ui-tabs-selected{
 	background: #6D6D6D url(../images/menu-bits.gif) repeat-x scroll left top;
 	border-color: #6D6D6D;
-	color: #FFFFFF;
+	color: #21759B;
 	text-shadow:0 -1px 0 #666666;
 
 	-moz-border-radius-topright: 6px;
@@ -277,7 +274,7 @@ div.bwbps_pagination{
 
 .ui-tabs-selected a,
 .ui-tabs-selected a:hover {
-	color:#FFFFFF !important;
+	color:#21759B !important;
 }
 
 .ui-tabs-nav .ui-tabs-selected a,
@@ -347,6 +344,10 @@ div.bwbps_pagination{
 }
 
 
+.ui-state-active {
+	color: #21759B;
+}
+
 /* Additional IE specific bug fixes... */
 * html .ui-tabs-nav { /* auto clear, @ IE 6 & IE 7 Quirks Mode */
     display: inline-block;
@@ -354,4 +355,3 @@ div.bwbps_pagination{
 *:first-child+html .ui-tabs-nav  { /* @ IE 7 Standards Mode - do not group selectors, otherwise IE 6 will ignore complete rule (because of the unknown + combinator)... */
     display: inline-block;
 }
-

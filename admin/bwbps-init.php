@@ -32,8 +32,8 @@ class BWBPS_Init{
 				image_name VARCHAR(250) NOT NULL,
 				image_caption TEXT,
 				file_type TINYINT(1),
-				file_name VARCHAR(255) NOT NULL,
-				file_url VARCHAR(255),
+				file_name TEXT NOT NULL,
+				file_url TEXT,
 				url VARCHAR(250) NOT NULL,
 				custom_fields TEXT,
 				updated_by BIGINT(20) NOT NULL,
@@ -53,27 +53,14 @@ class BWBPS_Init{
 				"DROP INDEX image_id";
 			$wpdb->query($sql);
 			
-			//Create the Image Ratings table (future use)
-			$table_name = $wpdb->prefix . "bwbps_imageratings";
-			$sql = "CREATE TABLE " . $table_name . " (
-				rating_id BIGINT(20) NOT NULL AUTO_INCREMENT,
-				image_id BIGINT(20) NOT NULL,
-				user_id BIGINT(20) NOT NULL,
-				rating TINYINT(1) NOT NULL,
-				comment VARCHAR(250) NOT NULL,
-				updated_date TIMESTAMP NOT NULL,
-				status TINYINT(1) NOT NULL,
-				PRIMARY KEY   (rating_id),
-				INDEX (image_id)
-				)  $charset_collate;";
-			dbDelta($sql);
-			
+						
 			//Create the Gallery Table
 			$table_name = $wpdb->prefix . "bwbps_galleries";
 			$sql = "CREATE TABLE " . $table_name . " (
 				gallery_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				post_id BIGINT(20),
 				gallery_name VARCHAR(250),
+				gallery_type TINYINT(1),
 				caption TEXT,
 				upload_form_caption VARCHAR(250),
 				contrib_role TINYINT(1) NOT NULL,
@@ -100,9 +87,24 @@ class BWBPS_Init{
 				use_customfields TINYINT(1),
 				cover_imageid BIGINT(20),
 				status TINYINT(1),
-				PRIMARY KEY   (gallery_id))
+				PRIMARY KEY  (gallery_id))
 				$charset_collate
 				;";
+			dbDelta($sql);
+			
+			//Create the Image Ratings table (future use)
+			$table_name = $wpdb->prefix . "bwbps_imageratings";
+			$sql = "CREATE TABLE " . $table_name . " (
+				rating_id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				image_id BIGINT(20) NOT NULL,
+				user_id BIGINT(20) NOT NULL,
+				rating TINYINT(1) NOT NULL,
+				comment VARCHAR(250) NOT NULL,
+				updated_date TIMESTAMP NOT NULL,
+				status TINYINT(1) NOT NULL,
+				PRIMARY KEY  (rating_id),
+				INDEX (image_id)
+				)  $charset_collate;";
 			dbDelta($sql);
 			
 			/* Create the PhotoSmash HTML layouts table
@@ -119,9 +121,27 @@ class BWBPS_Init{
 				cells_perrow TINYINT NOT NULL default '0',
 				css TEXT ,
 				lists VARCHAR(255) ,
-				PRIMARY KEY   (layout_id)
+				fields_used TEXT,
+				PRIMARY KEY  (layout_id)
 				)  $charset_collate;";
 			dbDelta($sql);
+			
+			
+			/* Create the CUSTOM FORMS table
+			* Custom forms let you create any form layout you can imagine...I think
+			* Code safe!
+			*/
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_forms (
+				form_id INT(11) NOT NULL AUTO_INCREMENT,
+				form_name VARCHAR(30) ,
+				form TEXT ,
+				css TEXT ,
+				fields_used TEXT,
+				category TINYINT(1),
+				PRIMARY KEY  (form_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
 			
 						
 			//Create the Fields table

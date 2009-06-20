@@ -4,6 +4,10 @@ var displayedGalleries = "";
 var bwbpsUploadStatus = false;
 var bwbpsAddedImages =0;
 
+$j.fn.tagName = function() {
+    return this.get(0).tagName;
+}
+
 $j(document).ready(function() { 
 	//Show and hide the Loading icon on Ajax start/end
 	$j("#bwbps_loading")
@@ -23,26 +27,38 @@ $j(document).ready(function() {
 
 	
 	
-	$j('#bwbps_uploadform').submit(function() { 
+	$j('.bwbps_uploadform').submit(function() { 
 		$j('#bwbps_message').html('');
-		ajaxLoadImage(this); 
-		//$j(this).ajaxSubmit(options); 
+		bwbpsAjaxLoadImage(this);
 		return false; 
 	});
+//	onsubmit="bwbpsSubmitForm(\'' . $g["pfx"] . '\' ); return false;" enctype="multipart/form-data"
 	
 	//make sure the upload form radio button is on Select file
-	$j("#bwbpsSelectFileRadio").attr("checked","checked");
+	$j(".init_radio").attr("checked","checked");
+	
+	
+	//Add OnClick to the Mass Update Buttons in the PhotoSmash Settings form
+	if($j('#bwbps_gen_settingsform').val() == '1'){
+		
+		bwbpsAddPSSettingsMassUpdateActions();
+	}
 });
 
-function ajaxLoadImage(myForm){
+function bwbpsAjaxLoadImage(myForm){
+
+	var form_pfx = myForm.id;
+	form_pfx = form_pfx.replace("bwbps_uploadform", "");
+
+
 	var options = { 
-		beforeSubmit:  bwbpsVerifyUploadRequest,
-		success:      bwbpsUploadSuccess , 
+		beforeSubmit:  function(){bwbpsVerifyUploadRequest(form_pfx);},
+		success: function(data, statusText){ bwbpsUploadSuccess(data, statusText, form_pfx); } , 
 		failure: function(){alert('failed');},
-		url:       bwbpsAjaxUpload,
+		url:      bwbpsAjaxUpload,
 		dataType:  'json'
 	}; 
-	
+
 	$j(myForm).ajaxSubmit(options); 
 	return false;
 }
@@ -62,63 +78,116 @@ function psSetGalleryHts(){
 	}
 }
 
-function bwbpsVerifyUploadRequest(formData, jqForm, options) { 
+function bwbpsVerifyUploadRequest(form_pfx) { 
 	var fileToUploadValue;
-	
-	$j("#bwbps_imgcaption").val($j("#bwbps_imgcaptionInput").val());
+		
+	$j('#' + form_pfx + 'bwbps_imgcaption').val($j('#' + form_pfx + 'bwbps_imgcaptionInput').val());
 			
-	if($j('#bwbpsSelectURLRadio').attr("checked")){
-		$j('#bwbps_uploadfile').val("");
+	if($j('#' + form_pfx + 'bwbpsSelectURLRadio').attr('checked')){
+		
 		fileToUploadValue = true;
 	} else {
-		fileToUploadValue = $j('#bwbps_uploadfile').val();		
+		fileToUploadValue = $j('#' + form_pfx + 'bwbps_uploadfile').val();		
 	}
 	
-	
-
-	if (!fileToUploadValue && !$j('#bwbps_allownoimg').val() == 1) { 
-		$j('#bwbps_message').html('Please select a file.'); 
+	if ( !bwbpsVerifyFileFilled(form_pfx) ) { 
+		$j('#' + form_pfx + 'bwbps_message').html('<b>VALIDATION ERROR: Please select a file.</b>'); 
 		return false; 
 	} 
 
-	$j("#bwbps_submitBtn").attr('disabled','disabled');
+	$j('#' + form_pfx + 'bwbps_submitBtn').attr('disabled','disabled');
 
-	$j("#bwbps_imgcaptionInput").attr('disabled','disabled');
-	$j('#bwbps_result').html('');
+	$j('#' + form_pfx + 'bwbps_imgcaptionInput').attr('disabled','disabled');
+	$j('#' + form_pfx + 'bwbps_result').html('');
 
 	return true;
 } 
 
 
+/*
+ *	Determine if the File Field is required, and if so, is it filled
+ *
+ */
+function bwbpsVerifyFileFilled(form_pfx){
+	if( $j('#' + form_pfx + 'bwbps_allownoimg').val() == 1 ){ return true; }
+	var filetype = $j('input:radio[name=' + form_pfx + 'bwbps_filetype]:checked').val();
+	
+	var bFilled = false;
+	switch (filetype){
+		case 0 :	//Image
+			bFilled = $j('#' + form_pfx + 'bwbps_uploadfile').val();
+			break;
+		
+		case 1 :	//Image URL
+			bFilled = $j('#' + form_pfx + 'bwbps_uploadurl').val();
+			if(bFilled){
+				$j('#' + form_pfx + 'bwbps_uploadfile').val("");
+			}
+			break;
+		
+		case 2 :	//Image Direct Link
+			bFilled = $j('#' + form_pfx + 'bwbps_uploaddl').val();
+			if(bFilled){
+				$j('#' + form_pfx + 'bwbps_uploadfile').val("");
+			}
+			break;
+			
+		case 3 :	//Image URL
+			bFilled = $j('#' + form_pfx + 'bwbps_uploadyt').val();
+			break;
+		
+		case 4 :	//Image URL
+			bFilled = $j('#' + form_pfx + 'bwbps_uploadvid').val();
+			break;
+		
+		case 5 :	//Image for File 2
+			bFilled = $j('#' + form_pfx + 'bwbps_uploadfile2').val();
+			break;
+			
+		case 6 :	//Image URL for File 2
+			bFilled = $j('#' + form_pfx + 'bwbps_uploadurl2').val();
+			if(bFilled){
+				$j('#' + form_pfx + 'bwbps_uploadfile2').val("");
+			}
+			break;
+		
+		default :
+			bFilled = true;
+	}
+	if( bFilled ){ return true; } else { return false; }
+}
+
 // Callback for successful Ajax image upload
 // Displays the image or error messages
-function bwbpsUploadSuccess(data, statusText)  {
+function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 	
 	//This Alternate function is set in PhotoSmash Settings Advanced page
 	//If the alternate function returns false...continue with standard function
-	if(bwbpsAlternateUploadFunction(data, statusText)){ return false;}
+	if(bwbpsAlternateUploadFunction(data, statusText, form_pfx)){ return false;}
 
-	$j("#bwbps_submitBtn").removeAttr('disabled');
-	$j("#bwbps_imgcaptionInput").removeAttr('disabled');
+	$j('#' + form_pfx + 'bwbps_submitBtn').removeAttr('disabled');
+	$j('#' + form_pfx + 'bwbps_imgcaptionInput').removeAttr('disabled');
 	bwbpsUploadStatus = true;
 	if (statusText == 'success') {
 		if(data == -1){
 				alert('nonce');
 			//The nonce	 check failed
-			$j('#bwbps_message').html("<span class='error'>Upload failed due to invalid authorization.  Please reload this page and try again.</span>");
+			$j('#' + form_pfx + 'bwbps_message').html("<span class='error'>Upload failed due to invalid authorization.  Please reload this page and try again.</span>");
 			return false;
 	 	}
 	 	
 		if( data.succeed == 'false'){
 			//Failed for some reason
-			$j('#bwbps_message').html(data.message); 
+			$j('#' + form_pfx + 'bwbps_message').html(data.message); 
 			return false;
 		}
 		
-		if (data.img != '') {
+		if (data.db_saved > 0 ) {
 			//We got an image back...show it
-			$j('#bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
-			$j('#bwbps_message').html('<b>Upload successful!</b>'); 
+			$j('#' + form_pfx + 'bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
+			$j('#' + form_pfx + 'bwbps_message').html('<b>Upload successful!</b>'); 
+			
+			$j('.bwbps_reset').val('');
 			
 			//Add the New Images box for custom Layouts			
 			var adderdiv;
@@ -177,56 +246,53 @@ function bwbpsUploadSuccess(data, statusText)  {
 			
 			imgdiv.appendTo(li);
 			
-			bwbps_equalHeight($j(".psgal_" + data.gallery_id));
+			bwbps_equalHeight($j('.psgal_' + data.gallery_id));
 			
 			li.append('&nbsp;');
 			
 			
 		} else {
-			$j('#bwbps_message').html( data.error); 
+			$j('#' + form_pfx + 'bwbps_message').html( data.error); 
 		}
 	} else {
-		$j('#bwbps_message').html('Unknown error!'); 
+		$j('#' + form_pfx + 'bwbps_message').html('Unknown error!'); 
 	}
 } 
 
 
 //Show the Photo Upload Form
-function bwbpsShowPhotoUpload(gal_id, post_id){
-
+function bwbpsShowPhotoUpload(gal_id, post_id, form_pfx){
+	if( form_pfx == null ){ form_pfx = ""; }
 	bwbpsActiveGallery = gal_id;
-	$j('#bwbps_galleryid').val(gal_id);
-	$j('#bwbps_post_id').val(post_id);
+	$j('#' + form_pfx + 'bwbps_galleryid').val(gal_id);
+	$j('#' + form_pfx + 'bwbps_post_id').val(post_id);
 }
 
-function bwbpsShowPhotoUploadNoThickbox(gal_id, post_id){
+function bwbpsShowPhotoUploadNoThickbox(gal_id, post_id, form_pfx){
 	bwbpsActiveGallery = gal_id;
-
-	$j('#bwbps_galleryid').val(gal_id);
-	$j('#bwbps_post_id').val(post_id);
-	$j('#bwbps-formcont').hide();
-	$j('#bwbps-formcont').appendTo('#bwbpsFormSpace_' + gal_id);
+	if(!form_pfx){form_pfx = "";}
+	$j('#' + form_pfx + 'bwbps_galleryid').val(gal_id);
+	$j('#' + form_pfx + 'bwbps_post_id').val(post_id);
+	$j('#' + form_pfx + 'bwbps-formcont').hide();
+	$j('#' + form_pfx + 'bwbps-formcont').appendTo('#bwbpsFormSpace_' + gal_id);
 	
 	$j('#bwbpsFormSpace_' + gal_id).show();
-	$j('#bwbps-formcont').show('slow');
+	$j('#' + form_pfx + 'bwbps-formcont').show('slow');
 }
 
-function bwbpsHideUploadForm(gal_id){
-	$j('#bwbps-formcont').hide('slow');
+function bwbpsHideUploadForm(gal_id, form_pfx){
+	if(!gal_id){gal_id = "";}
+	if( form_pfx == null ){ form_pfx = ""; }
+	$j('#' + form_pfx + 'bwbps-formcont').hide('slow');
 	$j('#bwbpsFormSpace_' + gal_id).hide('slow');
 }
 
-//Toggle File or URL field in upload
-function bwbpsToggleFileOrURL(bShowUrl, uploadInstance){
-	if(!uploadInstance){uploadInstance = "";}
-	if(bShowUrl){
-		$j("#bwbps_uploadfile"+uploadInstance).hide();
-		$j("#bwbps_uploadurlspan"+uploadInstance).fadeIn("slow");
-	}else{
-		$j("#bwbps_uploadurlspan"+uploadInstance).hide();
-		$j("#bwbps_uploadfile"+uploadInstance).fadeIn("slow");
-	}
-	return false;
+function bwbpsSwitchUploadField(field_id, select_iteration, form_pfx){
+	if( select_iteration == null ){ select_iteration = ""; }
+	if( form_pfx == null ){ form_pfx = ""; }
+	$j( "." + form_pfx + "bwbps_uploadspans" + select_iteration ).hide();
+	$j("#" + field_id).fadeIn("slow");
+	
 }
 
 //Toggle Form Visible setting in PhotoSmash Default Settings Admin page
@@ -262,7 +328,7 @@ function bwbpsConfirmDeleteGallery(){
 
 function bwbpsConfirmCustomForm(){
 	var fieldname = jQuery("#bwbpsCFDDL option:selected").text();
-	return confirm('Do you want to Custom Form: ' + fieldname + '?');
+	return confirm('Do you want to DELETE Custom Form: ' + fieldname + '?');
 }
 
 function bwbpsConfirmGenerateCustomTable(){
@@ -346,4 +412,83 @@ function bwbpsModerateSuccess(data, imgid)  {
 			$j('#psimg_' + imgid).removeClass('ps-moderate');
 			return false;
 		}
+}
+
+function bwbpsAddPSSettingsMassUpdateActions(){
+	$j('.psmass_update').click( function()
+		{
+			bwbpsMassUpdateGalleries(this.id);
+		}
+	);
+}
+
+function bwbpsMassUpdateGalleries(id){
+	var eleid = id.substring(5, id.length);
+	//var val = $j('#' + eleid).val();
+	
+	var ele = $j("[name=" + eleid + "]");
+	
+	var tagname = ele.tagName();
+	var val = "";
+	
+	if(tagname = 'input'){
+		var attr = ele.attr('type');
+		
+		switch (attr){
+			case "radio" :
+				val = $j("input:radio[name=" + eleid + "]:checked").val();
+				break;
+		
+			case "checkbox" :
+				val = $j("input[name='" + eleid + "']").attr('checked');
+				break;
+		
+			default :
+				val = ele.val();
+				break;		
+		}
+
+	} else {
+		 val = ele.val();
+	
+	}
+	
+	
+	if(!confirm('Do you want to update ALL GALLERIES ' + ele.attr('name') + ' to: ' + val + '?')){ return false;}
+	
+	var _moderate_nonce = $j("#_moderate_nonce").val();
+	
+	var myaction = 'mass_updategalleries';
+		
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	$j.ajax({
+		type: 'POST',
+		url: bwbpsAjaxURL,
+		data: { 'action': myaction,
+       'field_name': eleid,
+       '_ajax_nonce' : _moderate_nonce,
+       'field_value' : val
+       },
+		dataType: 'json',
+		success: function(data) {
+			bwbpsMassUpdateGalleriesSuccess(data);
+		}
+	});
+	return false;
+	
+}
+
+
+
+
+function bwbpsMassUpdateGalleriesSuccess(data){
+	try{
+		$j('#ps_savemsg').hide();
+	}catch(err){}
+	
+	alert(data.message);
+
 }

@@ -162,6 +162,9 @@ class BWBPS_FieldEditor{
 			case 6 :
 				$type = "TEXT";
 				break;
+			case 7 :
+				$type = "VARCHAR(255)";
+				break;
 			case 30 :
 				//Post ID - hidden field
 				$type = "INT";
@@ -482,6 +485,7 @@ class BWBPS_FieldEditor{
 			<input type="radio" name="bwbps_type" value="3" <?php if($fieldOptions['type'] == 3) echo 'checked'; ?>>Radio Buttons<br/>
 			<input type="radio" name="bwbps_type" value="4" <?php if($fieldOptions['type'] == 4) echo 'checked'; ?>>Checkbox (Use only 1 value below. Only 1 value will be saved)<br/>
 			<input type="radio" name="bwbps_type" value="5" <?php if($fieldOptions['type'] == 5) echo 'checked'; ?>>Date Picker  (uses <a target='_blank' href='http://docs.jquery.com/UI/Datepicker'>jQuery UI DatePicker</a>)<br/>
+			<input type="radio" name="bwbps_type" value="7" <?php if($fieldOptions['type'] == 7) echo 'checked'; ?>>URL  (validates that entry is valid url format)<br/>
 			<hr/>
 			<span style='color:#777;'>Special WordPress field types:</span><br/>
 			<input type="radio" name="bwbps_type" value="30" <?php if($fieldOptions['type'] == 30) echo 'checked'; ?>>Post ID - hidden field with value of current Post ID<br/>

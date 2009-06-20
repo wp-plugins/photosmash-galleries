@@ -16,6 +16,8 @@ class BWBPS_Admin{
 		
 		$this->gallery_id = (int)$_POST['gal_gallery_id'];
 		
+		$this->verifyDatabase();
+		
 		//Save PS General Settings
 		if(isset($_POST['update_bwbPSDefaults'])){
 			check_admin_referer( 'update-gallery');
@@ -41,8 +43,40 @@ class BWBPS_Admin{
 		if(isset($_POST['deletePhotoSmashGallery'])){
 			check_admin_referer( 'delete-gallery');
 			$this->deleteGallery($this->options);
-		}
+		}	
+	}
 	
+	function verifyDatabase(){
+		global $wpdb;
+		
+		if($wpdb->get_var("SHOW TABLES LIKE '".PSFORMSTABLE."'") != PSFORMSTABLE) {
+		
+			$msg = "<h4>PhotoSmash Database Error - needs update</h4><p>Missing fields due to an update of the Plugin. Please visit <a href='admin.php?page=psInfo'>Plugin Info</a> and run the Update DB.</p>";
+			
+		} else {
+		
+			$sql = "SELECT * FROM ".PSFORMSTABLE." LIMIT 1";
+		
+			$ret = $wpdb->get_row($sql);
+		
+			//if(!$ret){return false;}
+		
+			//Add newest field here to be checked against database
+			$cols = array('form_id');
+		
+			foreach($wpdb->get_col_info('name') as $name){
+				$colname[] = $name;
+			}
+			foreach($cols as $col){
+				if(! in_array($col, $colname) ){
+					$msg = "<h4>PhotoSmash Database Error - needs update</h4><p>Missing fields due to an update of the Plugin. Please visit <a href='admin.php?page=psInfo'>Plugin Info</a> and run the Update DB.</p>";
+				}
+			}
+		}		
+		
+		if($msg){$this->message = $msg. $this->message; $this->msgclass = 'error';}
+		
+		return;
 	}
 	
 	function cleanSlashes($val){
@@ -128,9 +162,11 @@ class BWBPS_Admin{
 		//This section deletes a Gallery
 		
 		if($this->gallery_id){
+			
 			$ret = $wpdb->query("DELETE FROM ".PSGALLERIESTABLE." WHERE gallery_id="
 				.$this->gallery_id." LIMIT 1" );
-				$this->gallery_id = 0;
+			
+			$this->gallery_id = 0;
 		}
 		if($ret){$this->message = "Gallery deleted...";}
 		
@@ -270,6 +306,7 @@ class BWBPS_Admin{
 		//This section saves Gallery specific settings
 			$gallery_id = $this->gallery_id;
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
+			$d['gallery_type'] = (int)$_POST['gal_gallery_type'];
 			$d['img_perpage'] = (int)$_POST['gal_img_perpage'];
 			$d['img_perrow'] = (int)$_POST['gal_img_perrow'];
 			$d['thumb_aspect'] = (int)$_POST['gal_thumb_aspect'];
@@ -329,6 +366,12 @@ class BWBPS_Admin{
 	
 	//Disply the General Settings Page
 	function printGallerySettings(){
+		
+		if(isset($_POST['massGalleryEdit'])){
+			$this->printMassGalleryEdit();
+			return;
+		}
+	
 		global $wpdb;
 		$psOptions = $this->psOptions;		
 		
@@ -363,10 +406,10 @@ class BWBPS_Admin{
 		<?php bwbps_nonce_field('delete-gallery'); ?>
 <h3>Gallery Settings</h3>
 <?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
-<table class="form-table"><tr>
+<table class="form-table">
 <tr>
-<th>Select Gallery to edit:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
-<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'suppleLang') ?>" />
+<th style='width: 92px; '>Select gallery:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
+<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" /> <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
 </td></tr>
 </table>
 </form>
@@ -393,20 +436,41 @@ if($psOptions['use_advanced'] ==1){
 	<table class="form-table">
 	<?php if($galleryID){
 	?>
-		<tr>
-				<th><b>Number of images:</b></th>
-				<td style='font-size: 14px;'>
-					<?php echo $imageCount;?> - <a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galOptions['gallery_id']; ?>' title='Photo Manager'>Manage images</a>
-				</td>
-		</tr>
 	
-		<tr><th><b>Display code:</b></th><td>[photosmash id=<?php echo $galleryID;?>]
-		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php if($galOptions['post_id']){ echo "<br/>Assiciated with post: ".$galOptions['post_id'];} ?></td></tr>
+	<tr>
+		<th><b>Number of images:</b></th>
+		<td style='font-size: 14px;'>
+		<?php echo $imageCount;?> - <a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galOptions['gallery_id']; ?>' title='Photo Manager'>Manage images</a>
+		</td>
+	</tr>
+	
+	<tr>
+		<th><b>Display code:</b></th>
+		<td>[photosmash id=<?php echo $galleryID;?>]
+		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php if($galOptions['post_id']){ echo "<br/>Assiciated with post: ".$galOptions['post_id'];} ?>
+		</td>
+	</tr>
+	
 	<?php }?>
+	
 	<tr>
 				<th>Gallery name:</th>
 				<td>
 					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
+				</td>
+	</tr>
+	
+	<tr>
+				<th>Gallery type:</th>
+				<td>
+					<select name="gal_gallery_type">
+						<option value="0" <?php if($psOptions['gallery_type'] == 0) echo 'selected=selected'; ?>>Photo gallery</option>
+						<option value="3" <?php if($galOptions['gallery_type'] == 3) echo 'selected=selected'; ?>>YouTube gallery</option>
+						<option value="4" <?php if($galOptions['gallery_type'] == 4) echo 'selected=selected'; ?>>Video - YouTube + Upload</option>
+						<option value="5" <?php if($galOptions['gallery_type'] == 5) echo 'selected=selected'; ?>>Video - Uploads only</option>
+						<option value="6" <?php if($galOptions['gallery_type'] == 6) echo 'selected=selected'; ?>>Mixed - Images + YouTube</option>
+						
+					</select>
 				</td>
 	</tr>
 	
@@ -588,14 +652,261 @@ if($psOptions['use_customform']){ ?>
 	</div>
 </div>
 <script type="text/javascript">
-	jQuery(function() {
-	jQuery("#tabs").tabs();
-	});
+	jQuery(document).ready(function(){
+			jQuery('#slider').tabs({ fxFade: true, fxSpeed: 'fast' });	
+		});
+
 </script>
 
 <?php
 	}
 	
+	
+	//Disply the General Settings Page
+	function printMassGalleryEdit(){
+		global $wpdb;
+		$psOptions = $this->psOptions;		
+		
+		if($this->gallery_id){
+			$galleryID = (int)$this->gallery_id;
+		} else { $galleryID = 0; }
+		
+		$galleryDDL = $this->getGalleryDDL($galleryID);
+		if($galleryID){
+			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$galleryID), ARRAY_A);
+			
+			$imageCount = $wpdb->get_var("SELECT COUNT(image_id) as imgcnt FROM ".PSIMAGESTABLE
+				." WHERE gallery_id = ".(int)$galleryID);
+			
+		} else {
+			$galOptions = $this->getGalleryDefaults();
+		}
+		
+		$layoutsDDL = $this->getLayoutsDDL((int)$galOptions['layout_id'], false);
+		
+		?>
+		<div class=wrap>
+		
+	<style type='text/css'>
+		<!--
+		/*	Admin */
+		.bwbps-tabular td, .bwbps-tabular th{
+			border-bottom: 1px solid #b4d2f5;
+			background-color: #eef6fc;
+		}
+		-->
+	</style>
+		
+		<h2>PhotoSmash Galleries</h2>
+		
+		<?php
+			if($this->message){
+				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
+			}
+		?>
+<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">	
+<h3>Mass Edit Gallery Settings</h3>
+<?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
+<table class="form-table"><tr>
+<tr><th style='width: 92px; '>Select gallery:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Single Edit', 'bwbPS') ?>" />
+ <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
+</td></tr>
+</table>
+</form>
+<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+	<input type="hidden" id="bwbps_gallery_id" name="gal_gallery_id" value="<?php echo $galleryID;?>" />
+
+<div id="slider" class="wrap">
+
+		<?php bwbps_nonce_field('update-galleries'); ?>
+	<table class="form-table bwbps-tabular">
+	<?php if($galleryID){
+	?>
+	<tr>
+				<th>Basis gallery name:</th>
+				<td>
+					<input disabled type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
+				</td>
+	</tr>
+	<?php } ?>
+	
+
+	<tr>
+				<th>Images per page:</th>
+				<td>
+					<input type='text' name="gal_img_perpage" value='<?php echo (int)$galOptions['img_perpage'];?>' style='width: 40px !important;'/>
+					 <em>0 turns off paging</em>
+				</td>
+			</tr>
+			<tr>
+				<th>Images per row in gallery:</th>
+				<td>
+					<input type='text' name="gal_img_perrow" value='<?php echo (int)$galOptions['img_perrow'];?>' style='width: 40px !important;'/>
+					 <em>0 - as many images/row as theme's width allows</em>
+				</td>
+			</tr>
+			<tr>
+				<th>"Rel" parameter for image links:</th>
+				<td>
+					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Default image css class:</th>
+				<td>
+					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Image caption style:</th>
+				<td>
+						<input type="radio" name="gal_show_imgcaption" value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="7" <?php if($galOptions['show_imgcaption'] == 7) echo 'checked'; ?>>Caption (link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)
+						<br/><hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
+						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
+						<br/>
+						(Website links will be the website in the user's WordPress profile)<br/>
+						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
+
+						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
+				</td>
+			</tr>
+		
+			<tr>
+				<th>Minimum role to upload photos:</th>
+				<td>
+					<select name="gal_contrib_role">
+						<option value="-1" <?php if($psOptions['contrib_role'] == -1) echo 'selected=selected'; ?>>Anybody</option>
+						<option value="0" <?php if($galOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
+						<option value="1" <?php if($galOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
+						<option value="10" <?php if($galOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>Default moderation status:</th>
+				<td>
+					<select name="gal_img_status">
+						<option value="0" <?php if(!$galOptions['img_status']) echo 'selected=selected'; ?>>Moderate</option>
+						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>Upload form caption:</th>
+				<td>
+					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Thumbnail style:</th>
+				<td>
+					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+				</td>
+			</tr>
+	<tr>
+				<th>Thumbnail width (px):</th>
+				<td>
+					<input type='text' name="gal_thumb_width" value='<?php echo (int)$galOptions['thumb_width'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Thumbnail height (px):</th>
+				<td>
+					<input type='text' name="gal_thumb_height" value='<?php echo (int)$galOptions['thumb_height'];?>'/>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Image style:</th>
+				<td>
+					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+				</td>
+			</tr>
+	<tr>
+				<th>Max. image width (px):</th>
+				<td>
+					<input type='text' name="gal_image_width" value='<?php echo (int)$galOptions['image_width'];?>'/> 0 will maintain original width
+				</td>
+			</tr>
+			<tr>
+				<th>Max. image height (px):</th>
+				<td>
+					<input type='text' name="gal_image_height" value='<?php echo (int)$galOptions['image_height'];?>'/> 0 will maintain original height
+				</td>
+			</tr>
+	</table>
+</div>
+
+<?php
+if($psOptions['use_advanced'] ==1){
+?>
+<div id="bwbps_advanced">
+		<table class="form-table">
+			<tr>
+				<th>Display using Layout:</th>
+				<td>
+					<?php echo $layoutsDDL;?>
+				</td>
+			</tr>
+			<tr>
+				<th>Custom form name:</th>
+				<td><?php echo $this->getCFDDL($galOptions['custom_formname']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
+			</tr>
+
+<?php 
+/*  Not implemented at gallery level
+
+<?php
+if($psOptions['use_customform']){ ?>
+			<tr>
+				<th>Use Custom Form:</th>
+				<td>
+					<input type="checkbox" name="gal_use_customform" <?php if($galOptions['use_customform'] == 1) echo 'checked'; ?>> Enable use of Custom Form in this gallery.
+				</td>
+			</tr>
+<?php } ?>
+			<tr>
+				<th>Use Custom Fields:</th>
+				<td>
+					<input type="checkbox" name="gal_use_customfields" <?php if($galOptions['use_customfields'] == 1) echo 'checked'; ?>> Enables custom fields in the standard form for this gallery.
+				</td>
+			</tr>
+*/
+?>
+		</table>
+</div>
+<?php } ?>
+
+</div>
+<p class="submit">
+	<input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" />
+</p>
+</form>
+
+<div>
+		<a href="admin.php?page=bwb-photosmash.php" title="PhotoSmash General Settings">PhotoSmash General Settings</a> | 
+		<a href="admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galleryID;?>">Manage Images</a>
+	</div>
+</div>
+<script type="text/javascript">
+	jQuery(document).ready(function(){
+			jQuery('#slider').tabs({ fxFade: true, fxSpeed: 'fast' });	
+		});
+
+</script>
+
+<?php
+	}
 
 	//Disply the General Settings Page
 	function printGeneralSettings(){
@@ -606,7 +917,19 @@ if($psOptions['use_customform']){ ?>
 		?>
 		<div class=wrap>
 		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+		<input type="hidden" id='bwbps_gen_settingsform' name='bwbps_gen_settingsform' value='1' />
 		<?php bwbps_nonce_field('update-gallery'); ?>
+		
+		
+				
+		<?php 
+			$nonce = wp_create_nonce( 'bwbps_moderate_images' );
+			echo '
+		<input type="hidden" id="_moderate_nonce" name="_moderate_nonce" value="'.$nonce.'" />
+		';
+		
+		?>
+		
 		<h2>PhotoSmash Galleries</h2>
 		
 		<?php
@@ -617,11 +940,9 @@ if($psOptions['use_customform']){ ?>
 		<h3>PhotoSmash Default Settings</h3>
 		
 		<?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
-		
-	<table class="form-table">
-	</table>
+	
 	<div id="slider" class="wrap">
-
+	<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px; position: fixed; top: 0; right: 0;">saving...</span>
 	<ul id="tabs">
 
 		<li><a href="#bwbps_galleryoptions">Gallery Defaults</a></li>
@@ -645,27 +966,27 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>Default Images per page:</th>
 				<td>
-					<input type='text' name="ps_img_perpage" value='<?php echo (int)$psOptions['img_perpage'];?>' style='width: 40px !important;'/>
+					<input type='text' id='ps_img_perpage' name="ps_img_perpage" value='<?php echo (int)$psOptions['img_perpage'];?>' style='width: 40px !important;'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perpage' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 					 <em>0 turns off paging and shows all images in galleries</em>
 				</td>
 			</tr>
 			<tr>
 				<th>Default Images per row in galleries:</th>
 				<td>
-					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/>
+					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perrow' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 					 <em>0 places as many images per row as theme's width allows</em>
 				</td>
 			</tr>
 			<tr>
 				<th>"Rel" parameter for image links:</th>
 				<td>
-					<input type='text' name="ps_img_rel" value='<?php echo $psOptions['img_rel'];?>'/>
+					<input type='text' name="ps_img_rel" value='<?php echo $psOptions['img_rel'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_rel' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			<tr>
 				<th>Default image css class:</th>
 				<td>
-					<input type='text' name="ps_img_class" value='<?php echo $psOptions['img_class']; ?>'/>
+					<input type='text' name="ps_img_class" value='<?php echo $psOptions['img_class']; ?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_class' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			<tr>
@@ -689,19 +1010,20 @@ if($psOptions['use_customform']){ ?>
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="ps_show_imgcaption"  value="8" <?php if($psOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="9" <?php if($psOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
+						<a href='javascript: void(0);' class='psmass_update' id='save_ps_show_imgcaption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 						<br/>
 						(Website links will be the website in the contributor's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, uses link in contributor's WordPress profile)<br/>
 												
 						<br/>
 						
-						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
+						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='javascript: void(0);' class='psmass_update' id='save_ps_nofollow_caption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
 			<tr>
 				<th>Thumbs link to Post on Main Page</th>
 				<td>
-					<input type="checkbox" name="ps_imglinks_postpages_only" <?php if($psOptions['imglinks_postpages_only'] == 1) echo 'checked'; ?>> Select this to link thumbs to Posts on Main/Archive/Category pages.  Use linkages from above on Post pages.
+					<input type="checkbox" name="ps_imglinks_postpages_only" <?php if($psOptions['imglinks_postpages_only'] == 1) echo 'checked'; ?>> <a href='javascript: void(0);' class='psmass_update' id='save_ps_imglinks_postpages_only' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Select this to link thumbs to Posts on Main/Archive/Category pages.  Use linkages from above on Post pages.
 				</td>
 			
 			</tr>
@@ -717,7 +1039,7 @@ if($psOptions['use_customform']){ ?>
 						<option value="0" <?php if($psOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
 						<option value="1" <?php if($psOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
 						<option value="10" <?php if($psOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
-					</select>
+					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_contrib_role' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 					<br/>Authors/Contributors and Admins will not need moderation, even if selected below.
 				</td>
 			</tr>
@@ -727,7 +1049,7 @@ if($psOptions['use_customform']){ ?>
 					<select name="ps_img_status">
 						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
 						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
-					</select>
+					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_status' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			<tr>
@@ -740,7 +1062,7 @@ if($psOptions['use_customform']){ ?>
 						<option value="21600" <?php if($psOptions['img_alerts'] == 21600) echo 'selected=selected'; ?>>every 6 hrs</option>
 						<option value="86400" <?php if($psOptions['img_alerts'] == 86400) echo 'selected=selected'; ?>>every day</option>
 					</select>
-					<input type='hidden' name='ps_last_alert' value='<?php echo (int)$psOptions['last_alert'];?>'/>
+					<input type='hidden' name='ps_last_alert' value='<?php echo (int)$psOptions['last_alert'];?>'/> 
 				</td>
 			</tr>
 			<tr>
@@ -752,7 +1074,7 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>Upload form caption:</th>
 				<td>
-					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>
+					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_upload_form_caption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			<tr>
@@ -783,19 +1105,19 @@ if($psOptions['use_customform']){ ?>
 				<th>Default thumb style:</th>
 				<td>
 					<input type="radio" name="ps_thumb_aspect" value="0" <?php if((int)$psOptions['thumb_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
+					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 				</td>
 			</tr>
 			<tr>
 				<th>Default thumb width (px):</th>
 				<td>
-					<input type='text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/>
+					<input type='text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			<tr>
 				<th>Default thumb height (px):</th>
 				<td>
-					<input type='text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/>
+					<input type='text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			
@@ -804,18 +1126,19 @@ if($psOptions['use_customform']){ ?>
 				<td>
 					<input type="radio" name="ps_image_aspect" value="0" <?php if((int)$psOptions['image_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
 					<input type="radio" name="ps_image_aspect" value="1" <?php if((int)$psOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
+					<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 				</td>
 			</tr>
 			<tr>
 				<th>Default max image width (px):</th>
 				<td>
-					<input type='text' name="ps_image_width" value='<?php echo (int)$psOptions['image_width'];?>'/> 0 will maintain original width
+					<input type='text' name="ps_image_width" value='<?php echo (int)$psOptions['image_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 0 will maintain original width
 				</td>
 			</tr>
 			<tr>
 				<th>Default max image height (px):</th>
 				<td>
-					<input type='text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> 0 will maintain original height
+					<input type='text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 0 will maintain original height
 				</td>
 			</tr>
 		</table>
@@ -844,7 +1167,7 @@ if($psOptions['use_customform']){ ?>
 				<th>Default Custom Layout:</th>
 				<td>
 					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true);
-					?> Default layout for displaying images
+					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default layout for displaying images
 					
 					<?php if($psOptions['use_advanced']){
 						echo " - <a href='admin.php?page=editPSHTMLLayouts' title='Layout Editor'>Layout Editor</a>";
@@ -853,7 +1176,7 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			<tr>
-				<th>Use an alternate ajax upload script:</th>
+				<th>Alternate Ajax Upload Script:</th>
 				<td>
 					<input type="checkbox" name="ps_use_alt_ajaxscript" <?php if($psOptions['use_alt_ajaxscript'] == 1) echo 'checked'; ?>>
 					<input type='text'  style='width: 300px;' name="ps_alt_ajaxscript" value='<?php echo $psOptions['alt_ajaxscript'];?>'/> <br/>Enter the file and it's path, relative to the 'wp-content/plugins/' folder (no leading '/'). Example:  myplugin/ajax_upload.php
@@ -862,7 +1185,7 @@ if($psOptions['use_customform']){ ?>
 			</tr>
 			
 			<tr>
-				<th>Alternate Javascript Function:</th>
+				<th>Alternate Javascript Upload Function:</th>
 				<td>
 					<input type="text" style='width: 300px;' name="ps_alt_javascript" value="<?php echo $psOptions['alt_javascript']; ?>" /><br/>Enter the name of a javascript function that you must include into the page (probably through your own WP-Plugin) that will handle the returned results of an Ajax upload.  
 					
@@ -943,11 +1266,11 @@ if($psOptions['use_customform']){ ?>
 </form>
 
 
-
 <script type="text/javascript">
-	jQuery(function() {
-	jQuery("#tabs").tabs();
-	});
+	jQuery(document).ready(function(){
+			jQuery('#slider').tabs({ fxFade: true, fxSpeed: 'fast' });	
+		});
+
 </script>
 </div>
 <?php 
@@ -1092,8 +1415,14 @@ if($psOptions['use_customform']){ ?>
 
 			$psTable .= $modMenu;
 			
+			// IMAGE DETAILS
+			
+			if($image->file_url){
+				$fileURLData = "<br/>File data: " . $image->file_url;
+			} else { $fileURLData = ""; }
+			
 			$psTable .= "<br/><b>Details: </b>(image id: ".$image->image_id.")<br/>Gallery: <a href='admin.php?page=managePhotoSmashImages&amp;psget_gallery_id="
-			.$image->gallery_id."'>id(".$image->gallery_id.") ".$image->gallery_name."</a><br/>Uploaded by: ".$this->calcUserName($image->user_login, $image->user_nicename, $image->display_name)."<br/>Date: ".$image->created_date."</td>";
+			.$image->gallery_id."'>id(".$image->gallery_id.") ".$image->gallery_name."</a><br/>Uploaded by: ".$this->calcUserName($image->user_login, $image->user_nicename, $image->display_name)."<br/>Date: ".$image->created_date. $fileURLData . "</td>";
 			if($i == 1){
 				$psTable .= "</tr><tr>";
 				$i = 0;
@@ -1250,7 +1579,6 @@ if($psOptions['use_customform']){ ?>
 	
 	//Get DDL of Custom Forms
 	function getCFDDL($selectedCF){
-		
 		
 		$cfList = get_option('bwbps_customformlist');
 		

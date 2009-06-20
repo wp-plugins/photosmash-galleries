@@ -50,14 +50,23 @@ class BWBPS_Layout{
 		if(!$image){
 		
 			//Determine if we need to bring back Custom Fields
-			if($this->psOptions['use_customfields'] || $this->psOptions['use_customform'] || $layoutName){
+			if($this->psOptions['use_customfields'] || 
+				$this->psOptions['use_customform'] || $layoutName){
+				
 				$usecustomfields = true;
-			} else { $usecustomfields = false;}
-		
+				
+			} else { 
+				
+				$usecustomfields = false;
+				
+			}
 		
 			$images = $this->getGalleryImages($g, $usecustomfields);
+			
 		}else{
+		
 			$images[] = $image;
+			
 		}
 	
 		//Calculate Pagination variables
@@ -95,20 +104,26 @@ class BWBPS_Layout{
 		//IMAGE REL
 		if($g['img_rel']){
 			
+			$caprel = str_replace("[album]","[album_"
+				.$g['gallery_id']."cap]",$g['img_rel']);
+				
 			$g['img_rel'] = str_replace("[album]","[album_"
 				.$g['gallery_id']."]",$g['img_rel']);
 			
-			$imgrel = " rel='".$g['img_rel']."'";
+			if( $caprel == $g['img_rel'] ){ $caprel .= 'cap'; }
 			
-		} else {$imgrel="";}
+			$g['url_attr']['imgrel'] = " rel='".$g['img_rel']."'";
+			$g['url_attr']['caprel'] = " rel='".$caprel."'";
+			
+		} else {$g['url_attr']['imgrel']="";}
 		
 		//NO FOLLOW
 		if($g['nofollow_caption']){
-			$nofollow = " rel='external nofollow'";
-		}else {$nofollow='';}
+			$g['url_attr']['nofollow'] = " rel='external nofollow'";
+		}else {$g['url_attr']['nofollow']='';}
 
 		//CAPTION CLASS
-		$captionclass= ' class="bwbps_caption"';
+		$g['url_attr']['captionclass']= ' class="bwbps_caption"';
 
 		//IMAGES PER ROW
 		if($g['img_perrow'] && $g['img_perrow']>0){
@@ -142,7 +157,7 @@ class BWBPS_Layout{
 		
 		if($images){
 			if($this->psOptions['img_targetnew']){
-				$imagetargblank = " target='_blank' ";
+				$g['url_attr']['imagetargblank'] = " target='_blank' ";
 			}
 					
 			foreach($images as $image){
@@ -151,20 +166,20 @@ class BWBPS_Layout{
 				//but there shouldn't be thousands of images in a gallery
 				if($startImg > $imgNum || $lastImg < $imgNum){ continue;}
 			
-				$modMenu = "";
+				$g['modMenu'] = "";
 				switch ($image['status']) {
 					case -1 :
 						$g['modClass'] = 'ps-moderate';
 						if($admin){
-							$modMenu = 
+							$g['modMenu'] = 
 								"<br/><span class='ps-modmenu' id='psmod_"
-								.$image['image_id']
+								.$image['psimageID']
 								."'><input type='button' "
 								."onclick='bwbpsModerateImage(\"approve\", "
-								.$image['image_id']
+								.$image['psimageID']
 								.");' value='approve' class='ps-modbutton'/>"
 								."<input type='button' onclick='bwbpsModerateImage(\"bury\", "
-								.$image['image_id']
+								.$image['psimageID']
 								.");' value='bury' class='ps-modbutton'/></span>";
 						}
 						break;
@@ -181,51 +196,18 @@ class BWBPS_Layout{
 						break;
 				}
 				
-				$g['imgtitle'] = str_replace("'","",$image['image_caption']);
+				$image['imgtitle'] = str_replace("'","",$image['image_caption']);
 				
 				
 				/*	***********		Set up the <a href....>		*************  */
+				$this->calculateURLs($g, $image, $perma);
 				
-				//Deal with cases where they only want links to images on Post Pages
-				$image['special_url'] = true;
-				if( !is_single() && $this->psOptions['imglinks_postpages_only'])
-				{
-					$g['imgurl'] = "<a href='".$perma."'>";
-				
-				} else {
-				
-					//Deal with special cases where the caption style changes 
-					//the thumbnail link.
-					if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9){
-						if($this->validURL($image['url'])){
-							$theurl = $image['url'];
-						} else {
-							if($this->validURL($image['user_url'])){
-								$theurl = $image['user_url'];
-							} else {
-								$theurl = PSIMAGESURL.$image['file_name'];
-								$image['special_url'] = false;
-							}
-						}
-						$g['imgurl'] = "<a href='".$theurl."'"
-							.$imgrel." title='".$g['imgtitle']."' ".$imagetargblank.">";
-					} else {
-						$g['imgurl'] = "<a href='".PSIMAGESURL.$image['file_name']."'"
-							.$imgrel." title='".$g['imgtitle']."' ".$imagetargblank.">";
-						
-						$image['special_url'] = false;
-					}
-				
-				}
 								
 				//Get the Layout:  Standard or Custom
 				if(!$layout){
 					//Standard Layout
 					$psTable .= $this->getStandardLayout($g, $image);
 							
-					$scaption = $this->getCaption($g, $image);
-			
-					$psTable .= $scaption."</div>$modMenu</li>";
 				} else {
 					//Custom Layout
 										
@@ -259,8 +241,6 @@ class BWBPS_Layout{
 					.$g['thumb_height']."' /></li>";
 			}
 		}
-		
-		
 		
 		//If using Cells Per Row (for tables in Custom Forms..a setting Advanced)
 		//then clean up any left over $psTableRows
@@ -327,6 +307,107 @@ class BWBPS_Layout{
 		return $ret;
 	}
 	
+	
+	function calculateURLs(&$g, &$image, $perma)
+	{
+		//Deal with cases where they only want links to images on Post Pages
+		$filetype = (int)$image['file_type'];
+		
+		if($filetype == 0 || $filetype == 1 || $filetype == 4 )
+		{
+			
+			// URL when setting for Front/Cat/Archive pages to link thumbnails to the Post
+			if( !is_single() && $this->psOptions['imglinks_postpages_only'])
+			{
+				$image['imgurl'] = "<a href='".$perma."'>";
+				$image['imgurl_close'] = "</a>";
+			} else {
+			// Normal URLs
+			
+				//Deal with special cases where the caption style changes 
+				//the thumbnail link.
+				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9){
+					if($this->validURL($image['url'])){
+						$theurl = $image['url'];
+					} else {
+						if($this->validURL($image['user_url'])){
+							$theurl = $image['user_url'];
+						} else {
+							$theurl = PSIMAGESURL.$image['file_name'];
+							$image['special_url'] = false;
+						}
+					}
+				
+					$image['imgurl'] = "<a href='".$theurl."'"
+						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
+						.$g['url_attr']['imagetargblank'].">";
+						
+					$image['capurl'] = "<a href='".$theurl."'"
+						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
+						.$g['url_attr']['imagetargblank'].">";
+															
+				} else {
+			
+					$image['imgurl'] = "<a href='".PSIMAGESURL
+						.$image['file_name']."'"
+						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
+						.$g['url_attr']['imagetargblank'].">";
+						
+					$image['capurl'] = "<a href='".PSIMAGESURL
+						.$image['file_name']."'"
+						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
+						.$g['url_attr']['imagetargblank'].">";
+				
+				}
+				
+				$image['imgurl_close'] = "</a>";
+				$image['capurl_close'] = $image['imgurl_close'];
+			}
+		} else {
+			$image['imgurl'] = "";
+			$image['imgurl_close'] = "";
+			$image['capurl'] = "";
+			$image['capurl_close'] = "";
+		}
+		
+	}
+	
+	
+	/**
+	 * Get Standard Layout
+	 * @return (str) containing a single images block of code, using an LI wrapper
+	 *
+	 * @param (object) $g - gallery definition array; (object) $image - an image object
+	 */
+	function getStandardLayout($g, $image){
+		$ret = "<li class='psgal_".$g['gallery_id']." "
+					.$g['modClass']."' id='psimg_".$image['psimageID']."'"
+					.$g['imgsPerRowHTML'].">
+					<div id='psimage_".$image['psimageID']."' "
+					.$g['captionwidth'].">";
+					
+		// Get File Field
+		$fileField = $this->getFileField($g, $image);	
+		if($fileField)
+		{
+			$ret .= $image['imgurl'] . $fileField . $image['imgurl_close'];
+		}
+		
+		// Get Caption
+		$scaption =  $this->getCaption($g, $image);
+		if($scaption) 
+		{
+			if( $fileField ) { $ret .= "<br/>"; }
+			$ret .= $image['capurl'] . $scaption . $image['capurl_close'];
+		}
+				
+		$ret .= "</div>".$g['modMenu']."</li>";					
+				
+		return $ret;
+	}
+	
+	
+	
 	/**
 	 * Get Custom Layout
 	 * @return (str) containing a single images block of code, using custom layout def
@@ -361,7 +442,7 @@ class BWBPS_Layout{
 
 			} else {
 				if(!strpos($ret, $fld) === false){
-					$ret = str_replace($fld, $this->getStdFieldHTML($fld, $image, $g), $ret);
+					$ret = str_replace($fld, $this->getCFFieldHTML($fld, $image, $g), $ret);
 				}
 			}
 		}
@@ -369,21 +450,30 @@ class BWBPS_Layout{
 		
 		//Replace Custom Fields with values
 		if($this->psOptions['use_customfields']){
-		foreach($this->custFields as $fld){
+		
+		  foreach($this->custFields as $fld){
+		
 			if(!strpos($ret, '['.$fld->field_name.']') === false){
+			
 				//Format Date if it's a date
 				if( $image[$fld->field_name] && $fld->type == 5){
+				
 					if($image[$fld->field_name] <> "0000-00-00 00:00:00"){
+					
 						$val = date($this->getDateFormat()
 							,strtotime ($image[$fld->field_name]));
+					
 					}
+
 				} else {
+
 					$val = $image[$fld->field_name];
+
 				}
 				
 				$ret = str_replace('['.$fld->field_name.']', $val, $ret);
 			}
-		}
+		  }
 		}
 		
 		return $ret;
@@ -412,44 +502,159 @@ class BWBPS_Layout{
 	
 	}
 	
+	function getFileField($g, $image, $is_thumb=true){
+		$ftype = (int)$image['file_type'];
+		
+		if($is_thumb){
+			$psg_imagesurl = PSTHUMBSURL;
+		} else {
+			$psg_imagesurl = PSIMAGESURL;
+		}
+		
+		switch ( true ) {
+		 
+			case ( $ftype == 0 || $ftype == 1 ) :	//image
+			
+				if($image['file_name']){
+				$ret = "<img src='".$psg_imagesurl.$image['file_name']."'".$g['imgclass']
+					." alt='".$image['imgtitle']."' />";
+				} else { $ret = ""; }
+			
+				break;
+			
+			case ( $ftype == 2 ) :	//direct link
+			
+				$thumbheight = "";
+				$thumbwidth = "";
+				if($g['thumb_width']){ $thumbwidth = " width='".$g['thumb_width']."'";}
+				if($g['thumb_height']){ $thumbheight = " width='".$g['thumb_height']."'";}
+				if( $this->psValidateURL($image['file_url']) )
+				{
+					$ret = "<img src='".$image['file_url']."'".$g['imgclass']
+					." alt='".$image['imgtitle']."' " . $thumbwidth . $thumbheight . " />";
+				} else { $ret = ""; }
+				
+				
+				break;
+				
+			case ( $ftype == 3 ) :	//youtube
+			
+				$thumbheight = "";
+				$thumbwidth = "";
+				if($g['thumb_width']){ $width = (int)$g['thumb_width'];}
+				if($g['thumb_height']){ $height = (int)$g['thumb_height'];}
+				
+				$width = $width ? $width : 320;
+				$height = $height ? $height : 265;
+				
+				if( $image['file_url'] ){
+					$ret = '<span class="youtube"><object width="'.$width.'" height="'.$height.'"><param name="movie" value="http://www.youtube-nocookie.com/v/FAlWxZK-ps4&hl=en&fs=1&rel=0&color1=0xe1600f&color2=0xfebd01"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="'
+					. htmlspecialchars("http://www.youtube-nocookie.com/v/" 
+					. $image['file_url'] 
+					. "&hl=en&fs=1&rel=0&color1=0xe1600f&color2=0xfebd01") 
+					. '" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="'.$width.'" height="'.$height.'"></embed></object></span>';
+				} else {
+				 	$ret = "";
+				}
+				
+				break;
+			
+			case ( $ftype == 4 ) :	//video
+				
+				
+				$thumbheight = "";
+				$thumbwidth = "";
+				if($g['thumb_width']){ $width = (int)$g['thumb_width'];}
+				if($g['thumb_height']){ $height = (int)$g['thumb_height'];}
+				
+				$width = $width ? $width : 320;
+				$height = $height ? $height : 265;
+				
+				if( $image['file_url'] ){
+					if($image['file_name']){
+											
+						$ret = "<img src='".$psg_imagesurl.$image['file_name']."'".$g['imgclass']
+							." alt='".$image['imgtitle']."' />";
+						
+					} else {
+			
+						$ret = "<img src='".BWBPSPLUGINURL."/images/no_image.gif'".$g['imgclass']
+							." alt='".$image['imgtitle']."' />";
+					
+					}
+					
+				} 
+				
+				
+				break;
+			
+			default :
+				
+				break;
+		}
+		
+		return $ret; 
+	}
+	
 	/**
-	 * Get Standard Layout
+	 * Get TaggedField
 	 * @return (str) containing a single images block of code, using an LI wrapper
 	 *
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
 	 
-	function getStdFieldHTML($fld, $image, $g){
+	function getCFFieldHTML($fld, $image, $g){
+		
 		switch ($fld){
 			case '[image]' :
-				if($image['file_name']){
-				$ret = "<img src='".PSIMAGESURL.$image['file_name']."'".$g['imgclass']
-					." alt='".$g['imgtitle']."' />";
-				} else { $ret = ""; }
+				$ret = $this->getFileField($g, $image, false);
+				break;
+				
+			case '[doc]' :
+				$ret = $this->getFileField($g, $image, false);
+				break;
+				
+			case '[youtube]' :
+				$ret = $this->getFileField($g, $image);
+				break;
+				
+			case '[video]' :
+				$ret = $this->getFileField($g, $image);
 				break;
 				
 			case '[linked_image]' :
 				if($image['file_name']){
-				$ret = $g['imgurl']."
-					<img src='".PSIMAGESURL.$image['file_name']."'".$g['imgclass']
-					." alt='".$g['imgtitle']."' /></a>";
+				  
+					$ret = $image['imgurl']."
+						<img src='".PSIMAGESURL.$image['file_name']."'".$g['imgclass']
+						. " alt='".$image['imgtitle']."' />"
+						. $image['imgurl_close'];
+						
 				} else { $ret = ""; }
 				break;
 				
 			case '[thumbnail]' :
 				if($image['file_name']){
-				$ret = $g['imgurl']."
-					<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
-					." alt='".$g['imgtitle']."' /></a>";
+				
+					$ret = $image['imgurl']."
+						<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
+						." alt='".$image['imgtitle']."' />"
+						.$image['imgurl_close'];
+					
 				} else { $ret = ""; }
+				
 				break;
 			
 			case '[thumb]' :
 				if($image['file_name']){
-				$ret = $g['imgurl']."
-					<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
-					." alt='".$g['imgtitle']."' /></a>";
+				
+					$ret = $image['imgurl']."
+						<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
+						." alt='".$image['imgtitle']."' />"
+						.$image['imgurl_close'];
+					
 				} else { $ret = ""; }
+				
 				break;
 				
 			case '[image_id]' :
@@ -523,35 +728,6 @@ class BWBPS_Layout{
 		return $ret;
 	}
 	
-	/**
-	 * Get Standard Layout
-	 * @return (str) containing a single images block of code, using an LI wrapper
-	 *
-	 * @param (object) $g - gallery definition array; (object) $image - an image object
-	 */
-	function getStandardLayout($g, $image){
-		$ret = "<li class='psgal_".$g['gallery_id']."' "
-					.$g['modClass']." id='psimg_".$image['image_id']."'"
-					.$g['imgsPerRowHTML'].">
-					<div id='psimage_".$image['image_id']."' "
-					.$g['captionwidth'].">";
-		
-		if($image['file_name']){
-		
-			$ret .= $g['imgurl']."
-					<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
-					." alt='".$g['imgtitle']."' />";
-		} else {
-			if($image['special_url']){
-				$ret .= $g['imgurl'];
-			} else {
-				$ret .= "<a href='javascript: void(0);'>";
-			}
-		}
-		
-		return $ret;
-	}
-	
 		
 	/**
 	 * Get Caption
@@ -559,137 +735,216 @@ class BWBPS_Layout{
 	 *
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
-	function getCaption($g, $image){
+	function getCaption($g, &$image){
 		//Build caption
 			if($this->psOptions['caption_targetnew']){
 				$captiontargblank = " target='_blank' ";
 			}
 			
 			$nicename = $this->calcUserName($image['user_login']
-				, $image['user_nicename'], $image['display_name']) 
-				? $this->calcUserName($image['user_login'], $image['user_nicename']
-				, $image['display_name']) : "anonymous";
+				, $image['user_nicename'], $image['display_name']);
+
+			$nicename = $nicename ? $nicename : "anonymous";
 							
 			switch ($g['show_imgcaption']){
 				case 0:	//no caption
-					$scaption = "</a>";	//Close out the link from above
+					$image['capurl'] = "";
+					$image['imgurl_close'] = "";
+					
 					break;
 				case 1: //caption - link to image
 					
-					$scaption = "<br/><span $captionclass>"
-						.$image['image_caption']."</span></a>";
+					if($image['image_caption']){
+					
+						$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+							. $image['image_caption']."</span>";
+					
+						$image['capurl_close'] = $image['imgurl_close'];
+						
+					} else {
+						$image['capurl'] = "";
+					}
 					break;
+					
 				case 2: //contributor's name - link to image
-					$scaption = "<br/><span >$captionurl".$nicename."</span></a>";
+				
+					$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+						. $nicename. "</span>";
 					break;
+					
 				case 3: //contributor's name - link to website
+					
 					if($this->validURL($image['user_url'])){
+					
 						$theurl = $image['user_url'];
 						$captionurl = "
 						<a href='".$theurl."'"
 							." title='".str_replace("'","",$image['image_caption'])
-							."' $nofollow $captiontargblank>";
+							."' ".$g['url_attr']['nofollow']." $captiontargblank>";
 						$closeUserURL = "</a>
 						";
-						$closePictureURL1 = "</a>
-						";
-						$closePictureURL2 = "";
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";
+												
 					}else{
 						$captionurl = "";
-						$closeUserURL = "";
-						$closePictureURL1 = "";
-						$closePictureURL2 = "</a>";
+						$closeUserURL = "";					
 					}
-					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
-						.$nicename.$closeUserURL."</span>".$closePictureURL2;
+					
+					$scaption = "<span ".$g['url_attr']['captionclass'].">"
+						. $captionurl
+						. $nicename . $closeUserURL . "</span>";
+						
 					break;
+					
 				case 4: //caption [by] contributor's name - link to website
 					if($this->validURL($image['user_url'])){
+						
 						$theurl = $image['user_url'];
-						$captionurl = "<a href='".$theurl."'"
+						$captionurl = "
+						<a href='".$theurl."'"
 							." title='".str_replace("'","",$image['image_caption'])
-							."' $nofollow $captiontargblank>";
-						$closeUserURL = "</a>";
-						$closePictureURL1 = "</a>";
-						$closePictureURL2 = "";
+							."' ".$g['url_attr']['nofollow']." $captiontargblank>";
+						$closeUserURL = "</a>
+						";
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";				
+						
 					}else{
+					
 						$captionurl = "";
 						$closeUserURL = "";
-						$closePictureURL1 = "";
-						$closePictureURL2 = "</a>";
+						
 					}
-					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
-						.$image['image_caption']." by "
-						.$nicename.$closeUserURL."</span>".$closePictureURL2;
+					
+					$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+						. $captionurl
+						. $image['image_caption']." by "
+						. $nicename . $closeUserURL . "</span>";
+					
 					break;
+					
 				case 5: //caption [by] contributor's name - link to image
-					$scaption = "<br/><span $captionclass>".$image['image_caption']." by "
-						.$nicename."</span></a>";
+				
+					$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+						. $image['image_caption']." by "
+						. $nicename 
+						. "</span>";
+											
 					break;
 					
 				case 6: //caption [by] contributor's name - link to user submitted url
+				
 					$goturl = false;
+					
 					if($this->validURL($image['url'])){
+						
+						$theurl = $image['user_url'];
+						$captionurl = "
+						<a href='".$theurl."'"
+							." title='".str_replace("'","",$image['image_caption'])
+							."' ".$g['url_attr']['nofollow']." $captiontargblank>";
+						$closeUserURL = "</a>
+						";
+											
 						$theurl = $image['url'];
 						$goturl = true;
+						
 					} else {
+					
 						if($this->validURL($image['user_url'])){
+						
 							$theurl = $image['user_url'];
 							$goturl = true;
+							
 						}
 					}
 					
 					if($goturl){
+					
 						$captionurl = "<a href='".$theurl."'"
 							." title='".str_replace("'","",$image['image_caption'])
-							."' $nofollow $captiontargblank>";
+							."' ".$g['url_attr']['nofollow']."  $captiontargblank>";
+							
 						$closeUserURL = "</a>";
-						$closePictureURL1 = "</a>";
-						$closePictureURL2 = "";
+						
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";
+						
 					}else{
+					
 						$captionurl = "";
-						$closeUserURL = "";
-						$closePictureURL1 = "";
-						$closePictureURL2 = "</a>";
+						$closeUserURL = "";					
 					}
-					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
-						.$image['image_caption']." by "
-						.$nicename.$closeUserURL."</span>".$closePictureURL2;
+					
+					$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+						. $captionurl
+						. $image['image_caption']." by "
+						. $nicename . $closeUserURL . "</span>";
+					
 					break;
-				case 7: //caption - link to user submitted url
-					$goturl = false;
-					if($this->validURL($image['url'])){
-						$theurl = $image['url'];
-						$goturl = true;
-					} else {
-						if($this->validURL($image['user_url'])){
-							$theurl = $image['user_url'];
-							$goturl = true;
-						}
-					}
 					
-					if($goturl){
-						$captionurl = "<a href='".$theurl."'"
-							." title='".str_replace("'","",$image['image_caption'])
-							."' $nofollow $captiontargblank>";
-						$closeUserURL = "</a>";
-						$closePictureURL1 = "</a>";
-						$closePictureURL2 = "";
-					}else{
-						$captionurl = "";
-						$closeUserURL = "";
-						$closePictureURL1 = "";
-						$closePictureURL2 = "</a>";
+				case 7: //caption - link to user submitted url
+					if( $image['image_caption'] ){
+					
+						$goturl = false;
+						if($this->validURL($image['url'])){
+							$theurl = $image['url'];
+							$goturl = true;
+						} else {
+							if($this->validURL($image['user_url'])){
+								$theurl = $image['user_url'];
+								$goturl = true;
+							}
+						}
+						
+						if($goturl){
+													
+							$captionurl = "<a href='".$theurl."'"
+								." title='".str_replace("'","",$image['image_caption'])
+								."' ".$g['url_attr']['nofollow']."  $captiontargblank>";
+								
+							$closeUserURL = "</a>";
+							
+							$image['capurl'] = "";
+							$image['capurl_close'] = "";
+							
+						}else{
+							$captionurl = "";
+							$closeUserURL = "";
+						}
+						
+						$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+							. $captionurl
+							. $image['image_caption']
+							. $closeUserURL . "</span>";
+					} else {
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";
 					}
-					$scaption = $closePictureURL1."<br/><span $captionclass>$captionurl"
-						.$image['image_caption'].$closeUserURL."</span>".$closePictureURL2;
+						
 					break;
 				
 				case 8:	//no caption - Thumbnail links to User Submitted URL
-					$scaption = "</a>";	//Close out the link from above
+					
+					$image['capurl'] = "";
+					$image['capurl_close'] = "";
+					$scaption = "";	//Close out the link from above
+					
 					break;
+					
 				case 9: //caption - Thumbnail & Caption link to User Submitted URL
-					$scaption = "<br/><span $captionclass>".$image['image_caption']."</span></a>";
+				
+					if( $image['image_caption'] ) 
+					{
+						$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+							. $image['image_caption']
+							. "</span>";
+					} else {
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";
+					}
+															
 					break;
 			}
 			
@@ -800,6 +1055,47 @@ class BWBPS_Layout{
 			$custdata = ", ".PSCUSTOMDATATABLE.".* ";
 		}
 		
+		$imagetablefields = array( 'seq'
+			, 'updated_date'
+			, 'avg_rating'
+			, 'rating_cnt'
+			, 'created_date'
+			, 'updated_date'
+			, 'user_id'
+			, 'gallery_id'
+			, 'image_id'
+			, 'file_type'
+			, 'image_caption'
+		);
+		
+		// Calculate ORDER BY
+		if( $g['sort_by'] ){
+			$sortflds = split(",", $g['sort_by']);
+			unset($sortby);
+			foreach ( $sortflds as $sfld )
+			{
+				$sfld = trim($sfld);
+				$tempfld = split(" ", $sfld);
+				$sorder = "";
+				if(count($tempfld) > 1){
+					$sorder = trim($tempfld[1]);
+					if($sorder == "ASC" || $sorder == "DESC" ){
+						$sorder = " ".$sorder;
+					}else{
+						$sorder = "";
+					}
+				}
+				if( in_array( $sfld, $imagetablefields ) ) {
+					$sortby[] = PSIMAGESTABLE.$sfld.$sorder;
+				}
+			}
+			if( is_array($sortby) ){
+				$sortby = implode( ", ", $sortby );
+			} else { $sortby = ""; }
+		} else {
+			$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date';
+		}
+		
 		//Admins can see all images
 		if(current_user_can('level_10')){
 			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
@@ -811,7 +1107,7 @@ class BWBPS_Layout{
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
-				.' WHERE gallery_id = %d ORDER BY seq, file_name', $g['gallery_id']);			
+				.' WHERE gallery_id = %d ORDER BY '.$sortby, $g['gallery_id']);			
 					
 			
 		} else {
@@ -827,7 +1123,7 @@ class BWBPS_Layout{
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				.$wpdb->users.'.ID = '. PSIMAGESTABLE . '.user_id'.$custDataJoin
 				.' WHERE gallery_id = %d AND (status > 0 OR user_id = '
-				.$uid.')ORDER BY seq, file_name'
+				.$uid.')ORDER BY '.$sortby
 				, $g['gallery_id']);			
 				
 		}
@@ -889,6 +1185,12 @@ class BWBPS_Layout{
 		if($displayname) return $displayname;
 		if($nicename) return $nicename;
 		return $loginname;
+	}
+	
+	//Validate URL
+	function psValidateURL($url)
+	{
+		return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $url)) ? FALSE : TRUE;
 	}
 }
 ?>

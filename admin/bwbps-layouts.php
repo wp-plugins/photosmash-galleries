@@ -47,13 +47,12 @@ class BWBPS_LayoutsEditor{
 		$d['wrapper'] = $_POST['bwbps_wrapper'];
 		$d['css'] = $_POST['bwbps_css'];
 		
-		
-		if(get_magic_quotes_gpc()){
-			$d['layout'] = stripslashes($d['layout']);
-			$d['alt_layout'] = stripslashes($d['alt_layout']);
-			$d['css'] = stripslashes($d['css']);
-			$d['wrapper'] = stripslashes($d['wrapper']);
-		}			
+		//Strip slashes...I think WP adds slashes regardless, so you need to strip them
+		$d['layout'] = stripslashes($d['layout']);
+		$d['alt_layout'] = stripslashes($d['alt_layout']);
+		$d['css'] = stripslashes($d['css']);
+		$d['wrapper'] = stripslashes($d['wrapper']);
+					
 		
 		if($this->layout_id == 0){
 				
@@ -71,7 +70,7 @@ class BWBPS_LayoutsEditor{
 					$this->message =  "<b>Layout Added -> </b>".$d['layout_name'];
 					return $insert_id;
 				} else {
-					$this->message = "<h3 style='color:red;'>FAILED...field failed to insert: </h3>".$d['field_name'];
+					$this->message = "<h3 style='color:red;'>FAILED...form failed to insert: </h3>".$d['field_name'];
 				}
 			}else{
 				$where['layout_id'] = $this->layout_id;

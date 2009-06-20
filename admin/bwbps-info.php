@@ -32,6 +32,7 @@ class BWBPS_Info{
 	function fixFilePerms(){
 			chmod(PSTHUMBSPATH2, 0755);
 			chmod(PSIMAGESPATH2, 0755);
+			chmod(PSDOCSPATH2, 0755);
 			chmod(PSUPLOADPATH, 0755);
 	}
 	
@@ -160,6 +161,22 @@ class BWBPS_Info{
 			
 			$ret .= "<span style='color: green;'>Exists</span>".$aret[3]."</li>";
 			$aret[3] = '';
+		}
+		
+		//Forms Table
+		$table_name = $wpdb->prefix . "bwbps_forms";
+		$ret .="
+			<li>". $table_name.": ";
+		
+		if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			$b = false;
+				$aret[0] += 1;
+			$aret[6]=" - <span style='color:red;'>was missing...update run successfully</span>";
+			$ret .= "<span style='color: red;'>Missing</span></li>";
+		} else {
+			
+			$ret .= "<span style='color: green;'>Exists</span>".$aret[6]."</li>";
+			$aret[6] = '';
 		}
 
 						
@@ -319,6 +336,40 @@ class BWBPS_Info{
 			if(file_exists($imgpath)){
 				$ret .= "<span style='color: red;'>Path originally missing.</span><span style='color: green;'> But has been added now.</span>";
 				$this->chmod(PSUPLOADPATH, 0755);
+			} else {
+				$ret .= "<span style='color: red;'>Does not exist - tried to create but failed.</span><br/>Manually create path:  wp-content/uploads<br/>
+				Set permissions to 755.
+				";
+			}
+		}
+		
+		//DOCS PATH - for videos and other document uploads
+		$imgpath = PSDOCSPATH2;
+		
+		$ret .="<li>Documents path (videos, et al): <span>".$imgpath."</span><br/>";
+		
+		if(file_exists($imgpath)){
+			if(is_writable($imgpath)){
+				$ret .= "<span style='color: green;'>Exists.</span>";
+			} else {
+				$ret .= "<span style='color: red;'>Exists - but not writeable.</span>";
+				
+				$this->chmod($imgpath, 0755);
+				
+				if(is_writable($imgpath)){
+					$ret.="<br/>CHMOD attempted and succeeded.";
+				}else{
+					$ret.="<br/>CHMOD attempted and failed.";
+				}
+			}
+			$b777 = substr(sprintf('%o', fileperms(PSDOCSPATH2)), -4);
+			if($b777 == "0777"){$has777 = true;}
+			$ret .= " - Permissions: " .$b777;
+		} else {
+			mkdir(PSDOCSPATH2, 0755);
+			if(file_exists($imgpath)){
+				$ret .= "<span style='color: red;'>Path originally missing.</span><span style='color: green;'> But has been added now.</span>";
+				$this->chmod(PSDOCSPATH2, 0755);
 			} else {
 				$ret .= "<span style='color: red;'>Does not exist - tried to create but failed.</span><br/>Manually create path:  wp-content/uploads<br/>
 				Set permissions to 755.

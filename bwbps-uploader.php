@@ -122,6 +122,7 @@ class BWBPS_Uploader{
 	}
 	
 	function verifyUserRights($g){
+		
 		if($g['contrib_role'] == -1){
 			$this->user_level = true;
 		} else {
@@ -134,8 +135,10 @@ class BWBPS_Uploader{
 				}
 			}
 		}
+		
 		if(!$this->user_level){
 			$this->json['message'] = "Current user does not have authorization for uploading to this gallery.";
+			$this->json['succeed'] = "false";
 			$this->echoJSON();
 			exit();
 		}
@@ -147,6 +150,13 @@ class BWBPS_Uploader{
 	 * --- use this filename in the creation of the New Upload Class instance
 	 */
 	function importImageFromURL($fileFieldNumber){
+		$image_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];
+		
+		
+		if(!$this->psValidateURL($image_url)){
+			return "";		
+		}
+			
 		if(!file_exists(PSTEMPPATH)){
 			if(!mkdir(PSTEMPPATH, 0755)){
 				$this->json['message'] = 
@@ -159,7 +169,6 @@ class BWBPS_Uploader{
 		chmod(PSTEMPPATH, 0755);
 		
 		/* *************  Gets an Image from a URL   *************** */
-		$image_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];		
 		$basename = basename($image_url);
 		$tempname = PSTEMPPATH.$basename;
 		
@@ -186,17 +195,102 @@ class BWBPS_Uploader{
 		//Clean up old handle if exists
 		if($this->handle){ $this->destroyHandle();}
 		
-		//Determine if using Select From URL
-		if(isset($_POST['bwbps_fileorurl'.$fileFieldNumber]) && $_POST['bwbps_fileorurl'.$fileFieldNumber] == 1){
-			//Get image from URL
-			$tempname = $this->importImageFromURL($fileFieldNumber);
-			$this->handle = new upload($tempname);	
-		} else {
-			//Get uploaded file
-			$this->handle = new upload($_FILES['bwbps_uploadfile'.$fileFieldNumber]);
-		}		
+		//Figure out the File Type that was uploaded
+		if(isset($_POST['bwbps_filetype'.$fileFieldNumber])){
+			$filetype = (int)$_POST['bwbps_filetype'.$fileFieldNumber];
+		} else { 
+			$filetype = 0; 
+		}
+		
+		switch ($filetype){
+			
+			case 0 :	//Image upload
+				$this->json['file_type'] = 0;
+				$this->handle = new upload($_FILES['bwbps_uploadfile'.$fileFieldNumber]);
+				break;
+			
+			case 1 :	//URL
+				$this->json['file_type'] = 0;
+				$tempname = $this->importImageFromURL($fileFieldNumber);
+				$this->handle = new upload($tempname);	
+				break;
+			
+			case 2 :	//Direct Link
+				$this->json['img'.$this->imageNumber] = "0";
+				$this->json['file_type'] = 2;
+				$image_url = $_POST['bwbps_uploaddl'.$fileFieldNumber];
+				
+				if(!$this->psValidateURL($image_url)){
+					$this->json['file_url'] = "";		
+					$this->json['message'] = "Invalid URL.";
+				} else {
+					$this->json['file_url'] = $image_url;
+				}
+				$this->json['succeed'] = 'true';
+				break;
+				
+			case 3 :	//YouTube
+				$this->json['img'.$this->imageNumber] = "0";
+				$this->json['file_type'] = 3;
+				$image_url = $_POST['bwbps_uploadyt'];
+				
+				if(!$this->psValidateURL($image_url)){
+					$this->json['file_url'] = "";
+					$this->json['message'] = "Invalid URL.";
+				} else {
+					$this->json['file_url'] = $this->extractYouTubeKey($image_url);
+					
+					if( !$this->json['file_url'] ){
+						$this->json['file_url'] = "";
+						$this->json['message'] = "Invalid YouTube URL.";
+						$this->json['succeed'] = 'false';
+					} else {
+					
+						$this->json['succeed'] = 'true';
+						
+					}
+					
+				}
+				
+				break;
+				
+			case 4 :	//Video File
+				$this->json['file_type'] = 4;
+				$this->handle = new upload($_FILES['bwbps_uploadvid'.$fileFieldNumber]);
+				break;
+			
+			case 5 :	//Image upload for File 2
+				$this->json['file_type'] = 0;
+				$this->handle = new upload($_FILES['bwbps_uploadfile'.$fileFieldNumber]);
+				break;
+				
+			case 6 :	//URL for File 2
+				$this->json['file_type'] = 0;
+				$tempname = $this->importImageFromURL($fileFieldNumber);
+				$this->handle = new upload($tempname);	
+				break;
+			
+			case 7 :	//General Document
+				$this->json['file_type'] = 7;
+				$this->handle = new upload($_FILES['bwbps_uploaddoc'.$fileFieldNumber]);
+				break;
+		}
+			
 		return true;
 	}
+	
+	function extractYouTubeKey($ytURL){
+		
+		//preg borrowed from SmartYouTube plugin by Vladimir Prelovac
+		preg_match_all("/http:\/\/([a-zA-Z0-9\-\_]+\.|)youtube\.com\/watch(\?v\=|\/v\/)([a-zA-Z0-9\-\_]{11})([^<\s]*)/", $ytURL, $matches, PREG_SET_ORDER);
+		
+		if(is_array($matches)){
+			$ret = $matches[0][3];
+		}
+		
+		return $ret;
+	}
+	
 	
 	function getHandleSettings(){
 		$this->handle->file_max_size = 5000000;
@@ -206,8 +300,59 @@ class BWBPS_Uploader{
 		$this->handle->dir_chmod = 0755;
 		$this->handle->auto_create_dir = true;
 		$this->handle->jpeg_quality = 100;
-		$this->handle->allowed = array('image/*');
-		$this->handle->forbidden = array('application/*');
+		
+		//deal with different file types
+		switch ((int)$this->json['file_type']){
+			case 0 : 	//Image
+				$this->handle->allowed = array('image/*');
+				$this->handle->forbidden = array('application/*');
+				break;
+				
+			case 1 :	//Image imported by URL
+				$this->json['file_type'] = 0;
+				$this->handle->allowed = array('image/*');
+				$this->handle->forbidden = array('application/*');
+				break;
+				
+			case 2 :	//Direct Link
+				$this->handle->forbidden = array('*/*');
+				break;
+				
+			case 3 :	//YouTube Link
+				$this->handle->forbidden = array('*/*');
+				break;
+				
+			case 4 :	//Video files
+				$this->handle->allowed = 
+					array( 'video/*'
+					, 'application/x-shockwave-flash'
+					, 'application/x-msmetafile'
+					, 'audio/*'
+				);
+				break;
+			
+			case 5 :	//Image2 - Should have been changed to 0 in Get Handle
+				$this->json['file_type'] = 0;
+							
+			case 6 :	//Image 2 URL - Should have been changed to 0 in GetHandle
+				$this->json['file_type'] = 0;
+				
+			case 7 :	//General documents
+				$this->handle->allowed = 
+					array( 'application/pdf' );
+				break;
+			
+			case 10 :	//PDF
+				$this->handle->allowed = 
+					array( 'application/pdf' );
+				break;
+				
+			default :
+				$this->handle->allowed = array('image/*');
+				$this->handle->forbidden = array('application/*');
+				break;				
+		}
+		
 		$this->handle->mime_magic_check = true;
 		
 	}
@@ -226,6 +371,8 @@ class BWBPS_Uploader{
 		$this->json['form_name'] = $_POST['bwbps_formname'];
 		
 		$this->json['post_id'] = (int)$_POST['bwbps_post_id'];
+		
+		$this->json['file_type'] = (int)$_POST['bwbps_file_type'];
 		
 		$this->json['image_caption'] = $this->getImageCaption();
 		
@@ -274,10 +421,13 @@ class BWBPS_Uploader{
 		return $val;
 	}
 	
+	/**
+	 * Process Main Image
+	 * 
+	 */
 	function processMainImage($g, $newname, $allowNoImg=false){
 	
 		//Verify User rights...and leave if not sufficient
-		
 		$this->verifyUserRights($g);	//will exit if not enough rights.
 
 		if(get_option('bwbps-use777') == '1' && !SAFE_MODE){
@@ -336,7 +486,11 @@ class BWBPS_Uploader{
 		$this->json['error'] = strip_tags($this->handle->error);
 		return $this->handle->processed;
 	}
-		
+	
+	/**
+	 * Process Thumbnail
+	 * 
+	 */
 	function processThumbnail($g, $newname, $allowNoImg=false){
 		$this->verifyUserRights($g);	//will exit if not enough rights.
 		
@@ -376,7 +530,8 @@ class BWBPS_Uploader{
 				$this->handle->image_y = $g['thumb_height'];
 			}
 		}
-
+		
+		//process the file
 		$this->handle->process(PSUPLOADPATH."/bwbps/thumbs/");
 
 		if($this->handle->processed){
@@ -388,6 +543,41 @@ class BWBPS_Uploader{
 
 		$this->json['error'] = strip_tags($this->handle->error);
 		return $this->handle->processed;
+	}
+	
+	/**
+	 * Process Document - non-image document uploads
+	 * 
+	 */
+	function processDocument($g, $newname, $allowNoImg=false){
+		$this->verifyUserRights($g);	//will exit if not enough rights.
+		
+		if(!$this->handle->file_is_image){
+			$this->json['succeed'] = "true";
+			$this->json['img'.$this->imageNumber] = "0";
+			return $allowNoImg;
+		}
+				
+		$this->handle->file_new_name_body = $newname;
+		
+		if(!$this->json['img'.$this->imageNumber]){
+			$this->json['img'.$this->imageNumber] = $newname.".".$this->handle->file_src_name_ext;
+		}
+		
+		//process the file
+		$this->handle->process(PSUPLOADPATH."/bwbps/thumbs/");
+
+		if($this->handle->processed){
+			$this->json['succeed'] = "true";
+		} else {
+			$this->json['succeed'] = "false";
+			$this->json['message'] = "Image processing failed.";
+		}
+
+		$this->json['error'] = strip_tags($this->handle->error);
+		return $this->handle->processed;
+
+	
 	}
 
 	function saveImageToDB($g, $bSaveCustomFields=true){
@@ -403,6 +593,11 @@ class BWBPS_Uploader{
 		$data['image_caption'] = $this->json['image_caption'];
 		$data['url'] = $this->json['url'];
 		$data['file_name'] = $this->json['img'.$this->imageNumber];
+		
+		$data['file_type'] = (int)$this->json['file_type'];
+		
+		$data['file_url'] = $this->json['file_url'];
+		
 		if($this->user_level){
 			$data['status'] = 1;
 		}else{
@@ -418,9 +613,15 @@ class BWBPS_Uploader{
 		$data['seq'] = -1;
 		$data['avg_rating'] = 0;
 		$data['rating_cnt'] = 0;
-				
+		
 		//Insert the image into the Images table
-		$wpdb->insert(PSIMAGESTABLE, $data);
+		$this->json['db_saved'] = (int)$wpdb->insert(PSIMAGESTABLE, $data);
+		
+		if( !$this->json['db_saved'] )
+		{
+			$this->json['message'] = "<span class='error'>Failed to save image to Database.</span>";
+			$this->json['succeed'] = "false";
+		}
 		
 		$image_id = $wpdb->insert_id;
 		
@@ -455,39 +656,58 @@ class BWBPS_Uploader{
 	 *	Create New Gallery
 	 *
 	 */
-	function createNewGallery($gallery_name, $post_id=0, $image_status=false)
+	//function createNewGallery($gallery_name, $post_id=0, $image_status=false)
+	function createNewGallery($data = false)
 	{
 		global $wpdb;
+		
+		if(!is_array($data)){
+			unset($data);
+			$data = array('empty'=> true);
+		}
+		
 		//This section saves Gallery specific settings
-			$d['gallery_name'] = $gallery_name;
-			$d['caption'] = $gallery_name;
-			$d['post_id'] = (int)$post_id;
-			$d['img_perpage'] = (int)$this->psOptions['img_perpage'];
-			$d['img_perrow'] = (int)$this->psOptions['img_perrow'];
-			$d['thumb_aspect'] = (int)$this->psOptions['thumb_aspect'];
-			$d['thumb_width'] = (int)$this->psOptions['thumb_width'];
-			$d['thumb_height'] = (int)$this->psOptions['thumb_height'];
+			$d['gallery_name'] = $data['gallery_name'] ? $data['gallery_name'] : "";
+			$d['gallery_type'] = isset($data['gallery_type']) ? (int)$data['gallery_type'] : 0;
+			$d['caption'] = $data['gallery_name'] ? $data['gallery_name'] : "";
+			$d['post_id'] = $data['post_id'] ? (int)$data['post_id'] : 0;
+			$d['img_perpage'] = $data['img_perpage'] ? (int)$data['img_perpage'] : (int)$this->psOptions['img_perpage'];
+			$d['img_perrow'] = isset($data['img_perrow']) ? (int)$data['img_perrow'] : (int)$this->psOptions['img_perrow'];
+			$d['thumb_aspect'] = isset($data['thumb_aspect']) ? (int)$data['thumb_aspect'] : (int)$this->psOptions['thumb_aspect'];
+			$d['thumb_width'] = isset($data['thumb_width']) ? (int)$data['thumb_width'] : (int)$this->psOptions['thumb_width'];
+			$d['thumb_height'] = isset($data['thumb_height']) ? (int)$data['thumb_height'] : (int)$this->psOptions['thumb_height'];
 			
-			$d['image_aspect'] = (int)$this->psOptions['image_aspect'];
-			$d['image_width'] = (int)$this->psOptions['image_width'];
-			$d['image_height'] = (int)$this->psOptions['image_height'];
+			$d['image_aspect'] = isset($data['image_aspect']) ? (int)$data['image_aspect'] : (int)$this->psOptions['image_aspect'];
+						
+			$d['image_width'] = isset($data['image_width']) ? (int)$data['image_width'] : (int)$this->psOptions['image_width'];
 			
-			$d['img_rel'] = $this->psOptions['img_rel'];
-			$d['upload_form_caption'] = $this->psOptions['upload_form_caption'];
-			$d['img_class'] = $this->psOptions['img_class'];
-			$d['show_imgcaption'] = (int)$this->psOptions['show_imgcaption'];
-			$d['nofollow_caption'] = isset($this->psOptions['nofollow_caption']) ? 1 : 0;
-			if($image_status === false){
-				$d['img_status'] = (int)$this->psOptions['img_status'];
+			$d['image_height'] = isset($data['image_height']) ? (int)$data['image_height'] : (int)$this->psOptions['image_height'];
+			
+			$d['img_rel'] = $data['img_rel'] ? $data['img_rel'] : $this->psOptions['img_rel'];
+			
+			$d['upload_form_caption'] = $data['upload_form_caption'] ? $data['upload_form_caption'] : $this->psOptions['upload_form_caption'];
+			
+			$d['img_class'] = $data['img_class'] ? $data['img_class'] : $this->psOptions['img_class'];
+			
+			$d['show_imgcaption'] = $data['show_imgcaption'] ? (int)$data['show_imgcaption'] : (int)$this->psOptions['show_imgcaption'];
+			
+			if(isset($data['nofollow_caption'])){
+				$d['nofollow_caption'] = (int)$data['nofollow_caption'];
 			} else {
-				$d['img_status'] = (int)$image_status;
+				$d['nofollow_caption'] = isset($this->psOptions['nofollow_caption']) ? 1 : 0;
 			}
-			$d['contrib_role'] = (int)$this->psOptions['contrib_role'];
 			
-			$d['use_customform'] = isset($this->psOptions['use_customform']) ? 1 : 0;
-			$d['use_customfields'] = isset($this->psOptions['use_customfields']) ? 1 : 0;
-			$d['custom_formname'] = 'default';
-			$d['layout_id'] = (int)$this->psOptions['layout_id'];
+			$d['img_status'] = isset($data['img_status']) ? (int)$data['img_status'] : (int)$this->psOptions['img_status'];
+			
+			$d['contrib_role'] = isset($data['contrib_role']) ? (int)$data['contrib_role'] : (int)$this->psOptions['contrib_role'];
+			
+			$d['use_customform'] = isset($data['use_customform']) ? (int)$data['use_customform'] : (isset($this->psOptions['use_customform']) ? 1 : 0);
+			
+			$d['use_customfields'] = isset($data['use_customfields']) ? $data['use_customfields'] : (isset($this->psOptions['use_customfields']) ? 1 : 0);
+			
+			$d['custom_formname'] = $data['custom_formname'] ? $data['custom_formname'] : 'default';
+			
+			$d['layout_id'] = isset($data['layout_id']) ? (int)$data['layout_id'] : (int)$this->psOptions['layout_id'];
 						
 			$tablename = $wpdb->prefix.'bwbps_galleries';
 			

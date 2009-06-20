@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.2.990
+Version: 0.2.991
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -30,7 +30,7 @@ Author URI: http://www.whypad.com/
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
 define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
-define("PSCUSTOMFORMSTABLE", $wpdb->prefix."bwbps_customforms");
+define("PSFORMSTABLE", $wpdb->prefix."bwbps_forms");
 define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
 define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
 define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
@@ -38,14 +38,23 @@ define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
 //Set the Upload Path
 define('PSBLOGURL', get_bloginfo('wpurl')."/");
 define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
+
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
 define('PSIMAGESPATH2',PSUPLOADPATH."/bwbps");
+define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
+
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
 define('PSTHUMBSPATH2',PSUPLOADPATH."/bwbps/thumbs");
-define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
 define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
-define("PSTABLEPREFIX", $wpdb->prefix."bwbps_");
+
+define('PSDOCSPATH',PSUPLOADPATH."/bwbps/docs/");
+define('PSDOCSPATH2',PSUPLOADPATH."/bwbps/docs");
+define('PSDOCSURL',PSIMAGESURL."docs/");
+
+define('PSTABLEPREFIX', $wpdb->prefix."bwbps_");
 define('PSTEMPLATESURL',WP_CONTENT_URL."/themes/");
+
+define('BWBPSPLUGINURL',WP_PLUGIN_URL."/photosmash-galleries/");
 
 define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Form</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a> 
 		<br/>");
@@ -64,10 +73,10 @@ if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 //include ('ajax_upload.php');
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 11;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 13;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
-	var $uploadFormCount = 0;
+	var $uploadFormCount;
 	var $manualFormCount = 0;
 	var $loadedGalleries;
 	var $moderateNonceCount = 0;
@@ -79,7 +88,7 @@ class BWB_PhotoSmash{
 	var $psForm;
 	
 	var $shortCoded;
-	var $cfStdFields;
+	var $stdFieldList;
 	var $cfList;
 	
 	var $galleries;
@@ -105,7 +114,7 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadCustomFormOptions(){
-		$this->cfStdFields = $this->getcfStdFields();
+		$this->stdFieldList = $this->getstdFieldList();
 		$this->cfList = $this->getCustomFields();
 	}
 	
@@ -192,14 +201,14 @@ class BWB_PhotoSmash{
 		return $psAdminOptions;
 	}
 	
-	function getcfStdFields(){
+	function getstdFieldList(){
 		
 		$cfVer = get_option('bwbps_custfield_ver');
 		
 		$cfOpts = get_option('bwbps_cf_stdfields');
 		
 		if(!$cfVer || $cfVer < $this->customFormVersion || !$cfOpts || empty($cfOpts)){
-			$cfOpts = $this->getCFDefaultOptions();
+			$cfOpts = $this->getFormsStandardFields();
 			if($cfOpts && !empty($cfOpts)){
 				update_option('bwbps_cf_stdfields',$cfOpts);				
 			} else {
@@ -215,11 +224,13 @@ class BWB_PhotoSmash{
 		return $cfOpts;
 	}
 	
-	function getCFDefaultOptions(){
+	//Custom Forms De
+	function getFormsStandardFields(){
 
 		$ret = array(
 			'image_select',
 			'image_select_2',
+			'video_select',
 			'submit',
 			'caption',
 			'caption2',
@@ -470,14 +481,25 @@ function shortCodeGallery($atts, $content=null){
 			'form' => false,
 			'form_alone' => false,
 			'no_gallery' => false,
+			'gallery_type' => false,
 			'no_form' => false,
 			'gallery' => false,
 			'gal_id' => false,
 			'field' => false,
 			'layout' => false,
-			'thickbox' => false
+			'thickbox' => false,
+			'form_visible' => false,
+			'single_layout' => false
 		),$atts));
-				
+		
+		
+		//A beautiful little shortcode that lets you set a different layout for single Post and Page pages than the one on Main Page, Categories, and Archives
+		if($single_layout){
+			if(is_page() || is_single()){
+				$layout = $single_layout;
+			}
+		}
+		
 		if(!$id && ($gallery || $gal_id)){
 			$id=$gallery;
 			if(!$id){
@@ -495,6 +517,7 @@ function shortCodeGallery($atts, $content=null){
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 				
 		$g['use_thickbox'] = $thickbox;
+		$g['form_visible'] = $form_visible;
 		
 		/* *********************************** */
 		// Shortcode for MANUAL FORM placement //
@@ -538,9 +561,11 @@ function shortCodeGallery($atts, $content=null){
 					|| current_user_can('photosmash_'.$g["gallery_id"]))
 				{
 					$blogname = str_replace('"',"",get_bloginfo("blogname"));
-					$ret = $this->getAddPhotosLink($g, $blogname);
+										
+					$ret = $this->getAddPhotosLink($g, $blogname, $formName);
 					$ret .= $this->getPhotoForm($g,$formName);
 					$this->manualFormCount++;
+					$skipForm = true;
 					
 				} else {
 				
@@ -601,7 +626,7 @@ function shortCodeGallery($atts, $content=null){
 				
 			
 			$this->loadedGalleries[] = $post->ID."-".$g['gallery_id'];
-			$ret = $this->buildGallery($g, $skipForm, $layoutName, $formName );
+			$ret .= $this->buildGallery($g, $skipForm, $layoutName, $formName );
 			$ret .= "
 				<script type='text/javascript'>
 					displayedGalleries += '|".$g['gallery_id']."';
@@ -678,9 +703,10 @@ function getGallery($g){
 		//No Gallery found...Need to create a Record for this Gallery
 			$data['post_id'] = $post->ID;
 			$data['gallery_name'] = $g['gallery_name'] ? $g['gallery_name']  : $post->post_title;
+			$data['gallery_type'] = isset($g['gallery_type']) ? (int)$g['gallery_type'] : 0;
 			$data['caption'] =  $g['caption'] ? $g['caption'] : $psoptions['gallery_caption'];
 			$data['upload_form_caption'] =  $g['upload_form_caption'] ? $g['upload_form_caption'] : $psoptions['upload_form_caption'];
-			$data['contrib_role'] =  $g['contrib_role'] ? $g['contrib_role'] : $psoptions['contrib_role'];
+			$data['contrib_role'] =  isset($g['contrib_role']) ? (int)$g['contrib_role'] : $psoptions['contrib_role'];
 			$data['img_rel'] =  $g['img_rel'] ? $g['img_rel'] : $psoptions['img_rel'];
 			$data['img_class'] =  $g['img_class'] ? $g['img_class'] : $psoptions['img_class'];
 			if($g['img_status'] === 0 || $g['img_status'] == 1){
@@ -688,14 +714,30 @@ function getGallery($g){
 			} else {
 				$data['img_status'] = (int)$psoptions['img_status'];
 			}
-			$data['img_perrow'] = (int)$g['img_perrow'] ? (int)$g['img_perrow'] : (int)$psoptions['img_perrow'];
-			$data['img_perpage'] = (int)$g['img_perpage'] ? (int)$g['img_perpage'] : (int)$psoptions['img_perpage'];
-			$data['thumb_aspect'] = (int)$g['thumb_aspect'] ? (int)$g['thumb_aspect'] : (int)$psoptions['thumb_aspect'];
-			$data['thumb_width'] = (int)$g['thumb_width'] ? (int)$g['thumb_width'] : (int)$psoptions['thumb_width'];
-			$data['thumb_height'] =  $g['thumb_height'] ? (int)$g['thumb_height'] : (int)$psoptions['thumb_height'];
-			$data['show_caption'] =  $g['show_caption'] ? (int)$g['show_caption'] : (int)$psoptions['show_caption'];
-			$data['nofollow_caption'] =  $g['nofollow_caption'] ? (int)$g['nofollow_caption'] : (int)$psoptions['nofollow_caption'];
-			$data['show_imgcaption'] =  $g['show_imgcaption'] ? (int)$g['show_imgcaption'] : (int)$psoptions['show_imgcaption'];
+			$data['img_perrow'] = isset($g['img_perrow']) ? (int)$g['img_perrow'] : (int)$psoptions['img_perrow'];
+			$data['img_perpage'] = isset($g['img_perpage']) ? (int)$g['img_perpage'] : (int)$psoptions['img_perpage'];
+			$data['thumb_aspect'] = isset($g['thumb_aspect']) ? (int)$g['thumb_aspect'] : (int)$psoptions['thumb_aspect'];
+			$data['thumb_width'] = isset($g['thumb_width']) ? (int)$g['thumb_width'] : (int)$psoptions['thumb_width'];
+			$data['thumb_height'] =  isset($g['thumb_height']) ? (int)$g['thumb_height'] : (int)$psoptions['thumb_height'];
+			
+			$data['image_aspect'] = isset($g['image_aspect']) ? (int)$g['image_aspect'] : (int)$psoptions['image_aspect'];
+						
+			$data['image_width'] = isset($g['image_width']) ? (int)$g['image_width'] : (int)$psoptions['image_width'];
+			
+			$data['image_height'] = isset($g['image_height']) ? (int)$g['image_height'] : (int)$psoptions['image_height'];
+			
+			$data['show_caption'] =  isset($g['show_caption']) ? (int)$g['show_caption'] : (int)$psoptions['show_caption'];
+			$data['nofollow_caption'] =  isset($g['nofollow_caption']) ? (int)$g['nofollow_caption'] : (int)$psoptions['nofollow_caption'];
+			$data['show_imgcaption'] =  isset($g['show_imgcaption']) ? (int)$g['show_imgcaption'] : (int)$psoptions['show_imgcaption'];
+			
+			$data['use_customform'] = isset($data['use_customform']) ? (int)$data['use_customform'] : (isset($this->psOptions['use_customform']) ? 1 : 0);
+			
+			$data['use_customfields'] = isset($data['use_customfields']) ? $data['use_customfields'] : (isset($this->psOptions['use_customfields']) ? 1 : 0);
+			
+			$data['custom_formname'] = $data['custom_formname'] ? $data['custom_formname'] : 'default';
+			
+			$data['layout_id'] = isset($data['layout_id']) ? (int)$data['layout_id'] : (int)$this->psOptions['layout_id'];
+			
 			$data['created_date'] = date( 'Y-m-d H:i:s');
 			$data['status'] = 1;
 			
@@ -712,56 +754,135 @@ function getGallery($g){
 }
 
 
-function getAddPhotosLink($g, $blogname){
+function getAddPhotosLink(&$g, $blogname, &$formname){
+	
 	global $post;
-	if($this->psOptions['use_thickbox'] || $g['use_thickbox']){
-		$ret = '<span style="margin-left: 10px;"><a href="TB_inline?height=390&amp;width=545&amp;inlineId=bwbps-formcont" onclick="bwbpsShowPhotoUpload('.$g["gallery_id"].', '.(int)$post->ID.');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
+	
+	$use_tb = (int)$this->psOptions['use_thickbox'];
+	$use_tb = $g['use_thickbox'] == 'false' ? false : $use_tb;
+	$use_tb = $g['use_thickbox'] == 'true' ? true : $use_tb;
+	$use_tb = $g['form_visible'] == 'true' ? false : $use_tb;
+	
+	$g['using_thickbox'] = $use_tb;
+	
+	if( $formname ){
+		//$cf = get_option('bwbps_cf_'.$formName);
+		
+		$g['cf'] = $this->getCustomFormDef($formname);
+				
+		$cf = $g['cf']['form_id'];		
+		//If the custom form is not defined, return the standard form
+		if(!$cf || empty($cf) || !trim($cf)){
+			
+			$formname = "";
+			unset($g['cf']);
+			
+		} else {
+		
+			//Set up Form ID Prefix for Custom Forms...will use this in form element IDs
+			$g['pfx'] = "c" . $g['cf']['form_id'];
+		}
+	}
+		
+	if( $use_tb	)
+	{
+	
+		$ret = '<span style="margin-left: 10px;"><a href="TB_inline?height=390&amp;width=545&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
+	
 	} else {
-		if( !$this->psOptions['uploadform_visible']){
-			$ret = '<span style="margin-left: 10px;"><a href="javascript: void(0);" onclick="bwbpsShowPhotoUploadNoThickbox('.$g["gallery_id"].', '.(int)$post->ID.');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span><div id="bwbpsFormSpace_'.$g['gallery_id'].'" style="display:none;"></div>';
+
+		$form_vis = (int)$this->psOptions['uploadform_visible'];
+		$form_vis = $g['form_visible'] == 'true' ? true : $form_vis;
+		$form_vis = $g['form_visible'] == 'false' ? false : $form_vis;
+		
+		$g['form_isvisible'] = $form_vis;
+			
+		if( !$form_vis )
+		{
+			$ret = '<span style="margin-left: 10px;"><a href="javascript: void(0);" onclick="bwbpsShowPhotoUploadNoThickbox('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload">'.$g['add_text'].'</a></span><div id="bwbpsFormSpace_'.$g['gallery_id'].'" style="display:none;"></div>';
 		}
 	}
 	return $ret;
 }
 
 
+	function getPhotoForm($g, $formName=false){	
+	
+		$frm = $formName ? $formName : 'std';
+		
+		if($this->uploadFormCount[$frm]){ return;}
+		$this->uploadFormCount[$frm]++;
+		
+	
+		if(!isset($this->psForm)){
+			require_once('bwbps-uploadform.php');
+			
+			if(!$this->stdFieldList || !$this->cfList){
+				$this->loadCustomFormOptions();	
+			}
+			
+			$this->psForm = new BWBPS_UploadForm($this->psOptions, $this->cfList);
+		}
+		
+		return $this->psForm->getUploadForm($g, $formName);
+	}
+	
+	/*
+	 *	Get Custom Form Definition - from database
+	 *	@param $formname - retrieves by name
+	 *
+	 */
+	function getCustomFormDef($formname = "", $formid = false){
+		
+		global $wpdb;
+		
+		if($formname){
+			$sql = $wpdb->prepare("SELECT * FROM " . PSFORMSTABLE . " WHERE form_name = %s", $formname);		
+		} else {
+		
+			$sql = $wpdb->prepare("SELECT * FROM " . PSFORMSTABLE . " WHERE form_id = %d", $formid);		
+		
+		}
+		
+		$query = $wpdb->get_row($sql, ARRAY_A);
+		return $query;
+	}
+
 function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 {
 	$blogname = str_replace('"',"",get_bloginfo("blogname"));
 	$admin = current_user_can('level_10');
-	
+		
 	$ret = '<div class="photosmash_gallery">';
+			
+	if($this->moderateNonceCount < 1 && $admin)
+	{
+		$nonce = wp_create_nonce( 'bwbps_moderate_images' );
+				
+		$ret .= 
+			'<form><input type="hidden" id="_moderate_nonce" name="_moderate_nonce" value="'
+			.$nonce.'" /></form>';
+				
+		$this->moderateNonceCount++;
+	}
 		
 	//Get UPLOAD FORM if 'use_manualform' is NOT set
-	if($formName || (!$this->psOptions['use_manualform'] && !$skipForm)){
+	if( ( $formName || !$this->psOptions['use_manualform'] ) && !$skipForm ){
 		if( $g['contrib_role'] == -1 || current_user_can('level_'.$g['contrib_role']) ||
 			current_user_can('upload_to_photosmash') || current_user_can('photosmash_'
 			.$g["gallery_id"])){		
 	
 			//Takes into account whether we're using Thickbox or not
-			$ret .= $this->getAddPhotosLink($g, $blogname);
-		
-			if($this->moderateNonceCount < 1)
-			{
-				$nonce = wp_create_nonce( 'bwbps_moderate_images' );
-				
-				$ret .= 
-					'<input type="hidden" id="_moderate_nonce" name="_moderate_nonce" value="'
-					.$nonce.'" />';
-					
-				$this->moderateNonceCount++;
-			}
-			
-			if($this->uploadFormCount < 1){
-				if($this->psOptions['uploadform_visible']){
-					if(is_page() || is_single()){
-						$ret .= $this->getPhotoForm($g,$formName);
-					}
-				}else{
-					$ret .= $this->getPhotoForm($g, $formName);
+			$ret .= $this->getAddPhotosLink($g, $blogname, $formName);
+									
+			//Get the Upload Form
+			if($this->psOptions['uploadform_visible'] || $g['form_visible'] ){
+				if(is_page() || is_single()){
+					$ret .= $this->getPhotoForm($g,$formName);
 				}
-				$this->uploadFormCount++;
-			}			
+			}else{
+				$ret .= $this->getPhotoForm($g, $formName);
+			}
 		}
 	} //closes out the use_manualform condition
 	
@@ -780,10 +901,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 
 }
 
-function validURL($str)
-{
-	return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $str)) ? FALSE : TRUE;
-}
+	function validURL($str)
+	{
+		return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $str)) ? FALSE : TRUE;
+	}
 
 	function validateURL($url){
 		if (preg_match("/^(http(s?):\\/\\/{1})((\w+\.)+)\w{2,}(\/?)$/i", $url)) {
@@ -793,38 +914,13 @@ function validURL($str)
 		} 
 	}
 	
-function getPhotoForm($g, $formName=false){	
-	if(!isset($this->psForm)){
-		require_once('bwbps-uploadform.php');
-		
-		if(!$this->cfStdFields || !$this->cfList){
-			$this->loadCustomFormOptions();	
-		}
-		
-		$this->psForm = new BWBPS_UploadForm($g, $this->psOptions, $this->cfList);
-	}
-	
-	return $this->psForm->getUploadForm($formName);
-}
-
-	
 	
 	//Add JS libraris
 	function enqueueBWBPS(){		
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-form');
 		wp_enqueue_script('thickbox');
-//		if($this->psOptions['use_thickbox']){
-			
-//		}
-		wp_enqueue_script('jquery-ui-tabs');
 				
-		/*
-		//enqueue jQuery Forms
-		wp_register_script('jquery_forms', WP_PLUGIN_URL . '/photosmash-galleries/js/jquery.form.js', array('jquery'), '2.17');
-		wp_enqueue_script('jquery_forms');
-		*/
-		//enqueue BWB-PS Javascript
 		wp_register_script('bwbps_js', WP_PLUGIN_URL . '/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
 		wp_enqueue_script('bwbps_js');
 		
@@ -871,7 +967,7 @@ function getPhotoForm($g, $formName=false){
 	var bwbpsThumbsURL = "<?php echo PSTHUMBSURL; ?>";
 	var bwbpsBlogURL = "<?php echo PSBLOGURL; ?>";
 	
-	function bwbpsAlternateUploadFunction(data, statusText){
+	function bwbpsAlternateUploadFunction(data, statusText, form_pfx){
 		
 		var ret = false;
 		
@@ -892,10 +988,12 @@ function getPhotoForm($g, $formName=false){
 	</script>
 	<?php
 	}
-	
+
 	//Add Javascript variables to Admin header
 	function injectAdminJS()
 	{
+		wp_enqueue_script( 'jquery-ui-tabs' );
+		
 		?>
 		<script type="text/javascript">
 		//<![CDATA[
@@ -1147,6 +1245,7 @@ $bwbPS = new BWB_PhotoSmash();
 add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));
 
 //Inject Admin Javascript & Styles
+
 add_action('admin_print_scripts', array(&$bwbPS, 'injectAdminJS') );
 add_action('admin_print_styles', array(&$bwbPS, 'injectAdminStyles') );
 

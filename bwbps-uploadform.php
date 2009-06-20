@@ -2,30 +2,30 @@
 
 class BWBPS_UploadForm{
 	var $options;
-	var $cfStdFields;
+	var $stdFieldList;
 	
 	var $cfields;
 	var $field_list;
-	var $galOptions;
 	var $tabindex =0;
 	var $cfList;
 	
-	function BWBPS_UploadForm($g, $options, $cfList){
-		$this->galOptions = $g;
+	function BWBPS_UploadForm($options, $cfList){
 		$this->options = $options;
 		$this->cfList = $cfList;
 		
-		$this->cfStdFields = get_option('bwbps_cf_stdfields');
+		$this->stdFieldList = get_option('bwbps_cf_stdfields');
 	}
 	
-	function getUploadForm($formName=false){
+	function getUploadForm($g, $formName=false){
 		
 		if($formName || $this->options['use_customform']){
+					
+			$ret = $this->getCustomForm($g,$formName);
 			
-			$ret = $this->getCustomForm($this->galOptions,$formName);
 		} else {
 			
-			$ret = $this->getStandardForm($this->galOptions);
+			$g['pfx'] = "";
+			$ret = $this->getStandardForm($g);
 		}
 		
 		return $ret;
@@ -34,14 +34,25 @@ class BWBPS_UploadForm{
 	function getFormHeader($g, $formName){
 		global $post;
 		$nonce = wp_create_nonce( 'bwb_upload_photos' );
+				
+		$use_tb = (int)$this->psOptions['use_thickbox'];
+		$use_tb = $g['use_thickbox'] == 'false' ? false : $use_tb;
+		$use_tb = $g['use_thickbox'] == 'true' ? true : $use_tb;
+		$use_tb = $g['form_visible'] == 'true' ? false : $use_tb;
 		
-		if($this->options['use_thickbox'] || $g['use_thickbox']){
-			$ret = '<div id="bwbps-formcont" class="thickbox" style="display:none;">';
+		
+		
+		if( $g['using_thickbox'] )
+		{
+		
+			$ret = '<div id="' . $g["pfx"] . 'bwbps-formcont" class="thickbox" style="display:none;">';
+		
 		} else {
-			if($this->options['uploadform_visible'] && !$g['use_thickbox']){
-				$ret = '<div id="bwbps-formcont">';	//Do not hide...visible is set to ON
+					
+			if( $g['form_isvisible'] ){
+				$ret = '<div id="' . $g["pfx"] . 'bwbps-formcont">';	//Do not hide...visible is set to ON
 			} else {
-				$ret = '<div id="bwbps-formcont" style="display:none;">';
+				$ret = '<div id="' . $g["pfx"] . 'bwbps-formcont" style="display:none;">';
 			}
 		}	
 			$ret .= '
@@ -50,13 +61,14 @@ class BWBPS_UploadForm{
 				#ui-datepicker-div{z-index: 199;}
 				-->
 		</style>
-        <form id="bwbps_uploadform" name="bwbps_uploadform" method="post" action="" style="margin:0px;">
-        	<input type="hidden" id="_ajax_nonce" name="_ajax_nonce" value="'.$nonce.'" />
-        	<input type="hidden" id="bwbps_formname" name="bwbps_formname" value="'.$formName.'" />
+        <form id="' . $g["pfx"] . 'bwbps_uploadform" name="bwbps_uploadform" method="post" action="" style="margin:0px;" class="bwbps_uploadform">
+        	<input type="hidden" name="_ajax_nonce" value="'.$nonce.'" />
+        	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formname" name="bwbps_formname" value="'.$formName.'" />
+        	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formtype" name="bwbps_formtype" value="'.(int)$g['gallery_type'].'" />
         	<input type="hidden" name="MAX_FILE_SIZE" value="'.$g["max_file_size"].'" />
-        	<input type="hidden" name="bwbps_imgcaption" id="bwbps_imgcaption" value="" />
-        	<input type="hidden" name="gallery_id" id="bwbps_galleryid" value="'.$g["gallery_id"].'" />
-        	<input type="hidden" name="bwbps_post_id" id="bwbps_post_id" value="'.(int)$post->ID.'" />
+        	<input type="hidden" name="bwbps_imgcaption" id="' . $g["pfx"] . 'bwbps_imgcaption" value="" />
+        	<input type="hidden" name="gallery_id" id="' . $g["pfx"] . 'bwbps_galleryid" value="'.(int)$g["gallery_id"].'" />
+        	<input type="hidden" name="bwbps_post_id" id="' . $g["pfx"] . 'bwbps_post_id" value="'.(int)$post->ID.'" />
         	';
 
 		
@@ -70,46 +82,46 @@ class BWBPS_UploadForm{
 	 * @param $g: Gallery settings
 	 */
 	function getStandardForm($g){
-			
 		$retForm = $this->getFormHeader($g, "ps-standard");
 		$retForm .= '
         	<table class="ps-form-table">
-			<tr><th>'.$g["upload_form_caption"].'<br/>(Max. allowed size: 400k)';
+			<tr><th>'.$g["upload_form_caption"].'<br/>';
 			
 				
 		$retForm .= '
 			</th>
 				<td align="left">
-					<input type="radio" id="bwbpsSelectFileRadio" name="bwbps_fileorurl" onclick="bwbpsToggleFileOrURL(false);" value="0" /> Browse for file 
-					&nbsp; <input type="radio" id="bwbpsSelectURLRadio" name="bwbps_fileorurl" onclick="bwbpsToggleFileOrURL(true);" value="1" /> Enter URL<br/> 
-					<input type="file" name="bwbps_uploadfile" id="bwbps_uploadfile" />
-					<span id="bwbps_uploadurlspan" style="display:none;"><input type="text" name="bwbps_uploadurl" id="bwbps_uploadurl" /> Image URL</span>
+				';
+		
+		//Get the Upload Fields
+		$retForm .= $this->getStdFormUploadFields($g);
+				
+		$retForm .= '
 				</td>
 			</tr>
 			<tr><th>Caption:</th>
 				<td align="left">
-					<input tabindex="2" type="text" name="bwbps_imgcaptionInput" id="bwbps_imgcaptionInput" />';
+					<input tabindex="50" type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset"/>';
 	
 		$retForm .='
 				</td>
 			</tr>';
 		
-		$this->tabindex = 2;
+		$this->tabindex = 50;
 		
 		//Alternate Caption URL
 		if($this->options['use_urlfield']){
 		
 			$retForm .= '<tr><th>Caption URL:</th>
 				<td align="left">
-					<input tabindex="3" type="text" name="bwbps_url" id="bwbps_url" /> Ex: http://www.mysite.com';
+					<input tabindex="50" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" /> Ex: http://www.mysite.com';
 			
 			$retForm .='
 				</td>
 				</tr>';
-			$this->tabindex=3;
+			
 		}
 		
-		$this->tabindex++;
 		//Add Custom Fields if use_advanced flag is set	
 		if($this->options['use_customfields']){
 			$retForm .= $this->getCustomFieldsForm($g);
@@ -117,21 +129,11 @@ class BWBPS_UploadForm{
 		
 		//Add Submit Button
 		$retForm .= '	
-	        <tr><th><input type="submit" class="ps-submit" value="Submit" id="bwbps_submitBtn" name="bwbps_submitBtn" /> ';
+	        <tr><th><input type="submit" class="ps-submit" value="Submit" id="' . $g["pfx"] . 'bwbps_submitBtn" name="bwbps_submitBtn" /> ';
 		
 		//Figure out if need to Add Done Button
-		if(!$this->options['use_thickbox'] && !$g['use_thickbox']){
-			if(!$this->options['uploadform_visible']  && !$g['use_thickbox']){
-				
-				if($this->options['use_donelink']){
-					$retForm .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.$g["gallery_id"].');return false;">Done</a>';
-				} else {			
-					$retForm .= '
-	        		<input type="button" class="ps-submit" value="Done" onclick="bwbpsHideUploadForm('.$g['gallery_id'].');return false;" />
-	        		';
-	        	}
-	        }
-		} else {
+		if( $g['using_thickbox'] ){
+		
 			if($this->options['use_donelink']){
 					$retForm .= '<a href="javascript: void(0);" onclick="tb_remove();return false;">Done</a>';
 			} else {
@@ -139,17 +141,35 @@ class BWBPS_UploadForm{
 	        		<input type="button" class="ps-submit" value="Done" onclick="tb_remove();return false;" />
 	        	';
 	        }
+		
+		} else {
+			
+			if( !$g['form_isvisible'] ){
+				
+				if($this->options['use_donelink']){
+				
+					$retForm .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.(int)$g["gallery_id"].',\'' . $g["pfx"] . '\');return false;">Done</a>';
+					
+				} else {			
+				
+					$retForm .= '
+	        		<input type="button" class="ps-submit" value="Done" onclick="bwbpsHideUploadForm('.(int)$g['gallery_id'].',\'' . $g["pfx"] . '\');return false;" />
+	        		';
+	        		
+	        	}
+	        	
+	        }	
 		}
 		
 		$retForm .= '</th>';	//Closes out TH for Submit/Done
 		
 			$retForm .= '	
 	        	<td>
-	        		<img id="bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />	
+	        		<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />	
 	        	</td>
 	        </tr>
-	        <tr><th><span id="bwbps_message"></span></th>
-	        <td><span id="bwbps_result"></span></td>
+	        <tr><th><span id="' . $g["pfx"] . 'bwbps_message"></span></th>
+	        <td><span id="' . $g["pfx"] . 'bwbps_result"></span></td>
 	        </tr>
 	        </table>
         </form>
@@ -165,7 +185,7 @@ class BWBPS_UploadForm{
 	 * Returns the Custom upload form 
 	 * @param $g: Gallery settings
 	 */
-	function getCustomForm($g, $formName=""){
+	function getCustomForm(&$g, $formName=""){
 		
 		if($formName){
 			//Use Supplied Custom Form name to override all others
@@ -180,39 +200,43 @@ class BWBPS_UploadForm{
 			}
 		}
 		
-		$cf = get_option('bwbps_cf_'.$formName);
-		
-		//If the custom form is not defined, return the standard form
-		if(!$cf || empty($cf) || !trim($cf)){
-			
-			//last resort...using standard form;
-			return $this->getStandardForm($g);
-		}
+		$cf = $g['cf']['form'];
 		
 		$nonce = wp_create_nonce( 'bwb_upload_photos' );
 		
 		//Get the form header and hidden fields
 		$retForm = $this->getFormHeader($g, $formName);
-
+		
+		
 		//Replace Std Fld tags in Custom Form with HTML
-		if(is_array($this->cfStdFields)){
-			foreach($this->cfStdFields as $fname){
-				$replace = false;
-				$atts = false;
+		if(is_array($this->stdFieldList)){
+			foreach($this->stdFieldList as $fname){
+				unset($replace);
+				unset($atts);
 				
 				// Some fields can have attributes...special method for getting Attributes
-				if($fname == 'submit' || $fname == 'done'){
+				if($fname == 'submit' || $fname == 'done' 
+					|| $fname == 'image_select' || $fname == 'video_select' || $fname == 'file_select'
+					|| $fname == 'image_select_2' )
+				{
+				
 					$atts = $this->getFieldsWithAtts($cf, $fname);
+					
 					$fname = "[".$fname."]";
-					$replace = $this->getStdFieldHTML($fname, $g, $atts);
+					
+					$replace = $this->getStandardField($fname, $g, $atts);
+					
 					$fname = $atts['bwbps_match'];
+					
 				} else {
+				
 					$fname = "[".$fname."]";
+					
 					if(!strpos($cf, $fname) === false){		
-						$replace = $this->getStdFieldHTML($fname, $g);
+					
+						$replace = $this->getStandardField($fname, $g);
 					}	
 				}
-				
 				if($replace){
 					$cf = str_replace($fname, $replace, $cf);
 				}	
@@ -229,7 +253,7 @@ class BWBPS_UploadForm{
 				foreach($cfs as $fld){
 					$fldname = "[".$fld->field_name."]";
 					if(!strpos($cf, $fldname) === false){
-						$ret = $this->getField($fld, 50);
+						$ret = $this->getField($g, $fld, 50);
 						$cf = str_replace($fldname, $ret, $cf);
 					}
 				}
@@ -245,33 +269,72 @@ class BWBPS_UploadForm{
 		return $retForm;
 	}
 	
-	function getStdFieldHTML($fld, $g, $atts=false){
+	/*
+	 *	Get Custom Form Definition - from database
+	 *	@param $formname - retrieves by name
+	 */
+	function getCustomFormDef($formname = "", $formid = false)
+	{
+		global $wpdb;
+		
+		if($formname){
+			$sql = $wpdb->prepare("SELECT * FROM " . PSFORMSTABLE . " WHERE form_name = %s", $formname);		
+		} else {
+			$sql = $wpdb->prepare("SELECT * FROM " . PSFORMSTABLE . " WHERE form_id = %d", $formid);
+		}
+		
+		$query = $wpdb->get_row($sql, ARRAY_A);
+		return $query;
+		
+	}
+		
+	/**
+	 * Get the HTML for a Standard Field
+	 * 
+	 * Returns the Custom upload form 
+	 * @param $fld - the field name that is being replaced; $g: Gallery settings;  $atts - an array of attributes that were captured from Custom Form field codes
+	*/
+	function getStandardField($fld, $g, $atts=false){
+	
 		switch ($fld) {
+		
+			//$atts should be an array that includes $atts['gallery_type'] = (int)
+			//This is what will determine what types of upload fields are returneds.
+			//If not filled, then defaults to standard image upload selections
+			//This drives the upload behavior on the server as well.
 			case '[image_select]' :
-				$ret = '<input type="radio" id="bwbpsSelectFileRadio" name="bwbps_fileorurl" onclick="bwbpsToggleFileOrURL(false,\'\');" value="0" /> Browse for file 
-					&nbsp; <input type="radio" id="bwbpsSelectURLRadio" name="bwbps_fileorurl" onclick="bwbpsToggleFileOrURL(true,\'\');" value="1" /> Enter URL<br/> 
-					<input type="file" name="bwbps_uploadfile" id="bwbps_uploadfile" />
-					<span id="bwbps_uploadurlspan" style="display:none;"><input type="text" name="bwbps_uploadurl" id="bwbps_uploadurl" /> Image URL</span>';
+				$ret = $this->getCFFileUploadFields($g, $atts);									
 				break;
 				
 			case '[image_select_2]' :
-				$ret = '<input type="radio" id="bwbpsSelectFileRadio2" name="bwbps_fileorurl2" onclick="bwbpsToggleFileOrURL(false, \'2\');" value="0" /> Browse for file 
-					&nbsp; <input type="radio" id="bwbpsSelectURLRadio2" name="bwbps_fileorurl2" onclick="bwbpsToggleFileOrURL(true,\'2\');" value="1" /> Enter URL<br/> 
-					<input type="file" name="bwbps_uploadfile2" id="bwbps_uploadfile2" />
-					<span id="bwbps_uploadurlspan2" style="display:none;"><input type="text" name="bwbps_uploadurl2" id="bwbps_uploadurl2" /> Image URL</span>';
+				$atts['gallery_type'] = 20;
+				$ret = $this->getCFFileUploadFields($g, $atts);
+				break;
+			
+			case '[video_select]' :
+				$ret = $this->getCFFileUploadFields($g, $atts);
+				break;
+				
+			case '[file_select]' :
+				$ret = $this->getCFFileUploadFields($g, $atts);
+				break;
+				
+			case '[doc_select]' :
+				$atts['gallery_type'] = 7;
+				$ret = $this->getCFFileUploadFields($g, $atts);
 				break;
 
 			case '[allow_no_image]' :
-				$ret = "<input type='hidden' name='bwbps_allownoimg' id='bwbps_allownoimg' value='1' />";
+				$ret = "<input type='hidden' name='bwbps_allownoimg' value='1' />";
 				break;
 			
 			case "[submit]":
-				if(is_array($atts) && array_key_exists('name', $atts)){
+				if($atts && is_array($atts) && array_key_exists('name', $atts)){
 					$submitname = $atts['name'];
 				} else {
 					$submitname = 'Submit';
 				}
-				$ret = '<input type="submit" class="ps-submit" value="'.$submitname.'" id="bwbps_submitBtn" name="bwbps_submitBtn" />';
+				$ret = '<input type="submit" class="ps-submit" value="'.$submitname.'" id="' . $g["pfx"] . 'bwbps_submitBtn" name="bwbps_submitBtn" />';
 				break;
 				
 			case "[done]":
@@ -285,10 +348,10 @@ class BWBPS_UploadForm{
 				if(!$this->options['use_thickbox'] && !$g['use_thickbox']){
 				
 					if($this->options['use_donelink']){
-						$ret .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.$g["gallery_id"].');return false;">'.$donename.'</a>';
+						$ret .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.(int)$g["gallery_id"].',\'' . $g["pfx"] . '\');return false;">'.$donename.'</a>';
 					} else {			
 						$ret .= '
-		        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="bwbpsHideUploadForm('.$g['gallery_id'].');return false;" />
+		        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="bwbpsHideUploadForm('.(int)$g['gallery_id'].',\'' . $g["pfx"] . '\');return false;" />
 	        		';
 		        	}
 
@@ -305,11 +368,11 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[caption]":
-				$ret = '<input type="text" name="bwbps_imgcaptionInput" id="bwbps_imgcaptionInput" />';
+				$ret = '<input type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" />';
 				break;
 			
 			case "[caption2]":
-				$ret = '<input type="text" name="bwbps_imgcaption2" id="bwbps_imgcaptionInput" />';
+				$ret = '<input type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" />';
 				break;
 			
 			case "[user_url]":
@@ -332,20 +395,20 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[thumbnail]":
-				$ret = '<span id="bwbps_result"></span>';
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_result"></span>';
 				break;
 				
 			case "[thumbnail_2]":
-				$ret = '<span id="bwbps_result2"></span>';
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2"></span>';
 				break;
 			case "[url]":
-				$ret = '<input tabindex="3" type="text" name="bwbps_url" id="bwbps_url" />';
+				$ret = '<input tabindex="3" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" />';
 				break;
 			case "[loading]":
-				$ret = '<img id="bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />';
+				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />';
 				break;
 			case "[message]" :
-				$ret = '<span id="bwbps_message"></span>';
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_message"></span>';
 				break;
 				
 			case "[category_name]" :
@@ -370,6 +433,288 @@ class BWBPS_UploadForm{
 	
 	}
 	
+	/**
+	 * Get File Upload Fields for STANDARD FORM
+	 * 
+	 *  uses the gallery type to determine which fields are needed
+	 * @param 
+	 */
+	function getStdFormUploadFields($g){
+		$atts = $this->getUploadTypes($g['gallery_type']);
+		$ret = $this->getFileUploadFields($g, $atts);
+		return $ret;
+	}
+	
+	/**
+	 * Get File Upload Fields for STANDARD FORM
+	 * 
+	 *  uses the gallery type to determine which fields are needed
+	 * @param 
+	 */
+	 //todo
+	function getCFFileUploadFields($g, $attributes){
+		
+		if(!is_array($attributes)){ $attributes = array(''); }
+		$utypes = $this->getUploadTypes($attributes['gallery_type']);
+		
+		$atts = array_merge($attributes, $utypes);
+		
+		$ret = $this->getFileUploadFields($g, $atts);
+		return $ret;
+	
+	}
+	
+	/**
+	 * Get and array of File Upload Fields Types from a gallery type
+	 * 
+	 *  uses the gallery type to determine which fields are needed
+	 * @param  int $gallery_type - what type of gallery??
+	 */
+	function getUploadTypes($gallery_type){
+	
+		$atts['gallery_type'] = (int)$gallery_type;
+		
+		switch ((int)$gallery_type) {
+			case 0 : // Photo Gallery
+				$atts['images'] = 'true';
+				$atts['displayed'] = 'images';
+				break;
+				
+			case 1 : // Image Uploads + Direct Linking to Images
+				$atts['images'] = 'true';
+				$atts['directlink'] = 'true';
+				$atts['displayed'] = 'images';
+				break;
+			
+			case 2 : // Direct Linking to Images only
+				$atts['directlink'] = 'true';
+				$atts['displayed'] = 'directlink';
+				break;
+				
+			case 3 : // YouTube gallery
+				$atts['youtube'] = 'true';
+				$atts['displayed'] = 'youtube';
+				break;
+			
+			case 4 : // All Video options
+				$atts['youtube'] = 'true';
+				$atts['videofile'] = 'true';
+				$atts['displayed'] = 'youtube';
+				break;
+				
+			case 5 : // Video Uploads only
+				$atts['videofile'] = 'true';
+				$atts['displayed'] = 'videofile';
+				break;
+			
+			case 6 : // Mixed - YouTube + Images
+				$atts['images'] = 'true';
+				$atts['displayed'] = 'images';
+				$atts['youtube'] = 'true';
+				break;
+				
+			
+			case 20 : // Secondart Image Select...only available in custom form/upload scripts
+				$atts['images2'] = 'true';
+				$atts['displayed'] = 'images2';
+				break;
+			
+			default :	// PhotoGallery
+				$atts['images'] = 'true';
+				$atts['displayed'] = 'images';
+				break;
+		}
+		return $atts;
+	}
+	
+		
+	/**
+	 * Get the Upload Fields (and radio selectors)
+	 * 
+	 * @param $atts - an array of attributes that are either included in custom form [video_select atts] or [file_select atts] tag
+	 *		or calculated from Gallery Type in Standard Forms.
+	 */
+	function getFileUploadFields($g, $atts){
+		
+		if(!is_array($atts)){ $atts[] = ''; }
+		
+		// Get Upload fields for this Gallery Type
+		
+		//Standard Images
+		if($atts['images'] == 'true'){
+			$hide = ($atts['displayed'] == 'images') ? "" : ' style="display: none;"';
+			$img_radio_msg = $atts['file_radio'] ? $atts['file_radio'] : 'Browse for file';
+			$url_radio = $atts['url_radio'] ? $atts['url_radio'] : 'Enter URL';
+			$msg = $atts['url_msg'] ? $atts['url_msg'] : 'Import Image by URL';
+			
+			if(!$hide){
+			
+				$checked = ' checked="checked" ';
+				$radioclass = ' init_radio';
+			
+			}
+			
+			$checked = $hide ? "" :  ' checked="checked" ';
+			
+				//For Field Browse box
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioFile" name="bwbps_filetype" '.$checked
+				. 'onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_file\',\'\',\'' . $g["pfx"] . '\');" class="'.$radioclass.'" value="0" /> '
+				. $img_radio_msg;
+				
+			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_file" class="' . $g["pfx"] . 'bwbps_uploadspans" '
+				.$hide.'><input type="file" name="bwbps_uploadfile"'
+				. 'id="' . $g["pfx"] . 'bwbps_uploadfile" class="bwbps_reset" /></span>';
+				
+				//For Image URL
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioURL" '
+				. 'name="bwbps_filetype" onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_url\',\'\',\'' . $g["pfx"] . '\');" value="1" /> '
+				. $url_radio;
+					
+					//Input box for image URL...hidden by default
+			$inputs[] = '<span id="' . $g["pfx"] . 'bwbps_up_url" class="' . $g["pfx"] . 'bwbps_uploadspans" '
+				. 'style="display:none;"><input type="text" name="bwbps_uploadurl" '
+				. 'id="' . $g["pfx"] . 'bwbps_uploadurl" class="bwbps_reset" /> '.$msg.'</span>';
+							
+		}
+
+		//Direct Linking Images
+		if($atts['directlink'] == 'true'){
+			$hide = $atts['displayed'] == 'directlink' ? "" : ' style="display: none;"';
+			$radio_msg = $atts['directlink_radio'] ? $atts['directlink_radio'] : 'Link to Image';
+			$msg = $atts['directlink_msg'] ? $atts['directlink_msg'] : 'URL of Image to link to';
+			
+			if(!$hide){
+			
+				$checked = ' checked="checked" ';
+				$radioclass = ' init_radio';
+			
+			}
+
+			
+			//DL Radio button selector
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioDL" name="bwbps_filetype" '.$checked
+					.'onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_dl\',\'\',\'' . $g["pfx"] . '\');" class="'.$radioclass.'" value="2" /> '.$radio_msg;
+			
+			//DL Input box
+			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_dl" class="' . $g["pfx"] . 'bwbps_uploadspans" '
+				.$hide.'><input type="text" name="bwbps_uploaddl"'
+				.' id="' . $g["pfx"] . 'bwbps_uploaddl" class="bwbps_reset" /> '.$msg.'</span>';
+			
+		}
+		
+		//Secondary Image Select
+		if($atts['images2'] == 'true'){
+			$hide = ($atts['displayed'] == 'images2') ? "" : ' style="display: none;"';
+			$img_radio_msg = $atts['file_radio'] ? $atts['file_radio'] : 'Browse for file';
+			$url_radio = $atts['url_radio'] ? $atts['url_radio'] : 'Enter URL';
+			$msg = $atts['url_msg'] ? $atts['url_msg'] : 'Import Image by URL';
+			
+			if(!$hide){
+			
+				$checked = ' checked="checked" ';
+				$radioclass = ' init_radio';
+			
+			}
+			
+			//For Field Browse box
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioFile2" name="bwbps_filetype2" '.$checked
+				. 'onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_file2\', \'2\',\'' . $g["pfx"] . '\');" class="'.$radioclass.'" value="5" /> '
+				. $img_radio_msg;
+				
+			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_file2" class="' . $g["pfx"] . 'bwbps_uploadspans2" '
+				.$hide.'><input type="file" name="bwbps_uploadfile2"'
+				. 'id="' . $g["pfx"] . 'bwbps_uploadfile2" class="bwbps_reset" /></span>';
+				
+			//For Image URL
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioURL2" '
+				. 'name="bwbps_filetype2" onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_url2\', \'2\',\'' . $g["pfx"] . '\');" value="6" /> '
+				. $url_radio;
+					
+					//Input box for image URL...hidden by default
+			$inputs[] = '<span id="' . $g["pfx"] . 'bwbps_up_url2" class="' . $g["pfx"] . 'bwbps_uploadspans2" '
+				. 'style="display:none;"><input type="text" name="bwbps_uploadurl2" '
+				. 'id="' . $g["pfx"] . 'bwbps_uploadurl2" class="bwbps_reset" /> '.$msg.'</span>';
+							
+		}
+		
+		
+		//YouTube
+		if($atts['youtube'] == 'true'){
+		
+			$hide = $atts['displayed'] == 'youtube' ? "" : ' style="display: none;"';
+			$radio_msg = $atts['youtube_radio'] ? $atts['youtube_radio'] : 'YouTube URL';
+			$msg = $atts['youtube_msg'] ? $atts['youtube_msg'] : 'Paste YouTube video URL';
+			
+			if(!$hide){
+			
+				$checked = ' checked="checked" ';
+				$radioclass = ' init_radio';
+			
+			}
+			
+			//YT Radio button selector
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioYT" name="bwbps_filetype" '.$checked
+					.'onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_yt\',\'\',\'' . $g["pfx"] . '\');" class="'.$radioclass.'" value="3" /> '.$radio_msg;
+			
+			//YT Input box
+			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_yt" class="' . $g["pfx"] . 'bwbps_uploadspans" '
+				.$hide.'><input type="text" name="bwbps_uploadyt"'
+				.' id="' . $g["pfx"] . 'bwbps_uploadyt" class="bwbps_reset" /> '.$msg.'</span>';
+			
+		}
+					
+		
+		//Video File upload
+		if($atts['videofile'] == 'true'){
+		
+			$hide = $atts['displayed'] == 'videofile' ? "" : ' style="display: none;"';
+			$msg = $atts['video_msg'] ? $atts['video_msg'] : 'Select video file';
+			$radio_msg = $atts['video_radio'] ? $atts['video_radio'] : 'Browse for video';
+			
+			if(!$hide){
+			
+				$checked = ' checked="checked" ';
+				$radioclass = ' init_radio';
+			
+			}
+			
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioVid" '.$checked
+					.'name="bwbps_filetype" onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_vid\',\'\',\'' . $g["pfx"] . '\');" class="'.$radioclass.'" value="4" /> '
+					.$radio_msg ;
+					
+			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_vid" class="' . $g["pfx"] . 'bwbps_uploadspans" '
+				. $hide.'><input type="file" name="bwbps_uploadvid" id="' . $g["pfx"] . 'bwbps_uploadvid" class="bwbps_reset" /> '
+				. '</span>';
+
+		}
+		
+		//General Documents - file type = 7
+		if($atts['doc'] == 'true'){
+			$hide = ($atts['displayed'] == 'doc') ? "" : ' style="display: none;"';
+			$radio_msg = $atts['doc_radio'] ? $atts['doc_radio'] : 'Browse for document';
+			
+			if(!$hide){
+			
+				$checked = ' checked="checked" ';
+				$radioclass = ' init_radio';
+			
+			}
+			
+			//For Field Browse box
+			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioDoc" name="bwbps_filetype" '.$checked
+				. 'onclick="bwbpsSwitchUploadField(\'' . $g["pfx"] . 'bwbps_up_doc\',\'\',\'' . $g["pfx"] . '\');" class="'.$radioclass.'" value="0" /> '
+				. $img_radio_msg;
+				
+			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_doc" class="' . $g["pfx"] . 'bwbps_uploadspans" '
+				.$hide.'><input type="file" name="bwbps_uploaddoc"'
+				. 'id="' . $g["pfx"] . 'bwbps_uploaddoc" class="bwbps_reset" /></span>';
+		}
+				
+		$ret = implode("&nbsp;", $radios) . '<br/>' . implode("",$inputs);
+				
+		return $ret;
+	}
+	
 	function getCustomFieldsForm($g){
 		$cfs = $this->cfList;
 		if(!$cfs){return '';}
@@ -387,9 +732,9 @@ class BWBPS_UploadForm{
 			//Label
 			$ret = "<tr><th scope='row' class='form-field'>".$fld->label."</th>";
 			//Field
-			$ret .= "<td align='left'>".$this->getField($fld)."</td></tr>";
+			$ret .= "<td align='left'>".$this->getField($g, $fld, 50)."</td></tr>";
 		} else {
-			$ret = "<tr><th></th><td>".$this->getField($fld)."</td></tr>";
+			$ret = "<tr><th></th><td>".$this->getField($g, $fld, 50)."</td></tr>";
 		}
 		return $ret;
 	}
@@ -397,7 +742,7 @@ class BWBPS_UploadForm{
 	
 	
 	//BUILD THE FORM FIELD
-	function getField($f, $tabindex=false){
+	function getField($g, $f, $tabindex=false){
 		
 		$val = $f->default_val;
 		
@@ -405,7 +750,7 @@ class BWBPS_UploadForm{
 		$name = "bwbps_".$blank.$f->field_name;
 		
 		//Doesn't work for multi value items...build their IDs ad hoc
-		$id = " id='bwbps_".$f->field_name."'";
+		$id = " id='".$g['pfx']."bwbps_".$f->field_name."'";
 		
 		$f->name = $name;
 		
@@ -431,12 +776,12 @@ class BWBPS_UploadForm{
 					$ret = "<input tabindex='".$tabindex."' ".$id
 						." ".$ele_name
 						." value='".htmlentities($val, ENT_QUOTES)
-						."' type='text' maxlength='255' />";
+						."' type='text' maxlength='255' class='bwbps_reset' />";
 				break;
 			case 1 :	//textarea
 				$ret = "<textarea tabindex='".$tabindex."' ".$id
 					." ".$ele_name
-					." rows=4 cols=40 />"
+					." rows=4 cols=40 class='bwbps_reset' />"
 					.htmlentities($val, ENT_QUOTES)."</textarea>
 					";
 				break;
@@ -465,7 +810,7 @@ class BWBPS_UploadForm{
 				$opts['type'] = "type='radio'";	// input type (e.g. type='text')
 				$opts['style'] = "style='width:auto;'";
 				$opts['name'] = "name='"."bwbps_".$blank.$f->field_name."'";  //form field name
-							//radioboxes need name defined
+						//radioboxes need name defined
 				
 				$ret = "<div>".$this->getFieldValueOptions($f->field_id, $opts)."</div>";
 				
@@ -487,22 +832,23 @@ class BWBPS_UploadForm{
 				if($val){
 					$val = date('m/d/Y',strtotime ($val));
 				}
-				$ret = "<input tabindex='".$tabindex."' ".$id
-					." ".$ele_name
-					." value='".htmlentities($val, ENT_QUOTES)
-					."' type='text' style='width:130px;' />";
+				$ret = "<input tabindex='".$tabindex."' " . $id
+					. " ".$ele_name
+					. " value='".htmlentities($val, ENT_QUOTES)
+					. "' type='text' style='width:130px;' class='bwbps_reset' />";
 					
 				$ret .= "
 				<script type='text/javascript'>
 					
 					jQuery(document).ready(function(){
 
-							jQuery('#bwbps_".$f->field_name."').datepicker();
+							jQuery('#" . $g['pfx'] . "bwbps_".$f->field_name."').datepicker();
 
 					});
 				</script>
 				";
 				break;
+				
 			case 6 :	//hidden
 				$ret = "<input  ".$id
 					." ".$ele_name
@@ -538,21 +884,6 @@ class BWBPS_UploadForm{
 				
 				
 				$ret = wp_dropdown_categories($opts);
-				
-				/*
-				
-				$ret = "<select tabindex='".$tabindex."' ".$id
-					." ".$ele_name.">";
-				$ret .= "<option value=''>--Select--</option>";
-				
-				$opts['opentag'] = "option";	//opening tag
-				$opts['closetag'] = "</option>";	//closing tag
-				$opts['selected'] = 'selected';  // indicator for selected value
-				$opts['defval'] = $val;
-				$opts['type'] = "";	// input type (e.g. type='text')
-				$opts['name'] = "";  //form field name (radioboxes need this)
-				
-				*/		
 				break;
 			
 				
