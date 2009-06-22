@@ -89,11 +89,15 @@ class BWBPS_SaveCustomFields{
 				$val = stripslashes($val);
 			}
 			
+			
+			// FILTER USER INPUT
 			//Use wp_kses to strip tags...based on field level setting
 			$i = (int)$field->html_filter;
 			
 			if($i < 3){
 				$val = wp_kses($val,$tags[$i]);
+			} else {
+				$val = wp_kses($val,$tags[2]);
 			}
 		}
 		//Format for date:
@@ -140,9 +144,14 @@ class BWBPS_SaveCustomFields{
 				), 
 			'ol' => array(
 				'id' => array(),
-				'class' => array()
+				'class' => array(),
+				'style' => array()
 				),
-			'li' => array(), 
+			'li' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+				), 
 			'abbr' => array(
 				'title' => array()
 				),
@@ -152,9 +161,17 @@ class BWBPS_SaveCustomFields{
 			'code' => array(),
 			'em' => array(),
 			'strong' => array(),
-			'b' => array()
+			'b' => array(),
+			'div' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+			),
+			'p' => array(),
+			'br' => array(),
+			'hr' => array()
+			
 		);
 		return $tags;
-	}
-	
+	}	
 }

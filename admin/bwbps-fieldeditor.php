@@ -516,7 +516,6 @@ class BWBPS_FieldEditor{
 		<input type="radio" name="bwbps_html_filter" value="0" <?php if($fieldOptions['html_filter'] == 0) echo 'checked'; ?>>Filter all html<br/>
 		<input type="radio" name="bwbps_html_filter" value="1" <?php if($fieldOptions['html_filter'] == 1) echo 'checked'; ?>>Allow formatting tags (b, strong, em, code)<br/>
 		<input type="radio" name="bwbps_html_filter" value="2" <?php if($fieldOptions['html_filter'] == 2) echo 'checked'; ?>>Allow formatting & links & lists<br/>
-		<input type="radio" name="bwbps_html_filter" value="3" <?php if($fieldOptions['html_filter'] == 3) echo 'checked'; ?>>No filtering<br/>
 		<span>Uses WordPress HTML filtering functionality (wp_kses)</span>
 	</td>
 </tr>

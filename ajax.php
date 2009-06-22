@@ -49,12 +49,51 @@ class BWBPS_AJAX{
 			case 'mass_updategalleries' :
 				$this->massUpdateGalleries();
 				break;
+				
+			case 'userdelete' :
+				$this->userDeleteImage(false);
+				break;
+			
+			case 'userdeletewithpost' :
+				$this->userDeleteImage(true);
+				break;
+				
+			case 'setgalleryid' :
+				$this->setGalleryID();
+				break;
 		
 			default :
 				break;
 		}
 	}
+	
+	function setGalleryID(){
+		global $wpdb;
+		
+		if(current_user_can('level_10') && isset($_POST['gallery_id'])){
+		
+			$data['gallery_id'] = (int)$_POST['gallery_id'];
+			if(!$data['gallery_id']){
+				$json['message'] = "Invalid Gallery ID.";
+				$json['action'] = 'failed';
+			} else {
+				$json['image_id'] = (int)$_POST['image_id'];
+				$where['image_id'] = $json['image_id'];
+				$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
+				
+				$json['message'] = "";				
+				$json['action'] = 'galleryset';
+			}
+			
+			$json['deleted'] = '';
+		
+			echo json_encode($json);
+			return;
+		}else {$json['status'] = -1;}
+		echo json_encode($json);
 
+	}
+	
 	function saveCaption(){
 		global $wpdb;
 		if(current_user_can('level_1')){
@@ -109,6 +148,67 @@ class BWBPS_AJAX{
 				
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
 					.' WHERE image_id = %d', $imgid));
+					
+				if( !$filename ){ $filename = ""; } else { $filename = " - ".$filename; }
+				$json['action'] = 'deleted'.$filename;
+				$json['deleted'] = 'deleted';
+				
+			} else {$json['status'] = 0;}
+		} else {
+			$json['status'] = 0;
+		}
+		
+		echo json_encode($json);
+		return;
+	}
+	
+	/*
+	 *	User Delete Image
+	 *	- Allows user to delete his/her own image if it's not approved
+	 *	- Provides some checking that the admin doesn't need
+	 *	- Also allows you to delete a post that might have been created for that  
+	 *	  image in a Custom Upload script
+	*/
+	function userDeleteImage($deletePost){
+		global $wpdb, $user_ID;
+				
+		if(current_user_can('level_0')){
+			$imgid = (int)$_POST['image_id'];
+			$json['image_id'] = $imgid;
+			if($imgid){
+				$row = $wpdb->get_row($wpdb->prepare("SELECT file_name, post_id FROM "
+					.PSIMAGESTABLE. " WHERE image_id = %d AND user_id = %d AND status < 0 ", $imgid, $user_ID));
+					
+				if(!$row){
+					//Bomb out if no row returned
+					$json['status'] = 0;
+					return;
+				}
+				if($row->file_name){
+					unlink(PSIMAGESPATH.$filename);
+					unlink(PSTHUMBSPATH.$filename);
+				}
+			
+				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
+					PSIMAGESTABLE.' WHERE image_id = %d AND user_ID = %d AND status < 0 ', $imgid, $user_ID ));
+				if($json['status']){
+					$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
+						.' WHERE image_id = %d', $imgid));
+						
+					//Delete the related post if directed to
+					if( $deletePost && $row->post_id ){
+						
+						//Check to make sure this person is deleting only his/her own post
+						//Also check to make sure that this post is "Pending"
+						$postAuthor = $wpdb->get_var($wpdb->prepare("SELECT post_author FROM "
+					. $wpdb->posts . " WHERE ID = %d AND post_author = %d AND post_status = 'pending' ", $row->post_id, $user_ID));
+					
+						if($postAuthor){
+							wp_delete_post((int)$row->post_id);
+						}
+					
+					}
+				}
 					
 				if( !$filename ){ $filename = ""; } else { $filename = " - ".$filename; }
 				$json['action'] = 'deleted'.$filename;

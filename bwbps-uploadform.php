@@ -18,14 +18,14 @@ class BWBPS_UploadForm{
 	
 	function getUploadForm($g, $formName=false){
 		
-		if($formName || $this->options['use_customform']){
-					
+		if(( $formName || $this->options['use_customform'] ) && $g['cf']['form'] ){
+			
 			$ret = $this->getCustomForm($g,$formName);
 			
 		} else {
-			
-			$g['pfx'] = "";
-			$ret = $this->getStandardForm($g);
+
+			//$g['pfx'] = "";
+			$ret = $this->getStandardForm($g, $formName);
 		}
 		
 		return $ret;
@@ -62,7 +62,7 @@ class BWBPS_UploadForm{
 				-->
 		</style>
         <form id="' . $g["pfx"] . 'bwbps_uploadform" name="bwbps_uploadform" method="post" action="" style="margin:0px;" class="bwbps_uploadform">
-        	<input type="hidden" name="_ajax_nonce" value="'.$nonce.'" />
+        	<input type="hidden" id="' . $g["pfx"] . 'bwbps_ajax_nonce" name="_ajax_nonce" value="'.$nonce.'" />
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formname" name="bwbps_formname" value="'.$formName.'" />
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formtype" name="bwbps_formtype" value="'.(int)$g['gallery_type'].'" />
         	<input type="hidden" name="MAX_FILE_SIZE" value="'.$g["max_file_size"].'" />
@@ -81,8 +81,9 @@ class BWBPS_UploadForm{
 	 * Returns the standard upload form + any custom fields if set for use
 	 * @param $g: Gallery settings
 	 */
-	function getStandardForm($g){
-		$retForm = $this->getFormHeader($g, "ps-standard");
+	function getStandardForm($g, $formname){
+		if(!trim($formname)){ $formname = "ps-standard"; }
+		$retForm = $this->getFormHeader($g, $formname);
 		$retForm .= '
         	<table class="ps-form-table">
 			<tr><th>'.$g["upload_form_caption"].'<br/>';
@@ -186,6 +187,7 @@ class BWBPS_UploadForm{
 	 * @param $g: Gallery settings
 	 */
 	function getCustomForm(&$g, $formName=""){
+	
 		
 		if($formName){
 			//Use Supplied Custom Form name to override all others

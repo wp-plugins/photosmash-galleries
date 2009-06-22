@@ -8,6 +8,7 @@ class BWBPS_Admin{
 	var $msgclass = "updated fade";
 	
 	var $gallery_id;
+	var $galleryQuery;
 	
 	//Constructor
 	function BWBPS_Admin(){
@@ -1023,7 +1024,7 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>Thumbs link to Post on Main Page</th>
 				<td>
-					<input type="checkbox" name="ps_imglinks_postpages_only" <?php if($psOptions['imglinks_postpages_only'] == 1) echo 'checked'; ?>> <a href='javascript: void(0);' class='psmass_update' id='save_ps_imglinks_postpages_only' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Select this to link thumbs to Posts on Main/Archive/Category pages.  Use linkages from above on Post pages.
+					<input type="checkbox" name="ps_imglinks_postpages_only" <?php if($psOptions['imglinks_postpages_only'] == 1) echo 'checked'; ?>> Select this to link thumbs to Posts on Main/Archive/Category pages.  Use linkages from above on Post pages.
 				</td>
 			
 			</tr>
@@ -1400,22 +1401,41 @@ if($psOptions['use_customform']){ ?>
 					break;
 			}
 			
+			$galupdate = $this->getGalleryDDL($image->gallery_id, "skipnew"
+				, "g".$image->image_id, "bwbps_set_imggal", 15, false);
+			
+			$galupdate .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Set new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk_multiple.png' alt='Set gallery' /></a>";
+			
+			if($image->post_id){
+				$galupdate .= "<br/>
+				<span>Edit related post: <a href='post.php?action=edit&post="
+				.$image->post_id."' title='Edit related post.'>". $image->post_id . "</a>";
+			}
+			
 			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a>";
+			
+			//Image HTML
 			
 			$psTable .= "<td class='psgal_".$image->gallery_id." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='".PSIMAGESURL.$image->file_name."' rel='"
 				.$g['img_rel']."' title='".str_replace("'","",$image->image_caption)
 				."'><span id='psimage_".$image->image_id."'><img src='".PSTHUMBSURL
 				.$image->image_name."' ".$modClass." /></span></a></td>";
-				
+			
+			
+			// IMAGE DETAILS
+			
 			$psCaption = htmlentities($image->image_caption, ENT_QUOTES);
+			
 			if($i==0){$border = " style='border-right: 1px solid #999;'";} else {$border = '';}
-			$psTable .= "<td $border><span>Caption:<br/><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption"
+			
+			$psTable .= "<td $border><span>Select Gallery:</span><br/>" .$galupdate. "<br/>				
+				<span>Caption:<br/><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption"
 					. $image->image_id."' value='$psCaption' style='width: 165px !important;' /><br/>URL:<br/><input type='text' id='imgurl_" . $image->image_id."' name='imgurl"
 					. $image->image_id."' value='".$image->url."' style='width: 165px !important;' /></span>";
 
 			$psTable .= $modMenu;
 			
-			// IMAGE DETAILS
+			
 			
 			if($image->file_url){
 				$fileURLData = "<br/>File data: " . $image->file_url;
@@ -1505,11 +1525,13 @@ if($psOptions['use_customform']){ ?>
 	}
 	
 	//Returns markup for a DropDown List of existing Galleries
-	function getGalleryDDL($selectedGallery = 0, $newtag= "New")
+	function getGalleryDDL($selectedGallery = 0, $newtag = "New", $idPfx = "", $ddlName= "gal_gallery_id", $length = 0, $showImgCount = true)
  	{
  		global $wpdb;
  		 
-		$ret = "<option value='0'>&lt;$newtag&gt;</option>";
+ 		if($newtag <> 'skipnew' ){
+			$ret = "<option value='0'>&lt;$newtag&gt;</option>";
+		}
 		
 		$sql = "SELECT ".PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
 		.$wpdb->prefix."posts.post_title, COUNT("
@@ -1525,7 +1547,17 @@ if($psOptions['use_customform']){ ?>
 		.$wpdb->prefix."posts.ID, ".PSGALLERIESTABLE.".post_id";
 		
 		
-		$query = $wpdb->get_results($sql);
+		if(!$this->galleryQuery){
+		
+			$query = $wpdb->get_results($sql);
+		
+			$this->galleryQuery = $query;
+		
+		} else {
+		
+			$query = $this->galleryQuery;
+			
+		}
 				
 		if(is_array($query)){
 		foreach($query as $row){
@@ -1535,10 +1567,19 @@ if($psOptions['use_customform']){ ?>
 				$title = $row->post_title;
 			}
 			
-			$ret .= "<option value='".$row->gallery_id."' ".$sel.">ID: ".$row->gallery_id."-".$title." (".$row->img_cnt." imgs)</option>";
+			if($length){
+				$title = substr($title,0,$length). "&#8230;";
+			}
+			
+			if($showImgCount){
+				$title .=  " (".$row->img_cnt." imgs)";
+			}
+			
+			$ret .= "<option value='".$row->gallery_id."' ".$sel.">ID: ".$row->gallery_id."-".$title."</option>";
 		}
 		}
-		$ret ="<select id='bwbpsGalleryDDL' name='gal_gallery_id'>".$ret."</select>";
+		$ret ="<select id='" . $idPfx . "bwbpsGalleryDDL' name='$ddlName'>".$ret."</select>";		
+		
 		return $ret;
 	}
 	

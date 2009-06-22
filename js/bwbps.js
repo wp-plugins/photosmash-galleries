@@ -47,10 +47,16 @@ $j(document).ready(function() {
 
 function bwbpsAjaxLoadImage(myForm){
 
+	//Get the Form Prefix...this is needed due to multiple forms being possible
 	var form_pfx = myForm.id;
 	form_pfx = form_pfx.replace("bwbps_uploadform", "");
-
-
+	
+	//Show the loader image
+	$j("#" + form_pfx + "bwbps_loading").show();
+	$j("#" + form_pfx + "bwbps_loading").ajaxComplete(function(){
+		$j(this).hide();
+	});
+	
 	var options = { 
 		beforeSubmit:  function(){bwbpsVerifyUploadRequest(form_pfx);},
 		success: function(data, statusText){ bwbpsUploadSuccess(data, statusText, form_pfx); } , 
@@ -59,6 +65,7 @@ function bwbpsAjaxLoadImage(myForm){
 		dataType:  'json'
 	}; 
 
+	//Submit that baby
 	$j(myForm).ajaxSubmit(options); 
 	return false;
 }
@@ -160,7 +167,6 @@ function bwbpsVerifyFileFilled(form_pfx){
 // Callback for successful Ajax image upload
 // Displays the image or error messages
 function bwbpsUploadSuccess(data, statusText, form_pfx)  {
-	
 	//This Alternate function is set in PhotoSmash Settings Advanced page
 	//If the alternate function returns false...continue with standard function
 	if(bwbpsAlternateUploadFunction(data, statusText, form_pfx)){ return false;}
@@ -187,6 +193,8 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			$j('#' + form_pfx + 'bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
 			$j('#' + form_pfx + 'bwbps_message').html('<b>Upload successful!</b>'); 
 			
+			
+			//Reset form fields
 			$j('.bwbps_reset').val('');
 			
 			//Add the New Images box for custom Layouts			
@@ -414,6 +422,71 @@ function bwbpsModerateSuccess(data, imgid)  {
 		}
 }
 
+
+
+
+//Set a new Gallery from within Photo Manager
+function bwbpsSetNewGallery(image_id){
+	var imgid = parseInt('' + image_id);
+	var myaction = false;
+	
+	myaction = "setgalleryid";
+	
+	if(!confirm('Do you want to set a new Gallery for this image (id: ' + imgid + ')?')){ return false;}
+	
+	var _moderate_nonce = $j("#_moderate_nonce").val();
+	
+	var gal_id = $j("#g" + imgid + "bwbpsGalleryDDL").val();
+	
+	gal_id = parseInt('' + gal_id);
+	
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	$j.ajax({
+		type: 'POST',
+		url: bwbpsAjaxURL,
+		data: { 'action': myaction,
+       'image_id': imgid,
+       '_ajax_nonce' : _moderate_nonce,
+       'gallery_id' : gal_id
+       },
+		dataType: 'json',
+		success: function(data) {
+			bwbpsSetGallerySuccess(data, imgid);
+		}
+	});
+	return false;
+}
+
+function bwbpsSetGallerySuccess(data, imgid){
+		try{
+			$j('#ps_savemsg').hide();
+		}catch(err){}
+		if(data == -1){
+				alert('Failed due to security: invalid nonce');
+			//The nonce	 check failed
+			$j('#psmod_' + imgid).html("fail: security"); 
+			alert("Update failed due to security");
+			return false;
+	 	}
+	 	
+		if( data.status == 'false' || data.status == 0){
+			//Failed for some reason
+			alert("Failed..." + data.message);
+			$j('#psmod_' + imgid).html("update: fail"); 
+			return false;
+		} else {
+			//this one passed
+			alert("Gallery set. " + data.message);
+			return false;
+		}
+
+}
+
+
+//Mass Updating of Galleries
 function bwbpsAddPSSettingsMassUpdateActions(){
 	$j('.psmass_update').click( function()
 		{

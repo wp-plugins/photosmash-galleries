@@ -411,7 +411,9 @@ class BWBPS_Uploader{
 			$json = $this->stripSlashes($_POST['bwbps_imgcaption']);   
 		}
 		
-		return $json;
+		$tags = $this->getFilterArrays();
+		
+		return wp_kses($json, $tags[0]);
 	}
 	
 	function stripSlashes($val){
@@ -584,10 +586,10 @@ class BWBPS_Uploader{
 		global $current_user;
 		global $wpdb;
 		
-		$data['user_id'] = $current_user->ID;
-		$data['gallery_id'] = $this->json['gallery_id'];
+		$data['user_id'] = (int)$current_user->ID;
+		$data['gallery_id'] = (int)$this->json['gallery_id'];
 		$data['comment_id'] = -1;
-		$data['post_id'] = $this->json['post_id'];
+		$data['post_id'] = (int)$this->json['post_id'];
 		
 		$data['image_name'] = $this->json['img'.$this->imageNumber];
 		$data['image_caption'] = $this->json['image_caption'];
@@ -626,6 +628,7 @@ class BWBPS_Uploader{
 		$image_id = $wpdb->insert_id;
 		
 		$data['image_id'] = $image_id;
+		$this->json['image_id'] = $image_id;
 		
 		//Expose the Image Data to external classes
 		$this->imageData = $data;
@@ -752,15 +755,21 @@ class BWBPS_Uploader{
 	
 	function echoJSON(){
 		
-		$this->json['image_caption'] = $this->cleanJS($this->json['image_caption']);
+		$this->json = $this->cleanJS($this->json);
 		
 		//Echoes back the JSON Array for an Ajax Call
 		echo json_encode($this->json);
 	}
 	
-	function cleanJS($str){
-		return $str;
-		//return str_replace('"','\"',$str);
+	function cleanJS($arr){
+	
+		if(is_array($arr)){
+			foreach($arr as $key => $val){
+				$newarr[$key] = strip_tags($val);
+			}
+		}
+		
+		return $newarr;
 	}
 
 	function destroyHandle(){
@@ -775,6 +784,68 @@ class BWBPS_Uploader{
 			chmod(PSIMAGESPATH2, 0755);
 			chmod(PSTHUMBSPATH2, 0755);
 		}
+	}
+	
+	function getFilterArrays(){
+	
+		//Allowable tag arrays for use with wp_kses
+	 	//Allow formatting
+	 	 $tags[0] = array('b' => array());
+		 $tags[1] = array(
+			'abbr' => array(
+				'title' => array()
+				),
+			'acronym' => array(
+				'title' => array()
+				),
+			'code' => array(),
+			'em' => array(),
+			'strong' => array(),
+			'b' => array()
+		);
+		
+		//Allow links and lists + formatting
+	  	$tags[2] = array(
+			'a' => array( 
+				'href' => array(), 
+				'title' => array(), 
+				'rel' => array()
+				),
+			'ul' => array(
+				'id' => array(),
+				'class' => array()
+				), 
+			'ol' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+				),
+			'li' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+				), 
+			'abbr' => array(
+				'title' => array()
+				),
+			'acronym' => array(
+				'title' => array()
+				),
+			'code' => array(),
+			'em' => array(),
+			'strong' => array(),
+			'b' => array(),
+			'div' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+			),
+			'p' => array(),
+			'br' => array(),
+			'hr' => array()
+			
+		);
+		return $tags;
 	}
 } 
 

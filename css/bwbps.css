@@ -118,15 +118,15 @@ div.bwbps_pagination{
 	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;
 	text-decoration: none;
 	font-size: 9px !important;
-	line-height: 11px;
-	padding: 1px 0px;
+	line-height: 12px;
+	padding: 2px 2px;
 	cursor: pointer;
 	border-width: 1px;
 	border-style: solid;
-	-moz-border-radius: 2px;
-	-khtml-border-radius: 2px;
-	-webkit-border-radius: 2px;
-	border-radius: 2px;
+	-moz-border-radius: 8px;
+	-khtml-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	border-radius: 8px;
 	-moz-box-sizing: content-box;
 	-webkit-box-sizing: content-box;
 	-khtml-box-sizing: content-box;
@@ -274,7 +274,7 @@ div.bwbps_pagination{
 
 .ui-tabs-selected a,
 .ui-tabs-selected a:hover {
-	color:#21759B !important;
+	color:#fff !important;
 }
 
 .ui-tabs-nav .ui-tabs-selected a,
