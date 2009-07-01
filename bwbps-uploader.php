@@ -379,7 +379,8 @@ class BWBPS_Uploader{
 		//$this->json['image_caption'] = htmlentities($this->json['image_caption'], ENT_QUOTES);
 		
 		//Get URL
-		$bwbps_url = trim($this->cleanJS(stripslashes($_POST['bwbps_url'])));
+		$bwbps_url = esc_url_raw($_POST['bwbps_url']);
+				
 		if($this->psValidateURL($bwbps_url)){
 			$this->json['url'] = $bwbps_url;
 		} else {
@@ -688,6 +689,9 @@ class BWBPS_Uploader{
 			
 			$d['img_rel'] = $data['img_rel'] ? $data['img_rel'] : $this->psOptions['img_rel'];
 			
+			$d['add_text'] = $data['add_text'] ? $data['add_text'] : 
+				( $this->psOptions['add_text'] ? $this->psOptions['add_text'] : "Add Photos" );
+			
 			$d['upload_form_caption'] = $data['upload_form_caption'] ? $data['upload_form_caption'] : $this->psOptions['upload_form_caption'];
 			
 			$d['img_class'] = $data['img_class'] ? $data['img_class'] : $this->psOptions['img_class'];
@@ -708,7 +712,7 @@ class BWBPS_Uploader{
 			
 			$d['use_customfields'] = isset($data['use_customfields']) ? $data['use_customfields'] : (isset($this->psOptions['use_customfields']) ? 1 : 0);
 			
-			$d['custom_formname'] = $data['custom_formname'] ? $data['custom_formname'] : 'default';
+			$d['custom_formid'] = $data['custom_formid'] ? (int)$data['custom_formid'] : (int)$this->psOptions['custom_formid'];
 			
 			$d['layout_id'] = isset($data['layout_id']) ? (int)$data['layout_id'] : (int)$this->psOptions['layout_id'];
 						

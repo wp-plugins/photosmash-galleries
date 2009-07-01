@@ -3,6 +3,7 @@
 class BWBPS_UploadForm{
 	var $options;
 	var $stdFieldList;
+	var $attFields;
 	
 	var $cfields;
 	var $field_list;
@@ -14,6 +15,18 @@ class BWBPS_UploadForm{
 		$this->cfList = $cfList;
 		
 		$this->stdFieldList = get_option('bwbps_cf_stdfields');
+		$this->attFields = $this->getFieldsWithAtts();
+	}
+	
+	// These fields can have attributes in the shortcodes
+	function getFieldsWithAtts(){
+		return array('submit'
+			, 'image_select'
+			, 'image_select_2'
+			, 'file_select'
+			, 'video_select'
+			, 'youtube_select'
+			);
 	}
 	
 	function getUploadForm($g, $formName=false){
@@ -194,8 +207,8 @@ class BWBPS_UploadForm{
 			$customFormSpecified = true;
 		}else{
 			//Use Gallery specified Custom Form as next in line
-			if($g['custom_formname']){
-				$formName = trim($g['custom_formname']);
+			if($g['cf']['form_name']){
+				$formName = trim($g['cf']['form_name']);
 			} else {
 				//Use the 'default' custom form as next to last resort
 				$formName = 'default';
@@ -216,32 +229,30 @@ class BWBPS_UploadForm{
 				unset($replace);
 				unset($atts);
 				
-				// Some fields can have attributes...special method for getting Attributes
-				if($fname == 'submit' || $fname == 'done' 
-					|| $fname == 'image_select' || $fname == 'video_select' || $fname == 'file_select'
-					|| $fname == 'image_select_2' )
-				{
+				//Check to see if the field name is in the form at all
+				if(!strpos($cf, $fname) === false){
 				
-					$atts = $this->getFieldsWithAtts($cf, $fname);
+					// Some fields can have attributes...special method for getting Attributes
+					if(in_array($fname, $this->attFields)){
+						
+						$atts = $this->getFieldAtts($cf, $fname);		
+						$fname = "[".$fname."]";
+						
+						//Get the new value for the replacement
+						$replace = $this->getStandardField($fname, $g, $atts);
+						//We need to replace the whole thing found by the regex
+						$fname = $atts['bwbps_match'];
+					} else {
 					
-					$fname = "[".$fname."]";
-					
-					$replace = $this->getStandardField($fname, $g, $atts);
-					
-					$fname = $atts['bwbps_match'];
-					
-				} else {
-				
-					$fname = "[".$fname."]";
-					
-					if(!strpos($cf, $fname) === false){		
-					
+						$fname = "[".$fname."]";
 						$replace = $this->getStandardField($fname, $g);
-					}	
-				}
-				if($replace){
+						
+					}
+					
+					
 					$cf = str_replace($fname, $replace, $cf);
-				}	
+									
+				}
 			}
 		}
 		
@@ -578,9 +589,12 @@ class BWBPS_UploadForm{
 				. 'id="' . $g["pfx"] . 'bwbps_uploadurl" class="bwbps_reset" /> '.$msg.'</span>';
 							
 		}
-
+		
+		/* DO NOT ENABLE DIRECT LINKING YET...too many security issues */
 		//Direct Linking Images
 		if($atts['directlink'] == 'true'){
+		
+			$radioclass = "";
 			$hide = $atts['displayed'] == 'directlink' ? "" : ' style="display: none;"';
 			$radio_msg = $atts['directlink_radio'] ? $atts['directlink_radio'] : 'Link to Image';
 			$msg = $atts['directlink_msg'] ? $atts['directlink_msg'] : 'URL of Image to link to';
@@ -606,6 +620,8 @@ class BWBPS_UploadForm{
 		
 		//Secondary Image Select
 		if($atts['images2'] == 'true'){
+		
+			$radioclass = "";
 			$hide = ($atts['displayed'] == 'images2') ? "" : ' style="display: none;"';
 			$img_radio_msg = $atts['file_radio'] ? $atts['file_radio'] : 'Browse for file';
 			$url_radio = $atts['url_radio'] ? $atts['url_radio'] : 'Enter URL';
@@ -643,6 +659,7 @@ class BWBPS_UploadForm{
 		//YouTube
 		if($atts['youtube'] == 'true'){
 		
+			$radioclass = "";
 			$hide = $atts['displayed'] == 'youtube' ? "" : ' style="display: none;"';
 			$radio_msg = $atts['youtube_radio'] ? $atts['youtube_radio'] : 'YouTube URL';
 			$msg = $atts['youtube_msg'] ? $atts['youtube_msg'] : 'Paste YouTube video URL';
@@ -668,7 +685,8 @@ class BWBPS_UploadForm{
 		
 		//Video File upload
 		if($atts['videofile'] == 'true'){
-		
+			
+			$radioclass = "";
 			$hide = $atts['displayed'] == 'videofile' ? "" : ' style="display: none;"';
 			$msg = $atts['video_msg'] ? $atts['video_msg'] : 'Select video file';
 			$radio_msg = $atts['video_radio'] ? $atts['video_radio'] : 'Browse for video';
@@ -692,6 +710,8 @@ class BWBPS_UploadForm{
 		
 		//General Documents - file type = 7
 		if($atts['doc'] == 'true'){
+			
+			$radioclass = "";
 			$hide = ($atts['displayed'] == 'doc') ? "" : ' style="display: none;"';
 			$radio_msg = $atts['doc_radio'] ? $atts['doc_radio'] : 'Browse for document';
 			
@@ -1009,7 +1029,7 @@ class BWBPS_UploadForm{
 	}
 	
 	
-	function getFieldsWithAtts($content, $fieldname){
+	function getFieldAtts($content, $fieldname){
 				
 		$pattern = '\[('.$fieldname.')\b(.*?)(?:(\/))?\](?:(.+?)\[\/\1\])?';
 		

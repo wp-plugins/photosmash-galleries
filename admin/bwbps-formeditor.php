@@ -238,7 +238,8 @@ class BWBPS_FormEditor{
 					<td>
 						<input type='text' name='bwbps_formname' size='30' value='<?php
 							echo htmlentities($cf['form_name'], ENT_QUOTES);
-						?>' />
+						?>' /><br />
+						(Form name must be alpha-numeric or underscore -- no spaces)
 					</td>
 				</tr>
 				</table>

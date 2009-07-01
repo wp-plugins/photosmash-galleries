@@ -217,12 +217,12 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption]</li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[full_caption] - <span style='font-size: 9px;'>caption displayed with rules set in Gallery Settings</span></li>
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[contributor] - <span style='font-size: 9px;'>displays image contributor's name</span></li>
-				
+										
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[user_name] - <span style='font-size: 9px;'>same as contributor</span></li>
 												
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[user_url] - <span style='font-size: 9px;'>displays URL from User's Profile</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[user_link] - <span style='font-size: 9px;'>displays User Name as link from Profile</span></li>
 
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[url] - <span style='font-size: 9px;'>alternate user supplied URL</span></li>
 												
@@ -231,8 +231,12 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail] - <span style='font-size: 9px;'>same as thumb</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[file_name] - <span style='font-size: 9px;'>image's file name</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_id] - <span style='font-size: 9px;'>image id in database</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_url] - <span style='font-size: 9px;'>Post's permalink (not linkified)</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_id] - <span style='font-size: 9px;'>Post's ID</span></li>						
 						
 						<?php echo $customfieldlist;?>
 					</ul>

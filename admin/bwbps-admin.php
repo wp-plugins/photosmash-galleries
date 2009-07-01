@@ -56,14 +56,14 @@ class BWBPS_Admin{
 			
 		} else {
 		
-			$sql = "SELECT * FROM ".PSFORMSTABLE." LIMIT 1";
+			$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
 		
 			$ret = $wpdb->get_row($sql);
 		
 			//if(!$ret){return false;}
 		
 			//Add newest field here to be checked against database
-			$cols = array('form_id');
+			$cols = array('custom_formid');
 		
 			foreach($wpdb->get_col_info('name') as $name){
 				$colname[] = $name;
@@ -146,7 +146,7 @@ class BWBPS_Admin{
 				'layout_id' => -1,
 				'caption_targetnew' => 0,
 				'img_targetnew' => 0,
-				'custom_formname' => 'default',
+				'custom_formid' => 0,
 				'use_donelink' => 0,
 				'css_file' => '',
 				'exclude_default_css' => 0,
@@ -238,7 +238,7 @@ class BWBPS_Admin{
 			
 			$ps['use_advanced'] = isset($_POST['ps_use_advanced']) ? 1 : 0;
 			$ps['use_urlfield'] = isset($_POST['ps_use_urlfield']) ? 1 : 0;
-			$ps['use_customform'] = isset($_POST['ps_use_customform']) ? 1 : 0;
+			$ps['custom_formid'] = (int)$_POST['ps_custom_formid'];
 			$ps['use_customfields'] = isset($_POST['ps_use_customfields']) ? 1 : 0;
 			$ps['use_thickbox'] = isset($_POST['ps_use_thickbox']) ? 1 : 0;
 			$ps['caption_targetnew'] = isset($_POST['ps_caption_targetnew']) ? 1 : 0;
@@ -319,6 +319,7 @@ class BWBPS_Admin{
 			$d['image_height'] = (int)$_POST['gal_image_height'];
 			
 			$d['img_rel'] = $_POST['gal_img_rel'];
+			$d['add_text'] = attribute_escape($_POST['gal_add_text']);
 			$d['upload_form_caption'] = $_POST['gal_upload_form_caption'];
 			$d['img_class'] = $_POST['gal_img_class'];
 			$d['show_imgcaption'] = (int)$_POST['gal_show_imgcaption'];
@@ -328,8 +329,7 @@ class BWBPS_Admin{
 			
 			$d['use_customform'] = isset($_POST['gal_use_customform']) ? 1 : 0;
 			
-			$d['custom_formname'] = trim($_POST['gal_custom_formname']);
-			if(!$d['custom_formname']){$d['custom_formname'] = 'default';}
+			$d['custom_formid'] = (int)$_POST['gal_custom_formid'];
 			$d['use_customfields'] = isset($_POST['gal_use_customfields']) ? 1 : 0;
 			$d['layout_id'] = (int)$_POST['gal_layout_id'];
 			
@@ -410,7 +410,12 @@ class BWBPS_Admin{
 <table class="form-table">
 <tr>
 <th style='width: 92px; '>Select gallery:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
-<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" /> <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
+<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" /> 
+<?php
+/*
+<input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
+*/
+?>
 </td></tr>
 </table>
 </form>
@@ -550,6 +555,12 @@ if($psOptions['use_advanced'] ==1){
 				</td>
 			</tr>
 			<tr>
+				<th>Text for Add Photo Link:</th>
+				<td>
+					<input type='text' name="gal_add_text" value='<?php echo $galOptions['add_text'];?>'/>
+				</td>
+			</tr>
+			<tr>
 				<th>Upload form caption:</th>
 				<td>
 					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
@@ -614,7 +625,7 @@ if($psOptions['use_advanced'] ==1){
 			</tr>
 			<tr>
 				<th>Custom form name:</th>
-				<td><?php echo $this->getCFDDL($galOptions['custom_formname']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
+				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
 			</tr>
 
 <?php 
@@ -861,7 +872,7 @@ if($psOptions['use_advanced'] ==1){
 			</tr>
 			<tr>
 				<th>Custom form name:</th>
-				<td><?php echo $this->getCFDDL($galOptions['custom_formname']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
+				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
 			</tr>
 
 <?php 
@@ -1153,19 +1164,21 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			<tr>
-				<th>Use Custom Form:</th>
+				<th>Default Form for new Galleries:</th>
 				<td>
-					<input type="checkbox" name="ps_use_customform" <?php if($psOptions['use_customform'] == 1) echo 'checked'; ?>> Use your own custom form.  See custom form below
+					<?php 
+						echo $this->getCFDDL($psOptions['custom_formid'], "ps_custom_formid");
+					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_custom_formid' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default upload form.  See custom form below
 				</td>
 			</tr>
 			<tr>
-				<th>Use Custom Fields:</th>
+				<th>Show Custom Fields in Default Form:</th>
 				<td>
 					<input type="checkbox" name="ps_use_customfields" <?php if($psOptions['use_customfields'] == 1) echo 'checked'; ?>> Use custom fields you define. See custom fields below
 				</td>
 			</tr>
 			<tr>
-				<th>Default Custom Layout:</th>
+				<th>Default Layout:</th>
 				<td>
 					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true);
 					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default layout for displaying images
@@ -1619,28 +1632,40 @@ if($psOptions['use_customform']){ ?>
 	}
 	
 	//Get DDL of Custom Forms
-	function getCFDDL($selectedCF){
 		
-		$cfList = get_option('bwbps_customformlist');
+	function getCFDDL($selected_id, $ele_name='gal_custom_formid' ){		
+		
+		$ret = "<option value='default'>&lt;default&gt;</option>";
+		
+		$cfList = $this->getCustomFormsList();
 		
 		if(is_array($cfList)){
 			foreach($cfList as $row){
-				if($selectedCF == $row){
+				if($selected_id == $row['form_id']){
 					$sel = "selected='selected'";
-					
+					if($selectedCF){
+						$bNoInput = true;
+					}	
 				}else{$sel = "";}
 			
-				$ret .= "<option value='".$row."' ".$sel.">".$row."</option>";
+				$ret .= "<option value='".$row['form_id']."' ".$sel.">".$row['form_name']."</option>";
 			}
-		} else {
-			$ret = "<option value='default'>&lt;default&gt;</option>";
 		}
-		$ret ="<select id='bwbpsCFDDL' name='gal_custom_formname' >".$ret."</select>";
+		
+		$ret ="<select id='bwbpsCFDDL' name='$ele_name' >".$ret."</select>";
 		
 		return $ret;
+
 	
 	}
 	
+	
+	function getCustomFormsList(){
+		global $wpdb;
+		
+		$query = $wpdb->get_results("SELECT form_id, form_name FROM " . PSFORMSTABLE, ARRAY_A);
+		return $query;
+	}
 	
 	function calcUserName($loginname, $nicename = false, $displayname = false){
 		if($displayname) return $displayname;

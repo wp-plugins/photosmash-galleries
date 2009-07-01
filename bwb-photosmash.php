@@ -70,6 +70,35 @@ if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 	define( 'SAFE_MODE', ini_get('safe_mode') );
 }
 
+
+//Move up to WP 2.8+
+//Using new url sanitizing function
+if( ! function_exists('esc_url_raw') ){
+
+	function esc_url_raw($url){
+		
+		if( function_exists('sanitize_url') ){
+			return sanitize_url($url);
+		} else {
+			return false;
+		}
+	
+	}
+}
+
+if( ! function_exists('esc_url') ){
+
+	function esc_url($url){
+		
+		if( function_exists('clean_url') ){
+			return clean_url($url);
+		} else {
+			return false;
+		}
+	
+	}
+}
+
 //include ('ajax_upload.php');
 class BWB_PhotoSmash{
 
@@ -170,7 +199,7 @@ class BWB_PhotoSmash{
 				'layout_id' => -1,
 				'caption_targetnew' => 0,
 				'img_targetnew' => 0,
-				'custom_formname' => 'default',
+				'custom_formid' => 0,
 				'use_donelink' => 0,
 				'css_file' => '',
 				'exclude_default_css' => 0,
@@ -469,6 +498,10 @@ function shortCodeGallery($atts, $content=null){
 		
 		$this->checkEmailAlerts();
 		
+		if(!is_array($atts)){
+			$atts = array();
+		}
+		
 		if(!$atts['id'] && $atts[0])
 		{
 			$maybeid = str_replace("=", "", trim($atts[0]));
@@ -485,6 +518,7 @@ function shortCodeGallery($atts, $content=null){
 			'no_form' => false,
 			'gallery' => false,
 			'gal_id' => false,
+			'image_id' => false,
 			'field' => false,
 			'layout' => false,
 			'thickbox' => false,
@@ -664,11 +698,13 @@ function getGallery($g){
 			if(!$gquery){$g['gallery_id'] = false; return $g;}
 		
 		} else {
-
+			
 			//Get gallery params based on Post_ID
 			$gquery = $wpdb->get_row(
 				$wpdb->prepare("SELECT * FROM ".$table_name
 					." WHERE post_id = %d",$post->ID),ARRAY_A);
+					
+			
 		}
 	}
 	
@@ -684,7 +720,7 @@ function getGallery($g){
 				break;
 			default: 
 				// Use PhotoSmash defaults and place into appropriate fields if missing.
-				$g['contrib_role'] = $psoptions['contrib_role'];
+				$g['contrib_role'] = (int)$psoptions['contrib_role'];
 				break;
 		}
 	}
@@ -692,11 +728,15 @@ function getGallery($g){
 	if($gquery){
 	
 		//Keep the parameters passed in From the [photosmash] tag in the Content...fill in the holes from the Gallery's default settings
+		
+		//Can't do array_merge since we need values from gquery that have values when $g is not set
+		
 		foreach ( $gquery as $key => $option ){
 			if(!$g[$key]){
 				$g[$key] = $option;
 			}
 		}
+		
 		
 	} else {
 
@@ -705,6 +745,10 @@ function getGallery($g){
 			$data['gallery_name'] = $g['gallery_name'] ? $g['gallery_name']  : $post->post_title;
 			$data['gallery_type'] = isset($g['gallery_type']) ? (int)$g['gallery_type'] : 0;
 			$data['caption'] =  $g['caption'] ? $g['caption'] : $psoptions['gallery_caption'];
+			
+			$data['add_text'] = $g['add_text'] ? $g['add_text'] : 
+				( $psoptions['add_text'] ? $psoptions['add_text'] : "Add Photos" );
+			
 			$data['upload_form_caption'] =  $g['upload_form_caption'] ? $g['upload_form_caption'] : $psoptions['upload_form_caption'];
 			$data['contrib_role'] =  isset($g['contrib_role']) ? (int)$g['contrib_role'] : $psoptions['contrib_role'];
 			$data['img_rel'] =  $g['img_rel'] ? $g['img_rel'] : $psoptions['img_rel'];
@@ -734,18 +778,21 @@ function getGallery($g){
 			
 			$data['use_customfields'] = isset($data['use_customfields']) ? $data['use_customfields'] : (isset($this->psOptions['use_customfields']) ? 1 : 0);
 			
-			$data['custom_formname'] = $data['custom_formname'] ? $data['custom_formname'] : 'default';
+			$data['custom_formid'] = isset($data['custom_formid']) ? (int)$data['custom_formid'] : (int)$this->psOptions['custom_formid'];
 			
 			$data['layout_id'] = isset($data['layout_id']) ? (int)$data['layout_id'] : (int)$this->psOptions['layout_id'];
 			
 			$data['created_date'] = date( 'Y-m-d H:i:s');
 			$data['status'] = 1;
 			
-			//$wpdb->insert($table_name, $data); //Insert into Galleries Table
+			$wpdb->insert($table_name, $data); //Insert into Galleries Table
 			$g = $data;
 			$g['gallery_id'] = $wpdb->insert_id;
 	}
-	$g['add_text'] = $psoptions['add_text'] ? $psoptions['add_text'] : "Add Photos";
+	
+	$g['add_text'] = $g['add_text'] ? $g['add_text'] : 
+				( $psoptions['add_text'] ? $psoptions['add_text'] : "Add Photos" );
+	
 	
 	$this->galleries[$g['gallery_id']] = $g;
 	
@@ -765,22 +812,32 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 	
 	$g['using_thickbox'] = $use_tb;
 	
-	if( $formname ){
-		//$cf = get_option('bwbps_cf_'.$formName);
+	if( $formname || (int)$g['custom_formid'] ){
 		
-		$g['cf'] = $this->getCustomFormDef($formname);
+		if($formname){
+	
+			$g['cf'] = $this->getCustomFormDef($formname);
+		
+		} else {
+			
+			$g['cf'] = $this->getCustomFormDef( "",(int)$g['custom_formid'] );
+			
+		}
 				
-		$cf = $g['cf']['form_id'];		
+		$cf = (int)$g['cf']['form_id'];		
+		
 		//If the custom form is not defined, return the standard form
-		if(!$cf || empty($cf) || !trim($cf)){
+		if(!$cf){
 			
 			$formname = "";
 			unset($g['cf']);
 			
 		} else {
-		
+			
 			//Set up Form ID Prefix for Custom Forms...will use this in form element IDs
 			$g['pfx'] = "c" . $g['cf']['form_id'];
+			$formname = $g['cf']['form_name'];
+			
 		}
 	}
 		
@@ -1032,7 +1089,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	}
 	
 	function shortCodes($atts, $content=null){
-		
+		if(!is_array($atts)){
+			$atts = array();
+		}
 		extract(shortcode_atts(array(
 			'id' => false,
 			'img_id' => false,
@@ -1050,7 +1109,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		
 		
 		
-		if($img_key || $id || $img_id){
+		if($img_key || $id || $img_id || $image_id){
 			if($id){
 				$img_key = $id;
 			} else {
@@ -1065,11 +1124,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			if(is_array($this->images)){
 				if(!array_key_exists($img_key, $this->images)){
 					$this->images[$img_key] = $this->getImage($img_key);
-				}
+				} 
 			}else{
 				$this->images[$img_key] = $this->getImage($img_key);
-			}
-			
+			}		
 			
 			//Fields and Layouts
 			if($this->images[$img_key]){
@@ -1083,7 +1141,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 						require_once('bwbps-layout.php');
 						$this->psLayout = new BWBPS_Layout($this->psOptions, $this->cfList);
 					}
-					$g = array('gallery_id' => $images['gallery_id']);
+					$g = array('gallery_id' => $this->images[$img_key]['gallery_id']);
 					$g = $this->getGallery($g);
 					$ret .= $this->psLayout->getPartialLayout($g, $this->images[$img_key], $layout, $alt);
 				}
@@ -1151,7 +1209,6 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		
 		$custdata = ", ".PSCUSTOMDATATABLE.".* ";
 		
-		
 		//Admins can see all images
 		if(current_user_can('level_10')){
 			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, ".PSGALLERIESTABLE.".img_class,"
@@ -1190,7 +1247,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		}
 				
 		$image = $wpdb->get_row($sql, ARRAY_A);
-		
+				
 		return $image;
 	}
 	
