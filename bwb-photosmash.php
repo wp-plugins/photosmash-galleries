@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.2.992
+Version: 0.2.995
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -679,19 +679,27 @@ function getGallery($g){
 	global $wpdb;
 	$psoptions = $this->psOptions;
 	//Define Galleries table name for use in queries
-	$table_name = $wpdb->prefix . "bwbps_galleries";
-	
+
 	//See if Gallery is Cached
 	if($g['gallery_id'] && is_array($this->galleries) && array_key_exists($g['gallery_id'], $this->galleries))
 	{
-		$g = $this->galleries[$g['gallery_id']];
+		// Set $g = to the cached gallery, but keep any values that $g already has
+		foreach ( $this->galleries[$g['gallery_id']] as $key => $option ){
+			if(!$g[$key]){
+				$g[$key] = $option;
+			}
+		}
+		
+		$galleryfound = true;
+	
 	} else {
+		//Gallery was not cached......Get from either Gallery ID or Post ID
 	
 		//Get the specified gallery params if valid gallery_id
 		if($g['gallery_id']){
 			//Get gallery params based on Gallery_ID
 			$gquery = $wpdb->get_row(
-				$wpdb->prepare("SELECT * FROM ".$table_name
+				$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
 					." WHERE gallery_id = %d",$g['gallery_id']),ARRAY_A);
 					
 			//If query is false, then Bad Gallery ID provided...alert user
@@ -701,11 +709,34 @@ function getGallery($g){
 			
 			//Get gallery params based on Post_ID
 			$gquery = $wpdb->get_row(
-				$wpdb->prepare("SELECT * FROM ".$table_name
+				$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
 					." WHERE post_id = %d",$post->ID),ARRAY_A);
 					
 			
 		}
+		
+		if($gquery){
+			
+			/* Keep the parameters passed in From the [photosmash] tag in the Content
+			   ...fill in the holes from the Gallery's default settings
+		
+				Can't do array_merge
+			*/
+			
+			$g['gallery_id'] = $gquery['gallery_id'];
+			
+			foreach ( $gquery as $key => $option ){
+				if(!$g[$key]){
+					$g[$key] = $option;
+				}
+			}
+			
+			//Cache the new gallery
+			$this->galleries[$gquery['gallery_id']] = $gquery;
+			
+			$galleryfound = true;
+		} 
+		
 	}
 	
 	if(isset($g['contrib_role'])){
@@ -725,20 +756,8 @@ function getGallery($g){
 		}
 	}
 		
-	if($gquery){
 	
-		//Keep the parameters passed in From the [photosmash] tag in the Content...fill in the holes from the Gallery's default settings
-		
-		//Can't do array_merge since we need values from gquery that have values when $g is not set
-		
-		foreach ( $gquery as $key => $option ){
-			if(!$g[$key]){
-				$g[$key] = $option;
-			}
-		}
-		
-		
-	} else {
+	if( !$galleryfound ){
 
 		//No Gallery found...Need to create a Record for this Gallery
 			$data['post_id'] = $post->ID;
@@ -785,16 +804,17 @@ function getGallery($g){
 			$data['created_date'] = date( 'Y-m-d H:i:s');
 			$data['status'] = 1;
 			
-			$wpdb->insert($table_name, $data); //Insert into Galleries Table
+			$wpdb->insert(PSGALLERIESTABLE, $data); //Insert into Galleries Table
 			$g = $data;
 			$g['gallery_id'] = $wpdb->insert_id;
+			
+			//Cache the new gallery
+			$this->galleries[$g['gallery_id']] = $g;
+			
 	}
 	
 	$g['add_text'] = $g['add_text'] ? $g['add_text'] : 
 				( $psoptions['add_text'] ? $psoptions['add_text'] : "Add Photos" );
-	
-	
-	$this->galleries[$g['gallery_id']] = $g;
 	
 	return $g;
 	
@@ -1075,8 +1095,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	{
 		//Check if default gallery already exists for post and return HTML for gallery
 		//If not exists, create gallery record and return HTML
-		$table_name = $wpdb->prefix . "bwbps_galleries";
-		$gallery_id = $wpdb->get_var($wpdb->prepare("SELECT gallery_id FROM ".$table_name." WHERE gallery_handle = %s", 'post-'.$post_id));
+
+		$gallery_id = $wpdb->get_var($wpdb->prepare("SELECT gallery_id FROM ". PSGALLERIESTABLE ." WHERE gallery_handle = %s", 'post-'.$post_id));
 		
 		if(!$gallery_id){
 			$data = $this->getGalleryDefaults();
