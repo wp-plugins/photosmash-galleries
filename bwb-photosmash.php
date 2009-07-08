@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.2.995
+Version: 0.2.996
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -56,7 +56,7 @@ define('PSTEMPLATESURL',WP_CONTENT_URL."/themes/");
 
 define('BWBPSPLUGINURL',WP_PLUGIN_URL."/photosmash-galleries/");
 
-define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Form</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a> 
+define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a> 
 		<br/>");
 
 define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> 
@@ -102,7 +102,7 @@ if( ! function_exists('esc_url') ){
 //include ('ajax_upload.php');
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 13;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 14;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -205,7 +205,9 @@ class BWB_PhotoSmash{
 				'exclude_default_css' => 0,
 				'date_format' => 'm/d/Y',
 				'upload_authmessage' => '',
-				'imglinks_postpages_only' => 0
+				'imglinks_postpages_only' => 0,
+				'sort_field' => 0,
+				'sort_order' => 0
 			);
 			if(!$psOptions){
 				add_option($this->adminOptionsName, $psAdminOptions);
@@ -300,6 +302,7 @@ class BWB_PhotoSmash{
 		if (!isset($bwbPS)) {
 			return;
 		}
+				
 		if (function_exists('add_menu_page')) {
 			
 			add_menu_page('PhotoSmash', 'PhotoSmash', 9, basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
@@ -325,7 +328,7 @@ class BWB_PhotoSmash{
 			}
 			if($bshowadv){
 				add_submenu_page(basename(__FILE__), __('PS Form Editor')
-					, __('Custom Form'), 9, 'editPSForm'
+					, __('Custom Forms'), 9, 'editPSForm'
 					, array(&$bwbPS, 'loadFormEditor'));
 					
 				add_submenu_page(basename(__FILE__), __('PS Field Editor')
@@ -346,6 +349,8 @@ class BWB_PhotoSmash{
 	
 	//Prints out the Admin Options Page
 	function loadAdminPage(){
+		$this->verifyDatabase(); //Check that the database is up to date
+		
 		if(!$this->psAdmin){
 			require_once("admin/bwbps-admin.php");
 			$this->psAdmin = new BWBPS_Admin();
@@ -354,6 +359,8 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadGallerySettings(){
+		$this->verifyDatabase(); //Check that the database is up to date
+		
 		if(!$this->psAdmin){
 			require_once("admin/bwbps-admin.php");
 			$this->psAdmin = new BWBPS_Admin();
@@ -363,6 +370,8 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadPhotoManager(){
+		$this->verifyDatabase(); //Check that the database is up to date
+	
 		if(!$this->psAdmin){
 			require_once("admin/bwbps-admin.php");
 			$this->psAdmin = new BWBPS_Admin();
@@ -373,24 +382,31 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadLayoutsEditor(){
+		$this->verifyDatabase(); //Check that the database is up to date
+		
 		require_once("admin/bwbps-layouts.php");
 		$layouts = new BWBPS_LayoutsEditor();		
 		return true;
 	}
 	
 	function loadFieldEditor(){
+		$this->verifyDatabase(); //Check that the database is up to date
+		
 		require_once("admin/bwbps-fieldeditor.php");
 		$fieldEditor = new BWBPS_FieldEditor($this->psOptions);		
 		return true;
 	}
 	
 	function loadFormEditor(){
+		$this->verifyDatabase(); //Check that the database is up to date
+		
 		require_once("admin/bwbps-formeditor.php");
 		$psform = new BWBPS_FormEditor($this->psOptions);		
 		return true;
 	}
 	
 	function loadPSInfo(){
+				
 		require_once("admin/bwbps-info.php");
 		$ts = new BWBPS_Info();			
 		return true;
@@ -801,8 +817,13 @@ function getGallery($g){
 			
 			$data['layout_id'] = isset($data['layout_id']) ? (int)$data['layout_id'] : (int)$this->psOptions['layout_id'];
 			
+			$data['sort_field'] = isset($data['sort_field']) ? (int)$data['sort_field'] : (int)$this->psOptions['sort_field'];
+			
+			$data['sort_order'] = isset($data['sort_order']) ? (int)$data['sort_order'] : (int)$this->psOptions['sort_order'];
+			
 			$data['created_date'] = date( 'Y-m-d H:i:s');
 			$data['status'] = 1;
+			
 			
 			$wpdb->insert(PSGALLERIESTABLE, $data); //Insert into Galleries Table
 			$g = $data;
@@ -864,7 +885,7 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 	if( $use_tb	)
 	{
 	
-		$ret = '<span style="margin-left: 10px;"><a href="TB_inline?height=390&amp;width=545&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
+		$ret = '<span class="bwbps_addphoto_link"><a href="TB_inline?height=390&amp;width=545&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
 	
 	} else {
 
@@ -876,7 +897,7 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 			
 		if( !$form_vis )
 		{
-			$ret = '<span style="margin-left: 10px;"><a href="javascript: void(0);" onclick="bwbpsShowPhotoUploadNoThickbox('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload">'.$g['add_text'].'</a></span><div id="bwbpsFormSpace_'.$g['gallery_id'].'" style="display:none;"></div>';
+			$ret = '<span class="bwbps_addphoto_link"><a href="javascript: void(0);" onclick="bwbpsShowPhotoUploadNoThickbox('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload">'.$g['add_text'].'</a></span><div id="bwbpsFormSpace_'.$g['gallery_id'].'" style="display:none;"></div>';
 		}
 	}
 	return $ret;
@@ -1035,7 +1056,6 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
     var tb_pathToImage = "<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/loadingAnimation.gif";
     var tb_closeImage = "<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/tb-close.png";
 	var displayedGalleries = "";
-	var bwbpsCustomLayout = false;
 	var bwbpsAjaxURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax.php";
 	var bwbpsAjaxUserURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_useractions.php";
 	var bwbpsAjaxUpload = "<?php 
@@ -1305,6 +1325,33 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			$atts = ltrim($text);
 		}	
 		return $atts;
+	}
+	
+	function verifyDatabase(){
+		global $wpdb;
+		
+			
+		$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
+	
+		$ret = $wpdb->get_row($sql);
+	
+		//if(!$ret){return false;}
+	
+		//Field to be checked against database
+		$col = 'sort_field';
+	
+		foreach($wpdb->get_col_info('name') as $name){
+			$colname[] = $name;
+		}
+		
+		if(! in_array($col, $colname) ){
+				echo "<div class='message error'><h2>PhotoSmash Database - Needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Please visit <a href='admin.php?page=psInfo'>Plugin Info</a> and run the Update DB (look for button in database section).</p></div>";
+		}
+						
+		
+		if($msg){$this->message = $msg. $this->message; $this->msgclass = 'error';}
+		
+		return;
 	}
 	
 	

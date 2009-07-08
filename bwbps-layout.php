@@ -313,12 +313,6 @@ class BWBPS_Layout{
 			
 			//Need the insertion point to create a holder for adding new images.			
 			$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
-				
-			$ret .= "
-				<script type='text/javascript'>
-					bwbpsCustomLayout = true;
-				</script>
-				";
 		}
 		
 		return $ret;
@@ -632,6 +626,15 @@ class BWBPS_Layout{
 		//Clean up URLs
 		$image['user_url'] = esc_url($image['user_url']);
 		$image['url'] = esc_url($image['url']);
+		
+		$ftype = (int)$image['file_type'];
+		
+		if($ftype == 3 && ($fld == '[thumb]' || $fld == '[thumbnail]' )) {
+			$fld = '[youtube]';
+		}
+		if($ftype == 4 && ($fld == '[thumb]' || $fld == '[thumbnail]' )) {
+			$fld = '[video]';
+		}
 	
 		//Fix up the image Alt for images
 		if( is_array($atts)){
@@ -1231,33 +1234,25 @@ class BWBPS_Layout{
 		);
 		
 		// Calculate ORDER BY
-		if( $g['sort_by'] ){
-			$sortflds = split(",", $g['sort_by']);
-			unset($sortby);
-			foreach ( $sortflds as $sfld )
-			{
-				$sfld = trim($sfld);
-				$tempfld = split(" ", $sfld);
-				$sorder = "";
-				if(count($tempfld) > 1){
-					$sorder = trim($tempfld[1]);
-					if($sorder == "ASC" || $sorder == "DESC" ){
-						$sorder = " ".$sorder;
-					}else{
-						$sorder = "";
-					}
-				}
-				if( in_array( $sfld, $imagetablefields ) ) {
-					$sortby[] = PSIMAGESTABLE.$sfld.$sorder;
-				}
-			}
-			if( is_array($sortby) ){
-				$sortby = implode( ", ", $sortby );
-			} else { $sortby = ""; }
-		} else {
-			$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date';
-		}
+		$sorder = (int)$g['sort_order'] ? "DESC" : "ASC";
 		
+		switch ( (int)$g['sort_field'] ){
+		
+			case 0 :	// When Uploaded
+				$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			case 1 :	// Custom Sort
+				$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date '. $sorder;
+				break;
+			case 2 :	// Custom Fields
+				$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			default :	// When Uploaded
+				$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+				
+		}
+				
 		//Admins can see all images
 		if(current_user_can('level_10')){
 			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '

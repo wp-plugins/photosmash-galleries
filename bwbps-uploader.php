@@ -715,6 +715,10 @@ class BWBPS_Uploader{
 			$d['custom_formid'] = $data['custom_formid'] ? (int)$data['custom_formid'] : (int)$this->psOptions['custom_formid'];
 			
 			$d['layout_id'] = isset($data['layout_id']) ? (int)$data['layout_id'] : (int)$this->psOptions['layout_id'];
+			
+			$d['sort_field'] = isset($data['sort_field']) ? (int)$data['sort_field'] : (int)$this->psOptions['sort_field'];
+			
+			$d['sort_order'] = isset($data['sort_order']) ? (int)$data['sort_order'] : (int)$this->psOptions['sort_order'];
 						
 			$tablename = $wpdb->prefix.'bwbps_galleries';
 			

@@ -88,6 +88,8 @@ class BWBPS_Init{
 				use_customfields TINYINT(1),
 				cover_imageid BIGINT(20),
 				status TINYINT(1),
+				sort_field TINYINT(1),
+				sort_order TINYINT(1),
 				PRIMARY KEY  (gallery_id))
 				$charset_collate
 				;";

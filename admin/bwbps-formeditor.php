@@ -352,7 +352,7 @@ class BWBPS_FormEditor{
 				$ret = "hidden field with current Cat ID";
 				break;
 			case 40 :
-				$ret = "*** not implemented yet ***";
+				$ret = "drop down of WP Categories";
 				break;
 			default:
 				$ret = "custom field";

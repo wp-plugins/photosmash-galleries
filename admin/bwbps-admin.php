@@ -16,9 +16,7 @@ class BWBPS_Admin{
 		$this->psOptions = $this->getPSOptions();
 		
 		$this->gallery_id = (int)$_POST['gal_gallery_id'];
-		
-		$this->verifyDatabase();
-		
+				
 		//Save PS General Settings
 		if(isset($_POST['update_bwbPSDefaults'])){
 			check_admin_referer( 'update-gallery');
@@ -43,42 +41,18 @@ class BWBPS_Admin{
 		//Delete Gallery
 		if(isset($_POST['deletePhotoSmashGallery'])){
 			check_admin_referer( 'delete-gallery');
-			$this->deleteGallery($this->options);
+			$this->deleteGallery($this->options, $this->gallery_id);
+			
+			$this->gallery_id = 0;
+		}
+		
+		//Delete Multiple Galleries
+		if(isset($_POST['deletePSGMultipleGalleries'])){
+			check_admin_referer( 'delete-gallery');			
+			$this->deleteMultiGalleries($this->options);
 		}	
 	}
 	
-	function verifyDatabase(){
-		global $wpdb;
-		
-		if($wpdb->get_var("SHOW TABLES LIKE '".PSFORMSTABLE."'") != PSFORMSTABLE) {
-		
-			$msg = "<h4>PhotoSmash Database Error - needs update</h4><p>Missing fields due to an update of the Plugin. Please visit <a href='admin.php?page=psInfo'>Plugin Info</a> and run the Update DB.</p>";
-			
-		} else {
-		
-			$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
-		
-			$ret = $wpdb->get_row($sql);
-		
-			//if(!$ret){return false;}
-		
-			//Add newest field here to be checked against database
-			$cols = array('custom_formid');
-		
-			foreach($wpdb->get_col_info('name') as $name){
-				$colname[] = $name;
-			}
-			foreach($cols as $col){
-				if(! in_array($col, $colname) ){
-					$msg = "<h4>PhotoSmash Database Error - needs update</h4><p>Missing fields due to an update of the Plugin. Please visit <a href='admin.php?page=psInfo'>Plugin Info</a> and run the Update DB.</p>";
-				}
-			}
-		}		
-		
-		if($msg){$this->message = $msg. $this->message; $this->msgclass = 'error';}
-		
-		return;
-	}
 	
 	function cleanSlashes($val){
 		if(get_magic_quotes_gpc()){
@@ -152,26 +126,103 @@ class BWBPS_Admin{
 				'exclude_default_css' => 0,
 				'date_format' => 'm/d/Y',
 				'upload_authmessage' => '',
-				'imglinks_postpages_only' => 0
+				'imglinks_postpages_only' => 0,
+				'sort_field' => 0,
+				'sort_order' => 0
 		);
 	}
+	
+	
+	function deleteMultiGalleries($options)
+	{
+	
+		if(isset($_POST['gal_gallery_ids'] ) && is_array($_POST['gal_gallery_ids'] ) ){
+		
+			foreach( $_POST['gal_gallery_ids'] as $delGal){
+				
+				$tempret = $this->deleteGallery($options, $delGal);
+				$ret['gal_deleted'] += $tempret['gal_deleted'];
+				$ret['deleted_image_cnt'] += $tempret['deleted_image_cnt'];
+			}
+			
+			if($ret['gal_deleted']){
+				$this->message = "Deleted Galleries: ".$ret['gal_deleted']. "...Deleted Images: ".$ret['deleted_image_cnt'] ;
+			} else {
+				$this->message = "No Galleries deleted.";
+			}
+		
+		} else {
+			$this->message = "No Galleries selected for deletion.";
+		}
+	}
 
-	function deleteGallery($options)
+	function deleteGallery($options, $gal_id)
 	{
 		global $wpdb;
 		
 		//This section deletes a Gallery
 		
-		if($this->gallery_id){
+		if($gal_id){
 			
-			$ret = $wpdb->query("DELETE FROM ".PSGALLERIESTABLE." WHERE gallery_id="
-				.$this->gallery_id." LIMIT 1" );
+			$ret['gal_deleted'] = $wpdb->query("DELETE FROM ".PSGALLERIESTABLE." WHERE gallery_id="
+				. (int)$gal_id ." LIMIT 1" );
 			
-			$this->gallery_id = 0;
 		}
-		if($ret){$this->message = "Gallery deleted...";}
+		if($ret['gal_deleted']){
 		
-		return;
+			$ret['deleted_image_cnt'] = $this->deleteGalleryImages($gal_id);
+			
+			$this->message = "Gallery deleted...Deleted Images: ".$ret['deleted_image_cnt'] ;
+		}
+				
+		return $ret;
+	}
+	
+	function deleteGalleryImages($gal_id){
+	
+		global $wpdb;
+				
+		$sql = $wpdb->prepare("SELECT image_id FROM " . PSIMAGESTABLE 
+			. " WHERE gallery_id = %d", $gal_id);
+						
+		$imgs = $wpdb->get_col($sql);
+		
+		$img_cnt =0;
+				
+		if($imgs){
+			foreach($imgs as $img){
+				$img_cnt += $this->deleteImage($img);
+			}
+		}
+		
+		return $img_cnt;
+	
+	}
+	
+	function deleteImage($imgid){
+		global $wpdb;
+		if(current_user_can('level_10')){
+			if($imgid){
+				$filename = $wpdb->get_var($wpdb->prepare("SELECT file_name FROM "
+					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid));
+				if($filename){
+					unlink(PSIMAGESPATH.$filename);
+					unlink(PSTHUMBSPATH.$filename);
+				}
+			
+				$ret = $wpdb->query($wpdb->prepare('DELETE FROM '.
+					PSIMAGESTABLE.' WHERE image_id = %d', $imgid ));
+				
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
+					.' WHERE image_id = %d', $imgid));
+					
+				
+			} else {$ret = 0;}
+		} else {
+			$ret = 0;
+		}
+		
+		return $ret;
 	}
 
 	
@@ -280,6 +331,10 @@ class BWBPS_Admin{
 			$ps['date_format'] = trim($_POST['ps_date_format']);
 			$ps['upload_authmessage'] = attribute_escape(stripslashes(trim($_POST['ps_upload_authmessage'])));
 			
+			$ps['sort_field'] = (int)$_POST['ps_sort_field'];
+			
+			$ps['sort_order'] = (int)$_POST['ps_sort_order'];
+			
 
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
@@ -333,6 +388,9 @@ class BWBPS_Admin{
 			$d['use_customfields'] = isset($_POST['gal_use_customfields']) ? 1 : 0;
 			$d['layout_id'] = (int)$_POST['gal_layout_id'];
 			
+			$d['sort_field'] = (int)$_POST['gal_sort_field'];
+			$d['sort_order'] = (int)$_POST['gal_sort_order'];
+			
 			
 			if($d['thumb_width']==0) $d['thumb_width'] = $psOptions['thumb_width'];
 			if($d['thumb_height']==0) $d['thumb_height'] = $psOptions['thumb_height'];
@@ -368,7 +426,7 @@ class BWBPS_Admin{
 	//Disply the General Settings Page
 	function printGallerySettings(){
 		
-		if(isset($_POST['massGalleryEdit'])){
+		if(isset($_POST['massGalleryEdit']) || isset($_POST['deletePSGMultipleGalleries']) ){
 			$this->printMassGalleryEdit();
 			return;
 		}
@@ -411,11 +469,9 @@ class BWBPS_Admin{
 <tr>
 <th style='width: 92px; '>Select gallery:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
 <input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" /> 
-<?php
-/*
+
 <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
-*/
-?>
+
 </td></tr>
 </table>
 </form>
@@ -480,7 +536,24 @@ if($psOptions['use_advanced'] ==1){
 				</td>
 	</tr>
 	
-	
+	<tr>
+				<th>Sort Images by:</th>
+				<td>
+					<select name="gal_sort_field">
+						<option value="0" <?php if(!$galOptions['sort_field']) echo 'selected=selected'; ?>>When uploaded</option>
+						<?php /*
+						<option value="1" <?php if($galOptions['sort_field'] == 1) echo 'selected=selected'; ?>>Manual sort</option>
+						<option value="2" <?php if($galOptions['sort_field'] == 2) echo 'selected=selected'; ?>>Custom field</option>
+						*/
+						?>
+					</select>
+					
+					<input type="radio" name="gal_sort_order" value="0" <?php if(!$galOptions['sort_order']) echo 'checked'; ?>>Ascending &nbsp;
+					
+					<input type="radio" name="gal_sort_order" value="1" <?php if($galOptions['sort_order'] == 1) echo 'checked'; ?>>Descending
+					
+				</td>
+			</tr>
 	
 	<tr>
 				<th>Images per page:</th>
@@ -526,7 +599,7 @@ if($psOptions['use_advanced'] ==1){
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
 
-						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
+						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?> /> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
 		
@@ -716,21 +789,59 @@ if($psOptions['use_customform']){ ?>
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
 		?>
+		
+
 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">	
+
 <h3>Mass Edit Gallery Settings</h3>
+
 <?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
-<table class="form-table"><tr>
-<tr><th style='width: 92px; '>Select gallery:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Single Edit', 'bwbPS') ?>" />
+
+<table class="form-table">
+
+	<tr>
+
+		<th style='width: 92px; '>Select gallery:</th>
+		<td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Single Edit', 'bwbPS') ?>" />
  <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
-</td></tr>
+		</td>
+
+	</tr>
+
 </table>
+
 </form>
+
 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
 	<input type="hidden" id="bwbps_gallery_id" name="gal_gallery_id" value="<?php echo $galleryID;?>" />
 
-<div id="slider" class="wrap">
+<div id="multigallery-wrapper">
 
-		<?php bwbps_nonce_field('update-galleries'); ?>
+<p>
+<a href='javascript: void(0);' onclick='bwbpsToggleDivHeight("multi-galleries", "100px"); return false;'>Toggle Full View</a> 
+
+<span style='margin-left: 30px;'>
+
+<button id='bwbpsDeleteSafety' onclick='$j(".bwbps-deletegroup").toggle(); return false;' class='bwbps-deletegroup'>Show Delete</button>
+
+<button class='bwbps-deletegroup' onclick='$j(".bwbps-deletegroup").toggle(); return false;' style='display:none;'>Hide</button>
+
+<input type='submit' name='deletePSGMultipleGalleries' onclick='return bwbpsConfirmDeleteMultipleGalleries();' class='bwbps-deletegroup' style='display: none; color: red;' value='Delete Selected' />
+
+</span>
+
+</p>
+
+<!-- Galleries Box -->
+<input type='checkbox' onclick="bwbpsToggleCheckboxes('bwbps_multigal', this.checked);"> toggle
+<div id="multi-galleries" style="clear: both; height: 100px; overflow: auto; background-color: #fff; border: 2px solid #247aa3; padding: 10px;">
+	<?php echo $this->getGalleriesCheckboxes(); ?>
+</div>
+
+<div id="slider" class="wrap" style='display:none;'>
+
+<?php bwbps_nonce_field('update-galleries'); ?>
+<?php bwbps_nonce_field('delete-gallery'); ?>
 	<table class="form-table bwbps-tabular">
 	<?php if($galleryID){
 	?>
@@ -772,22 +883,22 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>Image caption style:</th>
 				<td>
-						<input type="radio" name="gal_show_imgcaption" value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'checked'; ?>>No caption<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'checked'; ?>>Caption (link to image)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="7" <?php if($galOptions['show_imgcaption'] == 7) echo 'checked'; ?>>Caption (link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)
+						<input type="radio" name="gal_show_imgcaption" value="0" <?php if($galOptions['show_imgcaption'] == 0) echo 'checked'; ?> />No caption<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="1" <?php if($galOptions['show_imgcaption'] == 1) echo 'checked'; ?> />Caption (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="7" <?php if($galOptions['show_imgcaption'] == 7) echo 'checked'; ?> />Caption (link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?> />Contributor (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?> />Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?> />Caption [by] Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?> />Caption [by] Contributor (link to image)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?> />Caption [by] Contributor (link to user submitted url)
 						<br/><hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
-						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?> />No caption (thumbs link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?> />Caption (thumbs & captions link to user submitted url)<br/>					
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
 
-						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
+						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?> /> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
 		
@@ -857,53 +968,17 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 	</table>
-</div>
 
-<?php
-if($psOptions['use_advanced'] ==1){
-?>
-<div id="bwbps_advanced">
-		<table class="form-table">
-			<tr>
-				<th>Display using Layout:</th>
-				<td>
-					<?php echo $layoutsDDL;?>
-				</td>
-			</tr>
-			<tr>
-				<th>Custom form name:</th>
-				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
-			</tr>
+</div><!-- end of #slider -->
 
-<?php 
-/*  Not implemented at gallery level
-
-<?php
-if($psOptions['use_customform']){ ?>
-			<tr>
-				<th>Use Custom Form:</th>
-				<td>
-					<input type="checkbox" name="gal_use_customform" <?php if($galOptions['use_customform'] == 1) echo 'checked'; ?>> Enable use of Custom Form in this gallery.
-				</td>
-			</tr>
-<?php } ?>
-			<tr>
-				<th>Use Custom Fields:</th>
-				<td>
-					<input type="checkbox" name="gal_use_customfields" <?php if($galOptions['use_customfields'] == 1) echo 'checked'; ?>> Enables custom fields in the standard form for this gallery.
-				</td>
-			</tr>
-*/
-?>
-		</table>
-</div>
-<?php } ?>
+</div> <!-- end of #multigallery-wrapper -->
 
 </div>
 <p class="submit">
 	<input type="submit" name="save_bwbPSGallery" class="button-primary" value="<?php _e('Save Gallery', 'bwbPS') ?>" />
 </p>
 </form>
+
 
 <div>
 		<a href="admin.php?page=bwb-photosmash.php" title="PhotoSmash General Settings">PhotoSmash General Settings</a> | 
@@ -975,6 +1050,28 @@ if($psOptions['use_customform']){ ?>
 					</select>
 				</td>
 			</tr>
+			
+			<tr>
+				<th>Sort Images by:</th>
+				<td>
+					<select name="ps_sort_field">
+						<option value="0" <?php if(!$psOptions['sort_field']) echo 'selected=selected'; ?>>When uploaded</option>
+						<?php /*
+						<option value="1" <?php if($psOptions['sort_field'] == 1) echo 'selected=selected'; ?>>Manual sort</option>
+						<option value="2" <?php if($psOptions['sort_field'] == 2) echo 'selected=selected'; ?>>Custom field</option>
+						*/
+						?>
+					</select>
+					 <a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_field' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					
+					<input type="radio" name="ps_sort_order" value="0" <?php if(!$psOptions['sort_order']) echo 'checked'; ?>>Ascending &nbsp;
+					
+					<input type="radio" name="ps_sort_order" value="1" <?php if($psOptions['sort_order'] == 1) echo 'checked'; ?>>Descending
+					&nbsp;-&nbsp;<a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_order' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					
+				</td>
+			</tr>
+			
 			<tr>
 				<th>Default Images per page:</th>
 				<td>
@@ -1388,7 +1485,7 @@ if($psOptions['use_customform']){ ?>
 	 */
 	function getGalleryImages($gallery_id)
 	{
-		$images = $this->getGalleryQuery($gallery_id);
+		$images = $this->getImagesQuery($gallery_id);
 		$admin = current_user_can('level_10');
 		
 		$imgcnt =0;
@@ -1471,7 +1568,7 @@ if($psOptions['use_customform']){ ?>
 	
 	
 	//Get the Gallery Images
-	function getGalleryQuery($gallery_id){
+	function getImagesQuery($gallery_id){
 		global $wpdb;
 		global $user_ID;
 		if(current_user_can('level_10')){
@@ -1537,27 +1634,23 @@ if($psOptions['use_customform']){ ?>
 		return $images;
 	}
 	
-	//Returns markup for a DropDown List of existing Galleries
-	function getGalleryDDL($selectedGallery = 0, $newtag = "New", $idPfx = "", $ddlName= "gal_gallery_id", $length = 0, $showImgCount = true)
- 	{
- 		global $wpdb;
- 		 
- 		if($newtag <> 'skipnew' ){
-			$ret = "<option value='0'>&lt;$newtag&gt;</option>";
-		}
+	
+	function getGalleriesQuery(){
+		
+		global $wpdb;
 		
 		$sql = "SELECT ".PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
-		.$wpdb->prefix."posts.post_title, COUNT("
-		.PSIMAGESTABLE.".image_id) as img_cnt FROM "
-		.PSGALLERIESTABLE." LEFT OUTER JOIN "
-		.PSIMAGESTABLE." ON ".PSIMAGESTABLE.".gallery_id = "
-		.PSGALLERIESTABLE.".gallery_id LEFT OUTER JOIN "
-		.$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = "
-		.$wpdb->prefix."posts.ID WHERE ".PSGALLERIESTABLE.".status = 1 GROUP BY "
-		.PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
-		.$wpdb->prefix."posts.post_title, ".PSIMAGESTABLE.".gallery_id,"
-		.PSGALLERIESTABLE.".status, "
-		.$wpdb->prefix."posts.ID, ".PSGALLERIESTABLE.".post_id";
+			.$wpdb->prefix."posts.post_title, COUNT("
+			.PSIMAGESTABLE.".image_id) as img_cnt FROM "
+			.PSGALLERIESTABLE." LEFT OUTER JOIN "
+			.PSIMAGESTABLE." ON ".PSIMAGESTABLE.".gallery_id = "
+			.PSGALLERIESTABLE.".gallery_id LEFT OUTER JOIN "
+			.$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = "
+			.$wpdb->prefix."posts.ID WHERE ".PSGALLERIESTABLE.".status = 1 GROUP BY "
+			.PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
+			.$wpdb->prefix."posts.post_title, ".PSIMAGESTABLE.".gallery_id,"
+			.PSGALLERIESTABLE.".status, "
+			.$wpdb->prefix."posts.ID, ".PSGALLERIESTABLE.".post_id";
 		
 		
 		if(!$this->galleryQuery){
@@ -1571,6 +1664,47 @@ if($psOptions['use_customform']){ ?>
 			$query = $this->galleryQuery;
 			
 		}
+	
+		return $query;
+	}
+	
+	function getGalleriesCheckboxes($selected = false, $idPfx = "", $cbxName = "gal_gallery_ids"){
+	
+		$query = $this->getGalleriesQuery();
+		
+		if(!is_array($selected)){
+			$selected = array($selected);
+		}
+		
+		foreach($query as $row){
+			if(in_array($row->gallery_id, $selected)){
+				$checked = "checked"; 
+			} else { $checked = "";}
+			
+			if(trim($row->gallery_name) <> ""){$title = $row->gallery_name;} else {
+				$title = $row->post_title;
+			}
+			
+			$title = "Gal: $row->gallery_id - " . $title .  " (".$row->img_cnt." imgs)";
+			
+			$ret .= '<input type="checkbox" class="bwbps_multigal" name="' . $cbxName . '[]" '. $checked .' /value="'.$row->gallery_id.'"> '.$title.' <br/>
+			';
+			
+		}
+		
+		return $ret;
+	}
+	
+	//Returns markup for a DropDown List of existing Galleries
+	function getGalleryDDL($selectedGallery = 0, $newtag = "New", $idPfx = "", $ddlName= "gal_gallery_id", $length = 0, $showImgCount = true)
+ 	{
+ 		global $wpdb;
+ 		 
+ 		if($newtag <> 'skipnew' ){
+			$ret = "<option value='0'>&lt;$newtag&gt;</option>";
+		}
+		
+		$query = $this->getGalleriesQuery();
 				
 		if(is_array($query)){
 		foreach($query as $row){

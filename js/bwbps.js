@@ -2,7 +2,6 @@ var $j = jQuery.noConflict();
 var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
 var bwbpsUploadStatus = false;
-var bwbpsAddedImages =0;
 
 $j.fn.tagName = function() {
     return this.get(0).tagName;
@@ -49,7 +48,10 @@ function bwbpsAjaxLoadImage(myForm){
 
 	//Get the Form Prefix...this is needed due to multiple forms being possible
 	var form_pfx = myForm.id;
+		
 	form_pfx = form_pfx.replace("bwbps_uploadform", "");
+	
+	$j('#' + form_pfx + 'bwbps_imgcaption').val($j('#' + form_pfx + 'bwbps_imgcaptionInput').val());
 	
 	//Show the loader image
 	$j("#" + form_pfx + "bwbps_loading").show();
@@ -87,16 +89,14 @@ function psSetGalleryHts(){
 
 function bwbpsVerifyUploadRequest(form_pfx) { 
 	var fileToUploadValue;
-		
-	$j('#' + form_pfx + 'bwbps_imgcaption').val($j('#' + form_pfx + 'bwbps_imgcaptionInput').val());
-			
+					
 	if($j('#' + form_pfx + 'bwbpsSelectURLRadio').attr('checked')){
 		
 		fileToUploadValue = true;
 	} else {
 		fileToUploadValue = $j('#' + form_pfx + 'bwbps_uploadfile').val();		
 	}
-	
+		
 	if ( !bwbpsVerifyFileFilled(form_pfx) ) { 
 		$j('#' + form_pfx + 'bwbps_message').html('<b>VALIDATION ERROR: Please select a file.</b>'); 
 		return false; 
@@ -120,7 +120,7 @@ function bwbpsVerifyFileFilled(form_pfx){
 	var filetype = $j('input:radio[name=' + form_pfx + 'bwbps_filetype]:checked').val();
 	
 	var bFilled = false;
-	switch (filetype){
+	switch (Number(filetype)){
 		case 0 :	//Image
 			bFilled = $j('#' + form_pfx + 'bwbps_uploadfile').val();
 			break;
@@ -160,7 +160,9 @@ function bwbpsVerifyFileFilled(form_pfx){
 		
 		default :
 			bFilled = true;
+			break;
 	}
+		
 	if( bFilled ){ return true; } else { return false; }
 }
 
@@ -200,9 +202,12 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			//Add the New Images box for custom Layouts			
 			var adderdiv;
 			
-			if(bwbpsCustomLayout && bwbpsAddedImages < 1){
+			//If this is the first added image && it's a custom form, create the container
+			if( $j('#bwbps_stdgal_' + data.gallery_id).length == 0 ){
 				adderdiv = $j('<div></div>');
-				adderdiv.attr('id','bwbps_galcont_' + data.gallery_id).attr('class','bwbps_gallery_div');
+				adderdiv.attr('id','bwbps_galcont_' + data.gallery_id).attr('class','');
+				
+				$j('<h2></h2>').html('Added Images').appendTo(adderdiv);
 				
 				var bbtbl = $j('<table></table>');
 				var bbtr = $j('<tr></tr>');
@@ -211,7 +216,8 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 				
 				bbtd.appendTo(bbtr);
 				
-				var newImgUL = $j('<ul></ul>').attr('class','bwbps_gallery').attr('id','bwbps_stdgal_' + data.gallery_id);
+				var newImgUL = $j('<ul></ul>').attr('class','bwbps_gallery bwbps_custom_add')
+					.attr('id','bwbps_stdgal_' + data.gallery_id);
 				newImgUL.appendTo(bbtd);
 				bbtbl.appendTo(adderdiv);
 				adderdiv.insertAfter('#bwbpsInsertBox_' + data.gallery_id);
@@ -227,12 +233,20 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 				li.css('margin','15px');	
 			}	
 			
-			//Manually set the LI height for Custom Layouts
-			if(bwbpsCustomLayout && bwbpsAddedImages < 1){
-				li.css('height', data.thumb_height + 20);
+			if(Number(data.thumb_height)){
+				var thumb_ht = Number(data.thumb_height) + 15;
 			}
 			
-			bwbpsAddedImages++;
+			if(thumb_ht == 'NaN' || thumb_ht < 16){
+				thumb_ht = 125;
+			}
+			
+			//Manually set the LI height for Custom Layouts
+			if($j('#bwbps_stdgal_' + data.gallery_id).hasClass('bwbps_custom_add')){
+				li.css('height', thumb_ht + "px");
+			}
+			
+			
 			var imgdiv;
 			
 			if ($j.browser.msie) {
@@ -331,7 +345,11 @@ function bwbpsConfirmResetDefaults(){
 
 function bwbpsConfirmDeleteGallery(){
 	var fieldname = jQuery("#bwbpsGalleryDDL option:selected").text();
-	return confirm('Do you want to delete Gallery: ' + fieldname + '?');
+	return confirm('Do you want to delete Gallery & Images for: ' + fieldname + '?');
+}
+
+function bwbpsConfirmDeleteMultipleGalleries(){
+	return confirm('Warning!!! This deletes galleries and images for ALL SELECTED GALLERIES.  Do you want to do that?');
 }
 
 function bwbpsConfirmCustomForm(){
@@ -564,4 +582,17 @@ function bwbpsMassUpdateGalleriesSuccess(data){
 	
 	alert(data.message);
 
+}
+
+function bwbpsToggleDivHeight(ele_id, tog_ht){
+	if($j("#" + ele_id).css('height') == tog_ht){
+		$j("#" + ele_id).css('height', 'auto');
+		
+	} else {
+		$j("#" + ele_id).css('height', tog_ht);
+	}
+}
+
+function bwbpsToggleCheckboxes(chkbox_class, chk_val){
+	$j('input:checkbox.' + chkbox_class ).attr('checked', chk_val);
 }

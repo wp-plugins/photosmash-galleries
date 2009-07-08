@@ -16,6 +16,7 @@ class BWBPS_UploadForm{
 		
 		$this->stdFieldList = get_option('bwbps_cf_stdfields');
 		$this->attFields = $this->getFieldsWithAtts();
+		
 	}
 	
 	// These fields can have attributes in the shortcodes
@@ -26,6 +27,7 @@ class BWBPS_UploadForm{
 			, 'file_select'
 			, 'video_select'
 			, 'youtube_select'
+			, 'done'
 			);
 	}
 	
@@ -120,6 +122,7 @@ class BWBPS_UploadForm{
 		$retForm .='
 				</td>
 			</tr>';
+		
 		
 		$this->tabindex = 50;
 		
@@ -222,15 +225,20 @@ class BWBPS_UploadForm{
 		//Get the form header and hidden fields
 		$retForm = $this->getFormHeader($g, $formName);
 		
+			
 		
 		//Replace Std Fld tags in Custom Form with HTML
 		if(is_array($this->stdFieldList)){
 			foreach($this->stdFieldList as $fname){
 				unset($replace);
 				unset($atts);
+						
 				
+						
 				//Check to see if the field name is in the form at all
 				if(!strpos($cf, $fname) === false){
+				
+					
 				
 					// Some fields can have attributes...special method for getting Attributes
 					if(in_array($fname, $this->attFields)){
@@ -238,12 +246,14 @@ class BWBPS_UploadForm{
 						$atts = $this->getFieldAtts($cf, $fname);		
 						$fname = "[".$fname."]";
 						
+						
+						
 						//Get the new value for the replacement
 						$replace = $this->getStandardField($fname, $g, $atts);
 						//We need to replace the whole thing found by the regex
 						$fname = $atts['bwbps_match'];
 					} else {
-					
+						
 						$fname = "[".$fname."]";
 						$replace = $this->getStandardField($fname, $g);
 						
