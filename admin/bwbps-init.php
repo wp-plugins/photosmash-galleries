@@ -123,6 +123,7 @@ class BWBPS_Init{
 				wrapper TEXT ,
 				cells_perrow TINYINT NOT NULL default '0',
 				css TEXT ,
+				pagination_class VARCHAR(255),
 				lists VARCHAR(255) ,
 				fields_used TEXT,
 				PRIMARY KEY  (layout_id)

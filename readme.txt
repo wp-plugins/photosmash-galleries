@@ -3,7 +3,7 @@ Contributors: bennebw
 Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
-Tested up to: 2.8.1
+Tested up to: 2.7.1
 Stable tag: 0.3.00
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
@@ -11,8 +11,6 @@ PhotoSmash - user contributable photo galleries for WordPress pages and posts wi
 == Description ==
 
 PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  Following are the features:
-
-For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
 *   User contributable photo galleries
 *   AJAX photo uploads
@@ -24,17 +22,12 @@ For support and more documentation, visit the plugin's new homepage: [PhotoSmash
 *   Multiple galleries per post, added using a simple tag system
 *   Integrates with popular image viewing systems like Lightbox and Shadowbox
 *   Tweak appearance through the included css file
-*	Add Custom Fields to the upload form
-*	Create Custom Upload forms using simple tags and HTML
-*	Create Custom Layouts using simple tags and HTML
 
 == Installation ==
 
 1. Upload the plugin folder, bwb-photosmash, to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
-1. To automatically add a new gallery to a post, put this shortcode in the body of the post where you want it to show up: [photosmash]
-1. To add a specific existing gallery to a post, use this shortcode (replacing ## with the gallery's id): [photosmash id=##] 
-1. Alternatively, you can set PhotoSmash to "auto-add" galleries to all post by updating the settings in the PhotoSmash options page in the Settings Admin menu.
+1. Place [photosmash=] tag in your posts or pages.  You can add a gallery id after the '='.  Leaving blank will create a new gallery that will be linked to your post.  Alternatively, you can set PhotoSmash to "auto-add" galleries to all post by updating the settings in the PhotoSmash options page in the Settings Admin menu.
 
 == Frequently Asked Questions ==
 
@@ -68,13 +61,6 @@ It should be relatively straight forward to change the look and feel through thi
 1.  Sample PhotoSmash Gallery with default css
 2.  Top portion of the PhotoSmash options page
 3.  Sample of the upload page
-
-== Changelog ==
-
-= 0.3.00 =
-* This is a huge re-release of PhotoSmash, dozens of changes from custom forms/fields/layouts to sorting
-* You should not lose any of your prior galleries or work if you're upgrading, and they should work the same without any tweaking from you...All the same, BACKUP your PhotoSmash tables just in case.  Please!
-* Make sure you visit the PhotoSmash Admin pages after upgrading.  If you see a message concerning the database, please follow the instructions for upgrading it.
 
 == Usage ==
 

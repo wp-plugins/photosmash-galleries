@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: PhotoSmash
-Plugin URI: http://smashly.net/photosmash-galleries/
+Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.3.00
+Version: 0.3.01
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -1331,14 +1331,14 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		global $wpdb;
 		
 			
-		$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
+		$sql = "SELECT * FROM ".PSLAYOUTSTABLE." LIMIT 1";
 	
 		$ret = $wpdb->get_row($sql);
 	
 		//if(!$ret){return false;}
 	
 		//Field to be checked against database
-		$col = 'sort_field';
+		$col = 'pagination_class';
 	
 		foreach($wpdb->get_col_info('name') as $name){
 			$colname[] = $name;

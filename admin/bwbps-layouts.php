@@ -47,6 +47,8 @@ class BWBPS_LayoutsEditor{
 		$d['wrapper'] = $_POST['bwbps_wrapper'];
 		$d['css'] = $_POST['bwbps_css'];
 		
+		$d['pagination_class'] = esc_attr__($_POST['bwbps_pagination_class']);
+		
 		//Strip slashes...I think WP adds slashes regardless, so you need to strip them
 		$d['layout'] = stripslashes($d['layout']);
 		$d['alt_layout'] = stripslashes($d['alt_layout']);
@@ -192,6 +194,26 @@ class BWBPS_LayoutsEditor{
 		<textarea name="bwbps_css" cols="43" rows="4"><?php echo htmlentities($layoutOptions['css']);?></textarea>
 	</td>
 </tr>
+
+<tr>
+	<th>Pagination CSS class:</th>
+	<td>
+		<input type='text' name="bwbps_pagination_class" value='<?php 
+		
+		if(!$layoutOptions['pagination_class'] ){
+			echo "bwbps_pagination";
+		} else {
+			esc_attr_e($layoutOptions['pagination_class']);
+		}
+		?>'/>
+		<br/>Used when paging is turned on:
+		<ol><li>Standard (white text, blue background on hover): bwbps_pagination</li>
+			<li>Alternate (black text, black background on hover): bwbps_pag_2</li>
+		<li>Or, use your own class that you define in CSS elsewhere.</li></ol>
+	</td>
+</tr>
+
+
 
 <tr>
 <th><input type="submit" name="saveLayout" class="button-primary" tabindex="20" value="<?php _e('Save Layout', 'bwbpsLang') ?>" /></th>

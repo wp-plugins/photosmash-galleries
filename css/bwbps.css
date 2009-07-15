@@ -66,6 +66,7 @@ ul.bwbps_gallery li{
 }
 
 div.bwbps_pagination{
+	clear: both;
 	margin: 5px auto;
 	text-align: center;
 }
@@ -88,6 +89,36 @@ div.bwbps_pagination{
 
 .bwbps_pagination span {
 	color: #fff;
+	font-weight: bold;
+	padding: 3px 7px;
+	border: 1px;
+	margin: 2px;
+}
+
+div.bwbps_pag_2{
+	clear: both;
+	margin: 5px auto;
+	text-align: center;
+}
+
+.bwbps_pag_2 a {
+	color: #777;
+	padding: 3px 7px;
+	border: 1px;
+	margin: 2px;
+	border: 1px solid #a0a0a0;	
+}
+
+
+.bwbps_pag_2 a:hover{
+	background-color: #444;
+	color: #fff;
+	text-decoration: none;
+}
+
+
+.bwbps_pag_2 span {
+	color: #777;
 	font-weight: bold;
 	padding: 3px 7px;
 	border: 1px;

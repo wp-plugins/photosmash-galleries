@@ -94,20 +94,7 @@ class BWBPS_Layout{
 		
 		//Set to page 1 if not supplied in Get or Post
 		if(!$pagenum || $pagenum < 1){$pagenum = 1;}	
-	
-		//get the pagination navigation
-		if($totRows && $g['img_perpage']){
-			$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g['img_perpage']);	
-				//What image # do we begin page with?
-				$lastImg = $pagenum * $g['img_perpage'];
-				$startImg = $lastImg - $g['img_perpage'] + 1;
-			
-		} else {
-			$nav = "";
-			$startImg = 0;
-			$lastImg = $totRows + 1;
-		}
-	
+		
 		//Set up Attributes:  caption width, image class name, etc
 		if(!$g['thumb_width'] || $g['thumb_width'] < 60){
 			$g['captionwidth'] = "style='width: 80px'";
@@ -171,6 +158,20 @@ class BWBPS_Layout{
 		} else {
 			$imgNum = 0;
 		}
+		
+		//get the pagination navigation
+		if($totRows && $g['img_perpage']){
+			$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g['img_perpage'], $layout);	
+				//What image # do we begin page with?
+				$lastImg = $pagenum * $g['img_perpage'];
+				$startImg = $lastImg - $g['img_perpage'] + 1;
+			
+		} else {
+			$nav = "";
+			$startImg = 0;
+			$lastImg = $totRows + 1;
+		}
+		
 		
 		if($images){
 			if($this->psOptions['img_targetnew']){
@@ -287,6 +288,7 @@ class BWBPS_Layout{
 				";
 		} else {
 			//Custom Wrapper
+				
 			if($layout->wrapper){
 				$ret = $layout->wrapper;
 				$ret = str_replace('[gallery_id]',$g['gallery_id'], $ret);
@@ -301,6 +303,8 @@ class BWBPS_Layout{
 			} else {
 				$ret = $psTable;
 			}
+			
+			$ret .= $nav;
 			
 			//Add CSS
 			if(trim($layout->css)){
@@ -321,6 +325,7 @@ class BWBPS_Layout{
 	
 	function calculateURLs(&$g, &$image, $perma)
 	{
+			
 		//Deal with cases where they only want links to images on Post Pages
 		$filetype = (int)$image['file_type'];
 		
@@ -830,7 +835,11 @@ class BWBPS_Layout{
 					if($image['user_url'] && $this->validURL($image['user_url'])){
 						$ret = "<a href='".$image['user_url']."' title=''>"
 							.$this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])."</a>";
+					} else {
+						$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
 					}
+				} else {
+					$ret = "anonymous";
 				}
 				break;
 				
@@ -899,6 +908,7 @@ class BWBPS_Layout{
 		$image['user_url'] = esc_url($image['user_url']);
 		$image['url'] = esc_url($image['url']);
 		
+				
 		//Build caption
 			if($this->psOptions['caption_targetnew']){
 				$captiontargblank = " target='_blank' ";
@@ -1124,7 +1134,7 @@ class BWBPS_Layout{
 	 * @param (int) $totalRows - total rows in images query
 	 * @param (int) $rowsPerPage - rows per page - or # of images per page
 	 */
-	function getPagingNavigation($url, $page, $totalRows, $rowsPerPage){
+	function getPagingNavigation($url, $page, $totalRows, $rowsPerPage, $layout=false){
 		if((int)$rowsPerPage < 1){return false;}
 				
 		$total_pages = ceil($totalRows / $rowsPerPage);
@@ -1164,7 +1174,13 @@ class BWBPS_Layout{
 			$snav = implode("",$nav);
 		}
 		
-		$ret = "<div class='bwbps_pagination'>". $snav."</div>";
+		if($layout && $layout->pagination_class){
+			$pgnclass = $layout->pagination_class;
+		} else {
+			$pgnclass = "bwbps_pagination";
+		}
+		
+		$ret = "<div class='$pgnclass'>". $snav."</div>";
 		
 		return $ret;
 		
@@ -1272,13 +1288,14 @@ class BWBPS_Layout{
 			$uid = $user_ID ? $user_ID : -1;
 					
 			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
+				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'
 				.$wpdb->users.'.user_login,'
 				.$wpdb->users.'.user_url'
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
-				.$wpdb->users.'.ID = '. PSIMAGESTABLE . '.user_id'.$custDataJoin
+				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
 				.' WHERE gallery_id = %d AND (status > 0 OR user_id = '
 				.$uid.')ORDER BY '.$sortby
 				, $g['gallery_id']);			
@@ -1287,6 +1304,7 @@ class BWBPS_Layout{
 		
 		
 		$images = $wpdb->get_results($sql, ARRAY_A);
+		
 				
 		return $images;
 	}
