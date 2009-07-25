@@ -288,6 +288,7 @@ function bwbpsShowPhotoUpload(gal_id, post_id, form_pfx){
 	bwbpsActiveGallery = gal_id;
 	$j('#' + form_pfx + 'bwbps_galleryid').val(gal_id);
 	$j('#' + form_pfx + 'bwbps_post_id').val(post_id);
+	$j('#' + form_pfx + "bwbps_submitBtn").removeAttr('disabled');
 }
 
 function bwbpsShowPhotoUploadNoThickbox(gal_id, post_id, form_pfx){
@@ -300,6 +301,7 @@ function bwbpsShowPhotoUploadNoThickbox(gal_id, post_id, form_pfx){
 	
 	$j('#bwbpsFormSpace_' + gal_id).show();
 	$j('#' + form_pfx + 'bwbps-formcont').show('slow');
+	$j('#' + form_pfx + "bwbps_submitBtn").removeAttr('disabled');
 }
 
 function bwbpsHideUploadForm(gal_id, form_pfx){
@@ -375,13 +377,15 @@ function bwbpsModerateImage(action, image_id)
 {
 	var imgid = parseInt('' + image_id);
 	var myaction = false;
+	var actiontext = "";
 	
-	if(action == 'bury'){ myaction = "delete";}
-	if(action == 'approve'){ myaction = "approve";}
-	if(action == 'savecaption'){ myaction = 'savecaption';}
+	if(action == 'bury'){ myaction = "delete"; actiontext = "delete this image "; }
+	if(action == 'approve'){ myaction = "approve"; actiontext = "approve this image ";}
+	if(action == 'review'){ myaction = "review"; actiontext = "mark this image as reviewed ";}
+	if(action == 'savecaption'){ myaction = 'savecaption'; actiontext = "save image data ";}
 	if(!myaction){ alert('Invalid action.'); return false;}
 	
-	if(!confirm('Do you want to ' + myaction + ' this image (id: ' + imgid + ')?')){ return false;}
+	if(!confirm('Do you want to ' + actiontext + ' (id: ' + imgid + ')?')){ return false;}
 	
 	var _moderate_nonce = $j("#_moderate_nonce").val();
 	

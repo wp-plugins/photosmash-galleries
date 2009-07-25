@@ -610,7 +610,12 @@ class BWBPS_Uploader{
 				$data['status'] = -1;
 			}
 		}
-		$data['alerted'] = 0;
+		
+		if( $this->psOptions['alert_all_uploads'] == 1 || $data['status'] == -1 ) {
+			$data['alerted'] = 0;
+		} else {
+			$data['alerted'] = 1;
+		}
 		$data['updated_by'] = $current_user->ID;
 		$data['created_date'] = date( 'Y-m-d H:i:s');
 		$data['seq'] = -1;
@@ -638,6 +643,15 @@ class BWBPS_Uploader{
 			$this->saveCustomFields($image_id);
 		}
 		
+		//Trigger for up the Upload Alert Email
+		if($image_id){
+			if( $this->psOptions['img_alerts'] == -1 ) {
+				$this->sendNewImageAlerts();
+			} else {
+				update_option('BWBPhotosmashNeedAlert', 1);
+			}
+		}
+		
 		return $image_id;
 	}
 	
@@ -655,6 +669,56 @@ class BWBPS_Uploader{
 			}
 		}	
 	}
+	
+	//Send email alerts for new images
+	function sendNewImageAlerts()
+	{
+		global $wpdb;
+				
+		if( !$this->psOptions['alert_all_uploads'] ){
+			
+			$sqlStatus = " AND status = -1 " ;
+			$msgStatus = " awaiting moderation.";
+		
+		}
+		
+		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 $sqlStatus ;";
+		$results = $wpdb->get_results($sql);
+		if(!$results) return;
+		
+		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos". $msgStatus. ".  Select the appropriate gallery or click image below.<p><a href='".get_bloginfo('url')
+		."/wp-admin/admin.php?page=managePhotoSmashImages'>".get_bloginfo('name')." - PhotoSmash Photo Manager</a></p>";
+		
+		
+		$ret .= "<table><tr>";
+		$i = 0;
+		foreach($results as $row)
+		{
+			$ret .= "<td><a href='".get_bloginfo('url')
+		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".PSTHUMBSURL.$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
+			$i++;
+			if($i==4){
+				$ret .="</tr><tr>";
+				$i=0;
+			}
+		}
+		$ret .="</tr></table>";
+		$admin_email = get_bloginfo( "admin_email" );
+		
+ 		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
+ 		
+ 		wp_mail($admin_email, "New images for moderation", $ret, $headers );
+		$this->psOptions['last_alert'] = time();
+		
+		update_option($this->adminOptionsName, $this->psOptions);
+		update_option('BWBPhotosmashNeedAlert',0);
+		
+		$data['alerted'] = -1;
+		$where['alerted'] = 0;
+		$wpdb->update(PSIMAGESTABLE, $data, $where);
+		
+	}
+	
 	
 	/*
 	 *	Create New Gallery

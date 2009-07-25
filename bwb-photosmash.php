@@ -138,7 +138,16 @@ class BWB_PhotoSmash{
 			include_once("ajax_upload.php");
 		}
 		*
+		
+		
+		add_action( 'bwbps_contributor_gallery', array(&$this,'displayContributorGallery') );
 		*/
+		
+		if( $this->psOptions['contrib_gal_on'] ){
+			add_filter('the_posts',  array(&$this,'displayContributorGallery') );
+		
+			add_filter('the_excerpt',array(&$this,'fixExcerptGallery') ); 
+		}
 
 	}
 	
@@ -180,6 +189,7 @@ class BWB_PhotoSmash{
 				'upload_form_caption' => 'Select an image to upload:',
 				'img_class' => 'ps_images',
 				'show_caption' => 1,
+				'alert_all_uploads' => 0,
 				'img_alerts' => 3600,
 				'show_imgcaption' => 1,
 				'nofollow_caption' => 1,
@@ -207,7 +217,9 @@ class BWB_PhotoSmash{
 				'upload_authmessage' => '',
 				'imglinks_postpages_only' => 0,
 				'sort_field' => 0,
-				'sort_order' => 0
+				'sort_order' => 0,
+				'contrib_gal_on' => 0,
+				'suppress_contrib_posts' => 0
 			);
 			if(!$psOptions){
 				add_option($this->adminOptionsName, $psAdminOptions);
@@ -417,11 +429,20 @@ class BWB_PhotoSmash{
 	{
 		global $wpdb;
 		
-		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 AND status = -1;";
+		if(!get_option('BWBPhotosmashNeedAlert') == 1){ return; }
+		
+		if( !$this->psOptions['alert_all_uploads'] ){
+			
+			$sqlStatus = " AND status = -1 " ;
+			$msgStatus = " awaiting moderation.";
+		
+		}
+		
+		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 $sqlStatus ;";
 		$results = $wpdb->get_results($sql);
 		if(!$results) return;
 		
-		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos awaiting moderation.  Select the appropriate gallery or click image below.<p><a href='".get_bloginfo('url')
+		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos". $msgStatus. ".  Select the appropriate gallery or click image below.<p><a href='".get_bloginfo('url')
 		."/wp-admin/admin.php?page=managePhotoSmashImages'>".get_bloginfo('name')." - PhotoSmash Photo Manager</a></p>";
 		
 		
@@ -446,8 +467,9 @@ class BWB_PhotoSmash{
 		$this->psOptions['last_alert'] = time();
 		
 		update_option($this->adminOptionsName, $this->psOptions);
+		update_option('BWBPhotosmashNeedAlert',0);
 		
-		$data['alerted'] = 1;
+		$data['alerted'] = -1;
 		$where['alerted'] = 0;
 		$wpdb->update(PSIMAGESTABLE, $data, $where);
 		
@@ -494,8 +516,14 @@ function checkEmailAlerts(){
 	// Get the Class level psOptions variable
 	// contains Options defaults and the Alert message psuedo-cron	
 	
+	//This does the alert if it is set to alert immediately
+	if( $this->psOptions['img_alerts'] == -1 ){
+		$this->sendNewImageAlerts();
+		return;
+	}
+	
 	//This is the timer for sending Alerts 
-		if($this->psOptions['img_alerts'] >0 ){
+		if( $this->psOptions['img_alerts'] > 0 ){
 			$time = time();
 			if($time - $this->psOptions['last_alert'] > 
 				$this->psOptions['img_alerts'])
@@ -539,7 +567,8 @@ function shortCodeGallery($atts, $content=null){
 			'layout' => false,
 			'thickbox' => false,
 			'form_visible' => false,
-			'single_layout' => false
+			'single_layout' => false,
+			'author' => false
 		),$atts));
 		
 		
@@ -557,13 +586,35 @@ function shortCodeGallery($atts, $content=null){
 			}
 		}
 				
-		//Get Gallery
+		
 		$galparms = $atts;
+		
+		// Set up for contributor gallery
+		if( $gallery_type == 'contributor' ){
+			$id = 0;
+			$galparms['gallery_type'] = 10;
+		}
+		
+		if( $galparms['gallery_type'] == 10 ){
+			
+			$galparms['gallery_name'] = 'Contributor Gallery';
+			
+			if($author){
+			
+				$galparms['author'] == $author;
+				$galparms['smart_where'] = array ( "user_id" => $author );
+			
+			}
+			
+			$galparms['smart_gallery'] = true;
+			
+			
+		}
 		
 		$galparms['gallery_id'] = (int)$id;
 		$galparms['photosmash'] = $galparms['gallery_id'];
 	
-			
+		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 				
 		$g['use_thickbox'] = $thickbox;
@@ -697,7 +748,7 @@ function getGallery($g){
 	//Define Galleries table name for use in queries
 
 	//See if Gallery is Cached
-	if($g['gallery_id'] && is_array($this->galleries) && array_key_exists($g['gallery_id'], $this->galleries))
+	if($g['gallery_id'] && is_array($this->galleries) && array_key_exists($g['gallery_id'], $this->galleries) && $g['gallery_type'] <> 10)
 	{
 		// Set $g = to the cached gallery, but keep any values that $g already has
 		foreach ( $this->galleries[$g['gallery_id']] as $key => $option ){
@@ -710,25 +761,58 @@ function getGallery($g){
 	
 	} else {
 		//Gallery was not cached......Get from either Gallery ID or Post ID
-	
-		//Get the specified gallery params if valid gallery_id
-		if($g['gallery_id']){
-			//Get gallery params based on Gallery_ID
-			$gquery = $wpdb->get_row(
-				$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-					." WHERE gallery_id = %d",$g['gallery_id']),ARRAY_A);
-					
-			//If query is false, then Bad Gallery ID provided...alert user
-			if(!$gquery){$g['gallery_id'] = false; return $g;}
 		
+		
+		//Is it a Contributor Gallery???
+		if( $g['gallery_type'] == 10 ){
+			
+			$gquery = false;
+			if($g['gallery_id']){
+			
+				$g['gallery_id'] = (int)$this->psOptions['contributor_gallery'];
+				
+				$gquery = $wpdb->get_row(
+					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+						." WHERE gallery_id = %d AND gallery_type = 10",$g['gallery_id']),ARRAY_A);
+			
+			}
+			
+			if( !$gquery ){
+			
+				$gquery = $wpdb->get_row(
+					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+						." WHERE gallery_type = 10 AND status = 1 "),ARRAY_A);
+			
+			}
+			
+			if( !$gquery ){
+	
+				$g['gallery_name'] = 'Contributor Gallery';
+			
+			}
+			
+				
 		} else {
-			
-			//Get gallery params based on Post_ID
-			$gquery = $wpdb->get_row(
-				$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-					." WHERE post_id = %d",$post->ID),ARRAY_A);
+	
+			//Get the specified gallery params if valid gallery_id
+			if($g['gallery_id']){
+				//Get gallery params based on Gallery_ID
+				$gquery = $wpdb->get_row(
+					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+						." WHERE gallery_id = %d",$g['gallery_id']),ARRAY_A);
 					
+				//If query is false, then Bad Gallery ID provided...alert user
+				if(!$gquery){$g['gallery_id'] = false; return $g;}
+		
+			} else {
 			
+				//Get gallery params based on Post_ID
+				$gquery = $wpdb->get_row(
+					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+						." WHERE post_id = %d",$post->ID),ARRAY_A);
+					
+			}
+		
 		}
 		
 		if($gquery){
@@ -774,7 +858,7 @@ function getGallery($g){
 		
 	
 	if( !$galleryfound ){
-
+	
 		//No Gallery found...Need to create a Record for this Gallery
 			$data['post_id'] = $post->ID;
 			$data['gallery_name'] = $g['gallery_name'] ? $g['gallery_name']  : $post->post_title;
@@ -1144,7 +1228,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			'gal_id' => false,
 			'field' => false,
 			'layout' => false,
-			'alt' => false
+			'alt' => false,
+			'author' => false
 		),$atts));
 		
 		
@@ -1354,6 +1439,72 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		return;
 	}
 	
+	function displayContributorGallery($theposts){
+			
+		if(is_author()){
+						
+			$author = (int) get_query_var( 'author' );
+			
+			$d = date( 'Y-m-d H:i:s' );
+			
+			//Create an objec for a new post to un_shift onto the posts array
+				$newpost->ID = 0;
+				$newpost->post_author = $author;
+				$newpost->post_date = $d;
+				$newpost->post_date_gmt = $d;
+				$newpost->post_content = "[photosmash gallery_type=contributor author=".$author
+					." no_form=true]";
+				$newpost->post_title = 'Images by ' 
+					. get_the_author_meta(  'user_nicename', $author );
+				$newpost->post_category = 0;
+				$newpost->post_excerpt = '';
+				$newpost->post_status = 'publish';
+				$newpost->comment_status = 'closed';
+				$newpost->ping_status = 'closed';
+				$newpost->post_password = '';
+				$newpost->post_name = 'author-gallery';
+				$newpost->to_ping = '';
+				$newpost->pinged = '';
+				$newpost->post_modified = $d;
+				$newpost->post_modified_gmt = $d;
+				$newpost->post_content_filtered = '';
+				$newpost->post_parent = 0;
+				$newpost->guid = '';
+				$newpost->menu_order = 0;
+				$newpost->post_type = 'post';
+				$newpost->post_mime_type = '';
+				$newpost->comment_count = 0;
+				$newpost->photosmash = 'author';
+				
+			if( $this->psOptions['suppress_contrib_posts'] ){
+				
+				unset($theposts);
+				$theposts = array($newpost);
+				
+			} else {
+				
+				array_unshift( $theposts, $newpost );
+				
+			}
+		}	
+		
+		return $theposts;
+	
+	}
+	
+	function fixExcerptGallery($excerpt){
+		global $post;
+		
+		if($post->photosmash == 'author') {		
+			the_content();
+			return "";
+		} else {
+			return $excerpt;
+		}	
+	}
+	
+	
+	
 	
 } //End of BWB_PhotoSmash Class
 
@@ -1364,6 +1515,13 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 /* ***************************************************************************************** */
 
 $bwbPS = new BWB_PhotoSmash();
+
+//
+function bwbps_contributor_gallery(){
+	//do_action('bwbps_contributor_gallery');
+}
+
+
 
 
 //Call the Function that will Add the Options Page
@@ -1388,4 +1546,5 @@ add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
 add_shortcode('photosmash', array(&$bwbPS, 'shortCodeGallery'));
 
 add_shortcode('psmash', array(&$bwbPS, 'shortCodes'));
+
 ?>

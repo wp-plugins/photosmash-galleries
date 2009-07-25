@@ -37,6 +37,10 @@ class BWBPS_AJAX{
 			case 'approve':
 				$this->approveImage();
 				break;
+				
+			case 'review':
+				$this->markImageReviewed();
+				break;
 		
 			case 'delete' :
 				$this->deleteImage();
@@ -118,10 +122,29 @@ class BWBPS_AJAX{
 		if(current_user_can('level_10')){
 		
 			$data['status'] = 1;
+			$data['alerted'] = 1;
 			$json['image_id'] = (int)$_POST['image_id'];
 			$where['image_id'] = $json['image_id'];
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 			$json['action'] = 'approved';
+			$json['deleted'] = '';
+		
+			echo json_encode($json);
+			return;
+		}else {$json['status'] = -1;}
+		echo json_encode($json);
+	}
+	
+	function markImageReviewed(){
+		global $wpdb;
+		if(current_user_can('level_10')){
+		
+			
+			$data['alerted'] = 1;
+			$json['image_id'] = (int)$_POST['image_id'];
+			$where['image_id'] = $json['image_id'];
+			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
+			$json['action'] = 'marked';
 			$json['deleted'] = '';
 		
 			echo json_encode($json);

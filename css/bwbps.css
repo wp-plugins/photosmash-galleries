@@ -197,6 +197,10 @@ div.bwbps_pag_2{
 	border: 2px solid red !important;
 }
 
+.ps-newimage img {
+	border: 2px solid green !important;
+}
+
 .ps-buried img {
 	border: 2px solid purple !important;
 }

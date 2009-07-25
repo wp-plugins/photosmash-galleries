@@ -32,6 +32,7 @@ class BWBPS_Layout{
 			, 'user_name'
 			, 'user_url'
 			, 'user_link'
+			, 'author_link'
 			, 'contributor'
 			, 'full_caption'
 			, 'date_added'
@@ -850,6 +851,26 @@ class BWBPS_Layout{
 				}
 				
 				break;
+			
+			case '[author_link]' :
+
+				if( (int)$image['user_id'] ){
+									
+					$ret = get_author_posts_url($image['user_id']);
+					
+					if($ret){
+						$name = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
+						$ret = "<a href='".$ret."' title='View all images by contributor'>".$name."</a";
+					}
+				
+				} else {
+				
+					$ret = "";
+				
+				}
+								
+				break;
+				
 				
 			/*
 			case '[contributor_url]' :
@@ -1121,6 +1142,73 @@ class BWBPS_Layout{
 					}
 															
 					break;
+				
+				case 10: // by Contributor (link to WP author page)				
+					
+					if($image['user_id']){
+					
+						$theurl = get_author_posts_url($image['user_id']);
+						$captionurl = "
+						<a href='".$theurl."'"
+							." title='View all images by contributor'"
+							.$g['url_attr']['nofollow']." $captiontargblank>";
+						$closeUserURL = "</a>
+						";
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";
+												
+					}else{
+						$captionurl = "";
+						$closeUserURL = "";					
+					}
+					
+					$scaption = "<span ".$g['url_attr']['captionclass'].">by "
+						. $captionurl
+						. $nicename . $closeUserURL . "</span>";
+												
+					break;	
+					
+				case 11: // Caption by Contributor (link to WP author page)
+					
+					$goturl = false;					
+					if($image['user_id']){
+					
+						$theurl = get_author_posts_url($image['user_id']);
+						$goturl = true;
+						
+					} else {
+					
+						if($this->validURL($image['user_url'])){
+						
+							$theurl = $image['user_url'];
+							$goturl = true;
+							
+						}
+					}
+					
+					if($goturl){
+					
+						$captionurl = "<a href='".$theurl."'"
+							." title='".str_replace("'","",$image['image_caption'])
+							."' ".$g['url_attr']['nofollow']."  $captiontargblank>";
+							
+						$closeUserURL = "</a>";
+						
+						$image['capurl'] = "";
+						$image['capurl_close'] = "";
+						
+					}else{
+					
+						$captionurl = "";
+						$closeUserURL = "";					
+					}
+					
+					$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+						. $captionurl
+						. $image['image_caption']." by "
+						. $nicename . $closeUserURL . "</span>";
+					
+					break;	
 			}
 			
 			return $scaption;
@@ -1228,26 +1316,12 @@ class BWBPS_Layout{
 		global $wpdb;
 		global $user_ID;
 				
-		//Set up SQL for Custom Data if in Use
-		if($customFields){
-			$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
+		//Set up SQL for Custom Fields
+		$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
 				." ON ".PSIMAGESTABLE.".image_id = "
 				.PSCUSTOMDATATABLE.".image_id ";
 			$custdata = ", ".PSCUSTOMDATATABLE.".* ";
-		}
 		
-		$imagetablefields = array( 'seq'
-			, 'updated_date'
-			, 'avg_rating'
-			, 'rating_cnt'
-			, 'created_date'
-			, 'updated_date'
-			, 'user_id'
-			, 'gallery_id'
-			, 'image_id'
-			, 'file_type'
-			, 'image_caption'
-		);
 		
 		// Calculate ORDER BY
 		$sorder = (int)$g['sort_order'] ? "DESC" : "ASC";
@@ -1269,6 +1343,19 @@ class BWBPS_Layout{
 				
 		}
 				
+		// Add the WHERE clause for the Smart Galleries
+		if ( $g['smart_gallery'] && is_array($g['smart_where'] ) ){
+			
+			$swhere[] = $this->getSmartWhereField( $g['smart_where'] );
+				
+			$sqlWhere = " WHERE " . implode( " AND ", $swhere );			
+		
+		} else {
+		
+			$sqlWhere = " WHERE gallery_id = " . (int)$g['gallery_id'];
+		
+		}
+				
 		//Admins can see all images
 		if(current_user_can('level_10')){
 			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
@@ -1280,7 +1367,7 @@ class BWBPS_Layout{
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
-				.' WHERE gallery_id = %d ORDER BY '.$sortby, $g['gallery_id']);			
+				. $sqlWhere . ' ORDER BY '.$sortby);			
 					
 			
 		} else {
@@ -1296,17 +1383,52 @@ class BWBPS_Layout{
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
-				.' WHERE gallery_id = %d AND (status > 0 OR user_id = '
-				.$uid.')ORDER BY '.$sortby
-				, $g['gallery_id']);			
+				. $sqlWhere . ' AND (status > 0 OR user_id = '
+				.$uid.')  ORDER BY '.$sortby
+				);			
 				
 		}
-		
-		
+				
 		$images = $wpdb->get_results($sql, ARRAY_A);
 		
 				
 		return $images;
+	}
+	
+	/**
+	 * Smart Gallery Where Field
+	 * validates a URL
+	 *
+	 * @param (str) $url
+	 */
+	function getSmartWhereField( $swhere ){
+		
+		if( is_array($swhere) ){
+			$key = key($swhere);
+			$val = $swhere[$key];
+			
+			switch ($key) {
+				case "user_id" :
+					if( is_array($val) ){
+					
+						foreach ($val as $uid){
+						
+							$valid[] = (int)$uid;
+							
+						}
+						$ret = PSIMAGESTABLE . ".user_id IN ( " . implode( "," , $valid) . " ) ";
+						
+					} else {
+					
+						$ret = PSIMAGESTABLE . ".user_id = " . (int)$val;
+						
+					}
+					break;
+			}
+		
+		}
+		
+		return $ret;
 	}
 
 	/**

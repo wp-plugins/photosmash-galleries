@@ -102,6 +102,7 @@ class BWBPS_Admin{
 				'img_class' => 'ps_images',
 				'show_caption' => 1,
 				'nofollow_caption' => 1,
+				'alert_all_uploads' => 0,
 				'img_alerts' => 3600,
 				'show_imgcaption' => 1,
 				'contrib_role' => 10,
@@ -128,7 +129,9 @@ class BWBPS_Admin{
 				'upload_authmessage' => '',
 				'imglinks_postpages_only' => 0,
 				'sort_field' => 0,
-				'sort_order' => 0
+				'sort_order' => 0,
+				'contrib_gal_on' => 0,
+				'suppress_contrib_posts' => 0
 		);
 	}
 	
@@ -268,6 +271,9 @@ class BWBPS_Admin{
 			
 			$ps['nofollow_caption'] = isset($_POST['ps_nofollow_caption']) ? 1 : 0;
 			
+			//Alert on All Uploads
+			$ps['alert_all_uploads'] = isset($_POST['ps_alert_all_uploads']) ? 1 : 0;
+			
 			if(isset($_POST['ps_image_alert_schedule'])){
 				$ps['img_alerts'] = (int)$_POST['ps_image_alert_schedule'];
 			}
@@ -335,6 +341,10 @@ class BWBPS_Admin{
 			
 			$ps['sort_order'] = (int)$_POST['ps_sort_order'];
 			
+			/* Contributor Gallery */
+			$ps['contrib_gal_on'] = isset($_POST['ps_contrib_gal_on']) ? 1 : 0;
+			$ps['suppress_contrib_posts'] = isset($_POST['ps_suppress_contrib_posts']) ? 1 : 0;
+			
 
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
@@ -361,6 +371,7 @@ class BWBPS_Admin{
 		global $wpdb;
 		//This section saves Gallery specific settings
 			$gallery_id = $this->gallery_id;
+			$d['status'] = isset($_POST['gal_status']) ? 1 : 0;
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
 			$d['gallery_type'] = (int)$_POST['gal_gallery_type'];
 			$d['img_perpage'] = (int)$_POST['gal_img_perpage'];
@@ -516,6 +527,12 @@ if($psOptions['use_advanced'] ==1){
 	<?php }?>
 	
 	<tr>
+				<th>Activated:</th>
+				<td>
+					<input type="checkbox" name="gal_status" <?php if($galOptions['status'] == 1) echo 'checked'; ?> />
+				</td>
+	</tr>
+	<tr>
 				<th>Gallery name:</th>
 				<td>
 					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
@@ -531,6 +548,7 @@ if($psOptions['use_advanced'] ==1){
 						<option value="4" <?php if($galOptions['gallery_type'] == 4) echo 'selected=selected'; ?>>Video - YouTube + Upload</option>
 						<option value="5" <?php if($galOptions['gallery_type'] == 5) echo 'selected=selected'; ?>>Video - Uploads only</option>
 						<option value="6" <?php if($galOptions['gallery_type'] == 6) echo 'selected=selected'; ?>>Mixed - Images + YouTube</option>
+						<option value="10" <?php if($galOptions['gallery_type'] == 10) echo 'selected=selected'; ?>>Contributor Gallery</option>
 						
 					</select>
 				</td>
@@ -589,10 +607,13 @@ if($psOptions['use_advanced'] ==1){
 						<input type="radio" name="gal_show_imgcaption"  value="7" <?php if($galOptions['show_imgcaption'] == 7) echo 'checked'; ?>>Caption (link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="2" <?php if($galOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="3" <?php if($galOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="10" <?php if($galOptions['show_imgcaption'] == 10) echo 'checked'; ?>>Contributor (link to WP author page)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="4" <?php if($galOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="5" <?php if($galOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)
-						<br/><hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
+						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="11" <?php if($galOptions['show_imgcaption'] == 11) echo 'checked'; ?>>Caption [by] Contributor (link to WP author page)<br/>
+
+						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
 						<br/>
@@ -1036,6 +1057,7 @@ if($psOptions['use_customform']){ ?>
 		<li><a href="#bwbps_uploading">Uploading</a></li>
 		<li><a href="#bwbps_thumbnails">Thumbs/Images</a></li>
 		<li><a href="#bwbps_advanced">Advanced</a></li>
+		<li><a href="#bwbps_specgals">Special Galleries</a></li>
 
 	</ul>
 	<div id='bwbps_galleryoptions'>
@@ -1113,12 +1135,21 @@ if($psOptions['use_customform']){ ?>
 						<input type="radio" name="ps_show_imgcaption"  value="7" <?php if($psOptions['show_imgcaption'] == 7) echo 'checked'; ?>>Caption (link to user submitted url)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="2" <?php if($psOptions['show_imgcaption'] == 2) echo 'checked'; ?>>Contributor (link to image)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="3" <?php if($psOptions['show_imgcaption'] == 3) echo 'checked'; ?>>Contributor (link to website)<br/>
+						
+						<input type="radio" name="ps_show_imgcaption"  value="10" <?php if($psOptions['show_imgcaption'] == 10) echo 'checked'; ?>>Contributor (link to WP author page)<br/>
+						
 						<input type="radio" name="ps_show_imgcaption"  value="4" <?php if($psOptions['show_imgcaption'] == 4) echo 'checked'; ?>>Caption [by] Contributor (link to website)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="5" <?php if($psOptions['show_imgcaption'] == 5) echo 'checked'; ?>>Caption [by] Contributor (link to image)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="6" <?php if($psOptions['show_imgcaption'] == 6) echo 'checked'; ?>>Caption [by] Contributor (link to user submitted url)<br/>
+						
+						<input type="radio" name="ps_show_imgcaption"  value="11" <?php if($psOptions['show_imgcaption'] == 11) echo 'checked'; ?>>Caption [by] Contributor (link to WP author page)<br/>
+						
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="ps_show_imgcaption"  value="8" <?php if($psOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
-						<input type="radio" name="ps_show_imgcaption"  value="9" <?php if($psOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
+						<input type="radio" name="ps_show_imgcaption"  value="9" <?php if($psOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>
+						
+						
+						
 						<a href='javascript: void(0);' class='psmass_update' id='save_ps_show_imgcaption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 						<br/>
 						(Website links will be the website in the contributor's WordPress profile)<br/>
@@ -1164,7 +1195,9 @@ if($psOptions['use_customform']){ ?>
 			<tr>
 				<th>New Image email alert schedule:</th>
 				<td>
+					<input type="checkbox" name="ps_alert_all_uploads" <?php if( $psOptions['alert_all_uploads'] == 1) echo 'checked'; ?>/> Alert on all uploads (leave unchecked for moderations only)<br/>
 					<select name="ps_image_alert_schedule">
+						<option value="-1" <?php if($psOptions['img_alerts'] == -1) echo 'selected=selected'; ?>>alert immediately</option>
 						<option value="0" <?php if($psOptions['img_alerts'] == 0) echo 'selected=selected'; ?>>no alert</option>
 						<option value="600" <?php if($psOptions['img_alerts'] == 600) echo 'selected=selected'; ?>>every 10 min.</option>
 						<option value="3600" <?php if($psOptions['img_alerts'] == 3600) echo 'selected=selected'; ?>>every 1 hr</option>
@@ -1370,6 +1403,26 @@ if($psOptions['use_customform']){ ?>
 		<li><b>Alternate Javascript Function</b> - this feature allows you to plug in completely different behavior in the browser after an image is uploaded.  If you need to alter the display behavior upon upload and you are not a developer, there are plenty of WordPress/Javascript developers who can give you a hand for a reasonable fee or potentially gratis, depending on the time involved. (Note: 'Use Advanced Features' does NOT need to be set.) <b>Use carefully, and at your own risk.</b></li>
 		</ol>
 	</div>
+	
+	<div id="bwbps_specgals">
+		<table class="form-table">
+			<tr>
+				<th>Show Contributor Galleries:</th>
+				<td>
+					<input type="checkbox" name="ps_contrib_gal_on" <?php if($psOptions['contrib_gal_on'] == 1) echo 'checked'; ?>> Displays a gallery of all images by a contributor in the WordPress Author page. You don't have to tweak the file...this inserts the gallery as a new post at the top.
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Suppress Contributor posts:<br/><span style='font-size:10px; color: #999;' >Suppresses on author page only.</span></th>
+				<td>
+					<input type="checkbox" name="ps_suppress_contrib_posts" <?php if($psOptions['suppress_contrib_posts'] == 1) echo 'checked'; ?>> Will suppress all other posts on the authors page except for the Contributor Gallery.
+				</td>
+			</tr>
+			
+		</table>
+	</div>
+	
 	</div>
 	<p class="submit">
 		<input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" /> &nbsp; &nbsp; <input type="submit" name="reset_bwbPSDefaults" onclick="return bwbpsConfirmResetDefaults();" class="button-primary" value="<?php _e('Reset Defaults', 'bwbPS') ?>" /> &nbsp; &nbsp; <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a>
@@ -1457,7 +1510,7 @@ if($psOptions['use_customform']){ ?>
 		<?php 
 			echo $galleryDDL;
 		?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
-			&nbsp;<input type="submit" name="showModerationImages" value="<?php _e('In Moderation', 'bwbPS') ?>" />
+			&nbsp;<input type="submit" name="showModerationImages" value="<?php _e('Moderation/New', 'bwbPS') ?>" />
 			&nbsp;<input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') ?>" />		
 		<?php
 			
@@ -1485,6 +1538,7 @@ if($psOptions['use_customform']){ ?>
 	 */
 	function getGalleryImages($gallery_id)
 	{
+		global $wpdb;
 		$images = $this->getImagesQuery($gallery_id);
 		$admin = current_user_can('level_10');
 		
@@ -1507,7 +1561,15 @@ if($psOptions['use_customform']){ ?>
 				case -2 :
 					break;
 				default :
-					$modClass = '';
+					if( $image->alerted == -1 ){
+						$modClass= 'ps-newimage';
+						if($admin){
+							$modMenu = "<a href='javascript: void(0);' onclick='bwbpsModerateImage(\"review\", ".$image->image_id.");' class='ps-modbutton'>mark reviewed</a>";
+						}
+					break;
+					} else {
+						$modClass = '';
+					}
 					break;
 			}
 			
@@ -1559,6 +1621,13 @@ if($psOptions['use_customform']){ ?>
 			} else {$i++;}
 		}
 		
+		$data['alerted'] = -1;
+		$where['alerted'] = 0;
+		if( (int)$gallery_id ){
+			$where['gallery_id'] = (int)$gallery_id;
+		}
+		$wpdb->update(PSIMAGESTABLE, $data, $where);
+		
 		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span> <span>('.$imgcnt.') Images</span><br/><table class="widefat fixed" cellspacing="0">'.$psTable.'</table></div>';
 	} else {
 		return "<h3>No images in gallery yet...go to post page to load images.</h3>";
@@ -1598,7 +1667,8 @@ if($psOptions['use_customform']){ ?>
 					. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
 					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
 					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
-					. '.status = -1 ORDER BY '. PSIMAGESTABLE. '.seq, '
+					. '.status = -1 OR '. PSIMAGESTABLE
+					. '.alerted = -1 ORDER BY '. PSIMAGESTABLE. '.seq, '
 					. PSIMAGESTABLE. '.file_name');
 					break;
 					
@@ -1641,12 +1711,12 @@ if($psOptions['use_customform']){ ?>
 		
 		$sql = "SELECT ".PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
 			.$wpdb->prefix."posts.post_title, COUNT("
-			.PSIMAGESTABLE.".image_id) as img_cnt FROM "
+			.PSIMAGESTABLE.".image_id) as img_cnt, ".PSGALLERIESTABLE.".status FROM "
 			.PSGALLERIESTABLE." LEFT OUTER JOIN "
 			.PSIMAGESTABLE." ON ".PSIMAGESTABLE.".gallery_id = "
 			.PSGALLERIESTABLE.".gallery_id LEFT OUTER JOIN "
 			.$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = "
-			.$wpdb->prefix."posts.ID WHERE ".PSGALLERIESTABLE.".status = 1 GROUP BY "
+			.$wpdb->prefix."posts.ID  GROUP BY "
 			.PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
 			.$wpdb->prefix."posts.post_title, ".PSIMAGESTABLE.".gallery_id,"
 			.PSGALLERIESTABLE.".status, "
@@ -1720,6 +1790,10 @@ if($psOptions['use_customform']){ ?>
 			
 			if($showImgCount){
 				$title .=  " (".$row->img_cnt." imgs)";
+			}
+			
+			if( !$row->status ){
+				$title .= " - inactive";
 			}
 			
 			$ret .= "<option value='".$row->gallery_id."' ".$sel.">ID: ".$row->gallery_id."-".$title."</option>";

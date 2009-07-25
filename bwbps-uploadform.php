@@ -565,6 +565,7 @@ class BWBPS_UploadForm{
 		
 		//Standard Images
 		if($atts['images'] == 'true'){
+		
 			$hide = ($atts['displayed'] == 'images') ? "" : ' style="display: none;"';
 			$img_radio_msg = $atts['file_radio'] ? $atts['file_radio'] : 'Browse for file';
 			$url_radio = $atts['url_radio'] ? $atts['url_radio'] : 'Enter URL';
@@ -603,7 +604,7 @@ class BWBPS_UploadForm{
 		/* DO NOT ENABLE DIRECT LINKING YET...too many security issues */
 		//Direct Linking Images
 		if($atts['directlink'] == 'true'){
-		
+			$checked = "";
 			$radioclass = "";
 			$hide = $atts['displayed'] == 'directlink' ? "" : ' style="display: none;"';
 			$radio_msg = $atts['directlink_radio'] ? $atts['directlink_radio'] : 'Link to Image';
@@ -630,7 +631,8 @@ class BWBPS_UploadForm{
 		
 		//Secondary Image Select
 		if($atts['images2'] == 'true'){
-		
+			
+			$checked = "";
 			$radioclass = "";
 			$hide = ($atts['displayed'] == 'images2') ? "" : ' style="display: none;"';
 			$img_radio_msg = $atts['file_radio'] ? $atts['file_radio'] : 'Browse for file';
@@ -669,6 +671,7 @@ class BWBPS_UploadForm{
 		//YouTube
 		if($atts['youtube'] == 'true'){
 		
+			$checked = "";
 			$radioclass = "";
 			$hide = $atts['displayed'] == 'youtube' ? "" : ' style="display: none;"';
 			$radio_msg = $atts['youtube_radio'] ? $atts['youtube_radio'] : 'YouTube URL';
@@ -696,6 +699,7 @@ class BWBPS_UploadForm{
 		//Video File upload
 		if($atts['videofile'] == 'true'){
 			
+			$checked = "";
 			$radioclass = "";
 			$hide = $atts['displayed'] == 'videofile' ? "" : ' style="display: none;"';
 			$msg = $atts['video_msg'] ? $atts['video_msg'] : 'Select video file';
@@ -721,6 +725,7 @@ class BWBPS_UploadForm{
 		//General Documents - file type = 7
 		if($atts['doc'] == 'true'){
 			
+			$checked = "";
 			$radioclass = "";
 			$hide = ($atts['displayed'] == 'doc') ? "" : ' style="display: none;"';
 			$radio_msg = $atts['doc_radio'] ? $atts['doc_radio'] : 'Browse for document';
