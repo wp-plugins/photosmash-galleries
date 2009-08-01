@@ -71,6 +71,23 @@ It should be relatively straight forward to change the look and feel through thi
 
 == Changelog ==
 
+Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.3.02 - 08/01/2009 =
+
+    * Fixed Pagination when multiple galleries are on the same Post...now it remembers what page each gallery was on and paging links reflect proper paging for all other galleries.
+    * Added message to JSON return on upload for images that are to be moderated.  Uploading user is now presented with message:  Upload Successful!  Image is awaiting moderation.
+    * Added a hook to ajax_upload.php - hook:  bwbps_upload_done.  Fires after the Image is saved to the database, and provides an array containing the image's database values to the receiving function.  Useful if you're going to want to do some fun stuff after an image get uploaded.  A use case:  you have a business review site where the initial business record is created using a PhotoSmash upload.  The image in the upload should be the logo. If no image is supplied, that's ok, show a placeholder image. There is another gallery in the post you created for the business where users can upload their images.  When the an image is uploaded to this secondary gallery, you want to use that for the logo.  You can use this hook to update the blank image's file_name with the new image's file name.
+          o Call this hook in your code by:   add_action('bwbps_upload_done', 'your_function_name');
+          o Your function should accept an array as its first argument, all other arguments (if any) must be optional.
+    * Added Gallery-level option for allowing uploads with no image file attached - this will let you do some CMS type stuff
+    * Added Gallery-level option for suppressing 'no image' records in your gallery.  The can be accessed using the [psmash id=IMAGE-ID] shortcode. You can specify a layout to use or a field to display.
+    * Added Gallery-level default image option where you can specify the name of an image that is in the PhotoSmash images folder structure. This image will be used for 'no image' records if you don't Suppress.
+    * Fix - set contributor gallery so that it doesn't show any comments, and comments are closed.
+    * Fix - Link for post name in contributor gallery should link back to itself
+    * Fix - got rid of Video options in the Gallery Type setting.  YouTube options still remain, and will remain.  I'm not ready for uploading video yet. Worried about security issues.
+
+
 = 0.3.01 - 7/25/2009 =
 
     * Added Contributor Gallery - a special gallery that can be shown in the Author page.  Turn it on in PhotoSmash Setting > Special Galleries.  It can also suppress all other posts in the Author page.  Can also use custom layouts.
