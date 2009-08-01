@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: PhotoSmash
-Plugin URI: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/
+Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.3.01
+Version: 0.3.02
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -95,6 +95,37 @@ if( ! function_exists('esc_url') ){
 		} else {
 			return false;
 		}
+	
+	}
+}
+
+if( ! function_exists('esc_attr__') ){
+
+	function esc_attr__($string){
+		
+		if( function_exists('attribute_escape') ){
+			return attribute_escape($string);
+		} else {
+			return false;
+		}
+	
+	}
+	
+	function esc_attr($string){
+		
+		if( function_exists('attribute_escape') ){
+			return attribute_escape($string);
+		} else {
+			return false;
+		}
+	
+	}
+	
+	function esc_attr_e($string){
+		
+		if( function_exists('attribute_escape') ){
+			echo ($string);
+		} 
 	
 	}
 }
@@ -1416,14 +1447,14 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		global $wpdb;
 		
 			
-		$sql = "SELECT * FROM ".PSLAYOUTSTABLE." LIMIT 1";
+		$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
 	
 		$ret = $wpdb->get_row($sql);
 	
 		//if(!$ret){return false;}
 	
 		//Field to be checked against database
-		$col = 'pagination_class';
+		$col = 'default_image';
 	
 		foreach($wpdb->get_col_info('name') as $name){
 			$colname[] = $name;
@@ -1443,26 +1474,32 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			
 		if(is_author()){
 						
+			global $wp_rewrite;
+			
 			$author = (int) get_query_var( 'author' );
+			
+			$author_name = get_the_author_meta(  'user_nicename', $author );
+			
+			$authorpg = $wp_rewrite->author_base ."/" . $author_name;
+			
 			
 			$d = date( 'Y-m-d H:i:s' );
 			
 			//Create an objec for a new post to un_shift onto the posts array
-				$newpost->ID = 0;
+				$newpost->ID = -1;
 				$newpost->post_author = $author;
 				$newpost->post_date = $d;
 				$newpost->post_date_gmt = $d;
 				$newpost->post_content = "[photosmash gallery_type=contributor author=".$author
 					." no_form=true]";
-				$newpost->post_title = 'Images by ' 
-					. get_the_author_meta(  'user_nicename', $author );
+				$newpost->post_title = 'Images by ' . $author_name; 
 				$newpost->post_category = 0;
 				$newpost->post_excerpt = '';
 				$newpost->post_status = 'publish';
 				$newpost->comment_status = 'closed';
 				$newpost->ping_status = 'closed';
 				$newpost->post_password = '';
-				$newpost->post_name = 'author-gallery';
+				$newpost->post_name = $authorpg;
 				$newpost->to_ping = '';
 				$newpost->pinged = '';
 				$newpost->post_modified = $d;
@@ -1491,6 +1528,61 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		return $theposts;
 	
 	}
+	
+	function getContributorPost($author, $author_name){
+		global $wpdb;
+			
+		
+				
+		$post_name = sanitize_title("Images by $author_name psmash");
+		
+		$data = array(
+			"author" => $author,
+			"name"	=>	$post_name
+		);
+		
+		$thepost = $wpdb->get_row($wpdb->prepare("SELECT * FROM " 
+			.$wpdb->posts . " WHERE post_author = %d AND post_name = %s "
+			, $author, $post_name));
+			
+			
+			
+		if( !$thepost ){
+
+			$post_content = "[photosmash gallery_type=contributor author=".$author
+					." no_form=true]";
+					
+			$post = array (
+				"post_author"	=> $author,
+				"post_type" => 'page',
+				"post_title"     => "Images by $author_name",
+				"comment_status" => "open",
+				"post_name"      => $post_name,
+				"post_status"    => 'publish',
+				"post_content" => $post_content,
+				"post_category"  => array(0)
+	          );
+	          
+	          $post_id = wp_insert_post($post);
+	          
+	          if($post_id){
+	
+		          $thepost = $wpdb->get_row($wpdb->prepare("SELECT * FROM " 
+					.$wpdb->posts . " WHERE ID = %d "
+					, $post_id));
+		          
+		      }
+		}
+		
+		if( $thepost ){
+			
+			$thepost->status = 'publish';
+		
+		}
+		
+		return $thepost;
+	}
+	
 	
 	function fixExcerptGallery($excerpt){
 		global $post;

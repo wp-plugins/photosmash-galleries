@@ -128,7 +128,7 @@ class BWBPS_AJAX{
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 			$json['action'] = 'approved';
 			$json['deleted'] = '';
-		
+					
 			echo json_encode($json);
 			return;
 		}else {$json['status'] = -1;}

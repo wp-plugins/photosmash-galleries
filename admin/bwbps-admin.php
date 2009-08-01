@@ -392,6 +392,9 @@ class BWBPS_Admin{
 			$d['nofollow_caption'] = isset($_POST['gal_nofollow_caption']) ? 1 : 0;
 			$d['img_status'] = (int)$_POST['gal_img_status'];
 			$d['contrib_role'] = (int)$_POST['gal_contrib_role'];
+			$d['allow_no_image'] = isset($_POST['gal_allow_no_image']) ? 1 : 0;
+			$d['suppress_no_image'] = isset($_POST['gal_suppress_no_image']) ? 1 : 0;
+			$d['default_image'] = $_POST['gal_default_image'];
 			
 			$d['use_customform'] = isset($_POST['gal_use_customform']) ? 1 : 0;
 			
@@ -545,8 +548,14 @@ if($psOptions['use_advanced'] ==1){
 					<select name="gal_gallery_type">
 						<option value="0" <?php if($psOptions['gallery_type'] == 0) echo 'selected=selected'; ?>>Photo gallery</option>
 						<option value="3" <?php if($galOptions['gallery_type'] == 3) echo 'selected=selected'; ?>>YouTube gallery</option>
+						
+						<?php
+						 /*  We're blocking out the Video options right now
 						<option value="4" <?php if($galOptions['gallery_type'] == 4) echo 'selected=selected'; ?>>Video - YouTube + Upload</option>
 						<option value="5" <?php if($galOptions['gallery_type'] == 5) echo 'selected=selected'; ?>>Video - Uploads only</option>
+						
+						*/ 
+						?>
 						<option value="6" <?php if($galOptions['gallery_type'] == 6) echo 'selected=selected'; ?>>Mixed - Images + YouTube</option>
 						<option value="10" <?php if($galOptions['gallery_type'] == 10) echo 'selected=selected'; ?>>Contributor Gallery</option>
 						
@@ -573,7 +582,7 @@ if($psOptions['use_advanced'] ==1){
 				</td>
 			</tr>
 	
-	<tr>
+			<tr>
 				<th>Images per page:</th>
 				<td>
 					<input type='text' name="gal_img_perpage" value='<?php echo (int)$galOptions['img_perpage'];?>' style='width: 40px !important;'/>
@@ -658,6 +667,28 @@ if($psOptions['use_advanced'] ==1){
 				<th>Upload form caption:</th>
 				<td>
 					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Allow 'no image' uploads:</th>
+				<td>
+					<input type="checkbox" name="gal_allow_no_image" <?php if($galOptions['allow_no_image'] == 1) echo 'checked'; ?> /> 
+					 Allows a record to be saved with no image file.
+				</td>
+			</tr>
+			<tr>
+				<th>Suppress 'no image' records:</th>
+				<td>
+					<input type="checkbox" name="gal_suppress_no_image" <?php if($galOptions['suppress_no_image'] == 1) echo 'checked'; ?> /> 
+					 In normal galleries, will suppress records where no image exists.
+				</td>
+			</tr>
+			<tr>
+				<th>Default image on 'no image':</th>
+				<td>
+					<input type='text' name="gal_default_image" value='<?php esc_attr_e($galOptions['default_image']) ;?>'/>
+					 Enter the file name of an image in the normal PhotoSmash image folders.  Will be used for 'no image' records if Suppress is off.
 				</td>
 			</tr>
 	</table>
@@ -1653,7 +1684,7 @@ if($psOptions['use_customform']){ ?>
 						. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
 						. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
 						. PSIMAGESTABLE.'.gallery_id ORDER BY '
-						. PSIMAGESTABLE. '.file_name');
+						. PSIMAGESTABLE. '.image_id');
 					break;
 					
 				case "moderation" :
@@ -1669,7 +1700,7 @@ if($psOptions['use_customform']){ ?>
 					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
 					. '.status = -1 OR '. PSIMAGESTABLE
 					. '.alerted = -1 ORDER BY '. PSIMAGESTABLE. '.seq, '
-					. PSIMAGESTABLE. '.file_name');
+					. PSIMAGESTABLE. '.image_id');
 					break;
 					
 				default:
@@ -1685,7 +1716,7 @@ if($psOptions['use_customform']){ ?>
 					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
 					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
 					. '.gallery_id = %d ORDER BY '. PSIMAGESTABLE. '.seq, '
-					. PSIMAGESTABLE. '.file_name', $gallery_id);			
+					. PSIMAGESTABLE. '.image_id', $gallery_id);			
 			}
 			
 			$images = $wpdb->get_results($sql);
@@ -1699,7 +1730,7 @@ if($psOptions['use_customform']){ ?>
 					. '.ID = '. PSIMAGESTABLE. '.user_id WHERE '. PSIMAGESTABLE
 					. '.gallery_id = %d AND ('. PSIMAGESTABLE. '.status > 0 OR '
 					. PSIMAGESTABLE. '.user_id = '.$uid.')ORDER BY '. PSIMAGESTABLE
-					. '.seq, '. PSIMAGESTABLE. '.file_name', $gallery_id));
+					. '.seq, '. PSIMAGESTABLE. '.image_id', $gallery_id));
 		}
 		return $images;
 	}

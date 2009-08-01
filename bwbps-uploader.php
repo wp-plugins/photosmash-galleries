@@ -1,6 +1,6 @@
 <?php
 /*  FUNCTIONS FOR UPLOADING AND SAVING IMAGES TO GALLERIES */
- 
+
 if(!function_exists('json_encode')){
 	require("classes/JSON.php");
 }
@@ -35,8 +35,6 @@ define("PSTABLEPREFIX", $wpdb->prefix."bwbps_");
 define("PSTEMPPATH",PSUPLOADPATH."/bwbpstemp/");
 
 
-
-
 //Set SAFE_MODE constant
 if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 	// if sever did in in a other way
@@ -56,6 +54,7 @@ class BWBPS_Uploader{
 	var $imageNumber = "";	//
 	var $imageData; //This gets populated with Image data on Image Save
 	var $customData; //This gets populated with the custom fields data on Custom Field Save
+	var $badImage; //Set to true if allowNoImage == false and file mime != image and file type = 0
 	
 	/* 
 	 * Constructor
@@ -439,11 +438,19 @@ class BWBPS_Uploader{
 		}
 		
 		if(!$this->handle->file_is_image){
-			$this->json['succeed'] = "true";
+			
+			if($allowNoImg){
+				$this->json['succeed'] = "true";
+			} else {
+				$this->json['succeed'] = "false";
+				$this->json['message'] = "File was not a valid image.";
+			}
+			
 			$this->json['img'.$this->imageNumber] = "0";
 			return $allowNoImg;
-		}
-		
+			
+		} 
+				
 		//change image name
 		$this->handle->file_new_name_body = $newname;
 		sleep(1);
@@ -608,6 +615,7 @@ class BWBPS_Uploader{
 				$data['status'] = 1;
 			} else {
 				$data['status'] = -1;
+				$this->json['message'] = "Submission is awaiting moderation.";
 			}
 		}
 		
@@ -621,7 +629,7 @@ class BWBPS_Uploader{
 		$data['seq'] = -1;
 		$data['avg_rating'] = 0;
 		$data['rating_cnt'] = 0;
-		
+			
 		//Insert the image into the Images table
 		$this->json['db_saved'] = (int)$wpdb->insert(PSIMAGESTABLE, $data);
 		

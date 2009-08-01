@@ -46,7 +46,7 @@ class BWBPS_UploadForm{
 		return $ret;
 	}
 	
-	function getFormHeader($g, $formName){
+	function getFormHeader($g, $formName, $bCustomForm = false){
 		global $post;
 		$nonce = wp_create_nonce( 'bwb_upload_photos' );
 				
@@ -54,6 +54,15 @@ class BWBPS_UploadForm{
 		$use_tb = $g['use_thickbox'] == 'false' ? false : $use_tb;
 		$use_tb = $g['use_thickbox'] == 'true' ? true : $use_tb;
 		$use_tb = $g['form_visible'] == 'true' ? false : $use_tb;
+		
+		if( !$bCustomForm )
+		{
+			if( $g['allow_no_image'] ){
+				$noimage = "<input type='hidden' id='".$g['pfx']."bwbps_allownoimg' name='bwbps_allownoimg' value='1' />";
+			}
+		
+		
+		}
 		
 		
 		
@@ -84,6 +93,7 @@ class BWBPS_UploadForm{
         	<input type="hidden" name="bwbps_imgcaption" id="' . $g["pfx"] . 'bwbps_imgcaption" value="" />
         	<input type="hidden" name="gallery_id" id="' . $g["pfx"] . 'bwbps_galleryid" value="'.(int)$g["gallery_id"].'" />
         	<input type="hidden" name="bwbps_post_id" id="' . $g["pfx"] . 'bwbps_post_id" value="'.(int)$post->ID.'" />
+        	'.$noimage.'
         	';
 
 		
@@ -98,7 +108,7 @@ class BWBPS_UploadForm{
 	 */
 	function getStandardForm($g, $formname){
 		if(!trim($formname)){ $formname = "ps-standard"; }
-		$retForm = $this->getFormHeader($g, $formname);
+		$retForm = $this->getFormHeader($g, $formname, false);
 		$retForm .= '
         	<table class="ps-form-table">
 			<tr><th>'.$g["upload_form_caption"].'<br/>';
@@ -223,7 +233,7 @@ class BWBPS_UploadForm{
 		$nonce = wp_create_nonce( 'bwb_upload_photos' );
 		
 		//Get the form header and hidden fields
-		$retForm = $this->getFormHeader($g, $formName);
+		$retForm = $this->getFormHeader($g, $formName, true);
 		
 			
 		
@@ -348,7 +358,7 @@ class BWBPS_UploadForm{
 				break;
 
 			case '[allow_no_image]' :
-				$ret = "<input type='hidden' name='bwbps_allownoimg' value='1' />";
+				$ret = "<input type='hidden' id='".$g['pfx']."bwbps_allownoimg' name='bwbps_allownoimg' value='1' />";
 				break;
 			
 			case "[submit]":

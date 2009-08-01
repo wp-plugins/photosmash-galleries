@@ -91,10 +91,13 @@ class BWBPS_Layout{
 		$totRows = $wpdb->num_rows;	// Total # of images (total rows returned in query)
 
 		$perma = get_permalink($post->ID);	//The permalink for this post
-		$pagenum = (int)$_REQUEST['bwbps_page'];	//What Page # are we on?
+		$pagenum = $this->getPageNumbers();
 		
 		//Set to page 1 if not supplied in Get or Post
-		if(!$pagenum || $pagenum < 1){$pagenum = 1;}	
+
+		if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
+			$pagenum[$g['gallery_id']] = 1;
+		}	
 		
 		//Set up Attributes:  caption width, image class name, etc
 		if(!$g['thumb_width'] || $g['thumb_width'] < 60){
@@ -162,9 +165,9 @@ class BWBPS_Layout{
 		
 		//get the pagination navigation
 		if($totRows && $g['img_perpage']){
-			$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g['img_perpage'], $layout);	
+			$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g, $layout);	
 				//What image # do we begin page with?
-				$lastImg = $pagenum * $g['img_perpage'];
+				$lastImg = $pagenum[$g['gallery_id']] * $g['img_perpage'];
 				$startImg = $lastImg - $g['img_perpage'] + 1;
 			
 		} else {
@@ -180,6 +183,14 @@ class BWBPS_Layout{
 			}
 					
 			foreach($images as $image){
+				if( $g['suppress_no_image'] && !$image['file_type'] 
+					&& !$image['file_name'] ){
+					continue;	
+				}
+				if( !$image['file_type'] 
+					&& !$image['file_name'] && $g['default_image']){
+					$image['file_name'] = $g['default_image'];
+				}
 				$imgNum++;
 				//Pagination - not the most efficient, 
 				//but there shouldn't be thousands of images in a gallery
@@ -322,6 +333,31 @@ class BWBPS_Layout{
 		
 		return $ret;
 	}
+	
+	/**
+	 * Get an Array of Page numbers -> uses gallery ID as key
+	 * 
+	 * @param none
+	 */
+	function getPageNumbers(){
+		if(is_array($_REQUEST)){
+			foreach( $_REQUEST as $key => $option ){
+			
+				if( strpos($key, 'bwbps_page_' ) !== false ){
+					
+					$pg_gal = ( str_replace('bwbps_page_',"", $key ));
+					$pagenum[$pg_gal] = (int)$option;
+				
+				}
+			
+			}
+		}
+				
+		if(!is_array($pagenum)){ $pagenum = array(); }
+	
+		return $pagenum;
+	}
+	
 	
 	
 	function calculateURLs(&$g, &$image, $perma)
@@ -521,7 +557,7 @@ class BWBPS_Layout{
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
 	function getPartialLayout($g, $image, $layoutName, $alt=false){
-		
+		$g['suppress_no_image'] = false;
 		return $this->getGallery($g, $layoutName, $image, $alt);
 	
 	}
@@ -1222,7 +1258,11 @@ class BWBPS_Layout{
 	 * @param (int) $totalRows - total rows in images query
 	 * @param (int) $rowsPerPage - rows per page - or # of images per page
 	 */
-	function getPagingNavigation($url, $page, $totalRows, $rowsPerPage, $layout=false){
+	function getPagingNavigation($url, $pagenum, $totalRows, $g, $layout=false){
+		$rowsPerPage = $g['img_perpage'];
+		
+		$page = (int)$pagenum[$g['gallery_id']];
+		
 		if((int)$rowsPerPage < 1){return false;}
 				
 		$total_pages = ceil($totalRows / $rowsPerPage);
@@ -1236,9 +1276,13 @@ class BWBPS_Layout{
 			$url .= "?";
 		}
 		
+		$othergals = $this->getPagingForOtherGalleries($pagenum, (int)$g['gallery_id']);
+		
+		if($othergals){ $othergals = "&amp;".$othergals; }
+		
 		//Build PREVIOUS link
 		if($page > 1){
-			$nav[] = "<a href='".$url."bwbps_page=".($page-1)."'>&#9668;</a>";
+			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($page-1).$othergals."'>&#9668;</a>";
 		}
 		
 		if($total_pages > 1){
@@ -1247,14 +1291,14 @@ class BWBPS_Layout{
 				if($page == $page_num){ 
 					$nav[] = "<span>".$page."</span>";
 				}else{
-					$nav[] = "<a href='".$url."bwbps_page=".$page_num."'>".$page_num."</a>";
+					$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".$page_num.$othergals."'>".$page_num."</a>";
 				}
 			}
 			
 		}
 		
 		if($page < $total_pages){
-			$nav[] = "<a href='".$url."bwbps_page=".($page+1)."'>&#9658;</a>";
+			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($page+1).$othergals."'>&#9658;</a>";
 		}
 		
 		$snav = "";
@@ -1272,6 +1316,25 @@ class BWBPS_Layout{
 		
 		return $ret;
 		
+	}
+	
+	function getPagingForOtherGalleries($pagenum, $this_gal_id){
+	
+		if(is_array($pagenum)){
+			foreach( $pagenum as $gal_id => $page ){
+			
+				if( $gal_id <> $this_gal_id ){
+					$gal_pages[] = 'bwbps_page_'.(int)$gal_id.'='.(int)$page;
+				}
+			
+			}
+		}
+		
+		if(is_array($gal_pages)){
+			$gp = implode("&amp;",$gal_pages);
+		}
+		return $gp;
+	
 	}
 	
 	/**

@@ -25,8 +25,10 @@ class BWBPS_AJAXUpload{
 	var $allowNoImg = false;
 	
 	function BWBPS_AJAXUpload($psOptions, $_allowNoImg=false){
+	
 		$this->psUploader = new BWBPS_Uploader($psOptions);	
 		$this->allowNoImg = $_allowNoImg;
+		
 	}
 	
 	/*
@@ -56,7 +58,9 @@ class BWBPS_AJAXUpload{
 	
 	/*	Step 2:		Process Upload file & thumb
 	*/
-	function processUploadStep($imagename = false, $processThumbnail = true){
+	function processUploadStep($imagename = false, $processThumbnail = true)
+	{
+	
 		//Sets the new Image Name - 
 		//Creates name as the time right now - takes a string param to append to name
 		
@@ -70,6 +74,9 @@ class BWBPS_AJAXUpload{
 		//image, so you process it using the processDocument 
 		
 		$ftype = (int)$this->psUploader->json['file_type'];
+		
+		//Remove me!!!
+		//$this->allowNoImg = true;
 		
 		switch ( true ) {
 			
@@ -102,6 +109,7 @@ class BWBPS_AJAXUpload{
 				
 				break;
 		}
+		
 			
 		return $ret;
 	}
@@ -130,7 +138,15 @@ class BWBPS_AJAXUpload{
 		$processStatus = $this->processUploadStep($imagename, $processThumbnail);
 		
 		//Step 3
-		if($processStatus || $this->allowNoImg){ return $this->saveUploadToDBStep($saveCustomFields); }
+		if($processStatus){ 
+			$image_id = $this->saveUploadToDBStep($saveCustomFields); 
+			
+			do_action('bwbps_upload_done', $this->psUploader->imageData);
+			
+			return $image_id;
+			
+		}
+		
 		
 		return false;
 	}
@@ -184,8 +200,7 @@ if(!$bCustomScriptInUse){
 	if(isset($_POST['bwbps_allownoimg']) && (int)$_POST['bwbps_allownoimg'] == 1){
 		$bwbpsAllowNoImage = true;
 	} else { $bwbpsAllowNoImage = false; }
-	
-	
+		
 	$bwbpsAjaxUpload = new BWBPS_AJAXUpload($bwbpsOptions, $bwbpsAllowNoImage);
 	
 	$bwbpsAjaxUpload->processUpload();

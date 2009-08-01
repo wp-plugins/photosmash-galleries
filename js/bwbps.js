@@ -19,7 +19,7 @@ $j(document).ready(function() {
 			{
 				$j("#bwbps_submitBtn").removeAttr('disabled');
 				$j("#bwbps_imgcaptionInput").removeAttr('disabled');
-				$j('#bwbps_message').html("The maximum file size allowed is 400k.  Please resize and try again.");
+				$j('#bwbps_message').html("Image upload failed. Your image may have been too large or there may have been another problem. Please reload the page and try again.");
 			}
 		bwbpsUploadStatus = false;
 	});
@@ -60,7 +60,12 @@ function bwbpsAjaxLoadImage(myForm){
 	});
 	
 	var options = { 
-		beforeSubmit:  function(){bwbpsVerifyUploadRequest(form_pfx);},
+		beforeSubmit:  function(){ 
+			if(!bwbpsVerifyUploadRequest(form_pfx)){
+				$j("#" + form_pfx + "bwbps_loading").hide();
+				return false;
+			} else { return true; } 
+		},
 		success: function(data, statusText){ bwbpsUploadSuccess(data, statusText, form_pfx); } , 
 		failure: function(){alert('failed');},
 		url:      bwbpsAjaxUpload,
@@ -193,7 +198,14 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 		if (data.db_saved > 0 ) {
 			//We got an image back...show it
 			$j('#' + form_pfx + 'bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
-			$j('#' + form_pfx + 'bwbps_message').html('<b>Upload successful!</b>'); 
+			
+			if(data.message == undefined){	
+				data.message = "";
+			} else { 
+				data.message = "<br/>" + data.message;
+			}
+			$j('#' + form_pfx + 'bwbps_message').html('<b>Upload successful!</b>' + data.message);
+			
 			
 			
 			//Reset form fields
