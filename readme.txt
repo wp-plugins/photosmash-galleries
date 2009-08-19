@@ -74,6 +74,18 @@ It should be relatively straight forward to change the look and feel through thi
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
+= 0.3.04 - 08/19/2009 =
+
+    * Fixed a conflict with Contact Form 7 where duplicate creation of esc_attr functions was occuring 
+    * Added template tags:  
+          o show_photosmash_gallery(optional $attr);  – echoes a gallery – the $attr param can be a gallery ID or an array of parameters that you can also use in shortcodes. 
+          o get_photosmash_gallery(optional $attr);  -  same as show except returns a gallery as a string that you can use in PHP 
+
+= 0.3.03 - 08/19/2009 =
+
+    * Added Star Rating system – thanks to GD Star Ratings for use of the star set (used by permission).  2 placement options (beneath caption or overlay image [default]).  Design of star rating system enables extensions.  Next up is a vote up/down option…not implemented yet. 
+    * Improved the Admin messaging – database message now contains a link that updates the database when clicked.
+
 = 0.3.02 - 08/01/2009 =
 
     * Fixed Pagination when multiple galleries are on the same Post...now it remembers what page each gallery was on and paging links reflect proper paging for all other galleries.
