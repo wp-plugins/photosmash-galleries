@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.3.03
+Version: 0.3.04
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -122,7 +122,8 @@ if( ! function_exists('esc_attr__') ){
 		}
 	
 	}
-	
+}
+if( ! function_exists('esc_attr') ){
 	function esc_attr($string){
 		
 		if( function_exists('attribute_escape') ){
@@ -132,7 +133,9 @@ if( ! function_exists('esc_attr__') ){
 		}
 	
 	}
-	
+}
+
+if( ! function_exists('esc_attr_e') ){
 	function esc_attr_e($string){
 		
 		if( function_exists('attribute_escape') ){
@@ -576,8 +579,14 @@ function checkEmailAlerts(){
 }
 
 
-//  Loop through Content and inject Gallery where [photosmash id=###] is found
-//  Called by add_shortcode filter
+/*
+ *	ShortCode Handler for Galleries
+ *	
+ *	param:	$atts - the array of attributes
+ *	param:	$content - for dealing with enclosing shortcodes 
+ *		like: [photosmash]contents go here[/photosmash]
+ *	Note: can be used to return a completed gallery...just supply the proper $atts array
+*/
 function shortCodeGallery($atts, $content=null){
 		global $post;
 		
@@ -1642,6 +1651,22 @@ function bwbps_contributor_gallery(){
 	//do_action('bwbps_contributor_gallery');
 }
 
+function show_photosmash_gallery($gallery_params = false){
+	echo get_photosmash_gallery($gallery_params);
+}
+
+function get_photosmash_gallery($gallery_params = false){
+	global $bwbPS;
+	$atts = array();
+	if( is_array($gallery_params) ){
+		$atts = $gallery_params;
+	} else {
+		if ( is_numeric($gallery_params) ){
+			$atts = array('id' => (int)$gallery_params);
+		}
+	}
+	return $bwbPS->shortCodeGallery($atts);
+}
 
 add_action('admin_notices', array(&$bwbPS, 'verifyDatabase'));
 

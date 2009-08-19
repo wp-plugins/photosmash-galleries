@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+	<title>Star Rating widget Demo7 Page</title>
+	
+	<!-- Demo page css --> 
+	<link href="css/demos.css" rel="stylesheet" type="text/css" media="screen"/>
+	<style type="text/css"> 
+		.caption {
+			padding: 2px 0 0 .5em;
+			float: left;
+			line-height: 1em;
+		} 
+	</style>
+
+	<!-- Uni-Form style sheet --> 
+	<style type="text/css" media="screen"> 
+		@import "css/uni-form.css"; 
+	</style>
+	<!--[if lte ie 7]>
+	<style type="text/css" media="screen">
+		.uniForm, .uniForm fieldset, .uniForm .ctrlHolder, .uniForm .formHint, .uniForm .buttonHolder, .uniForm .ctrlHolder .multiField, .uniForm .inlineLabel{ zoom:1; }
+		.uniForm .inlineLabels label, .uniForm .inlineLabels .label, .uniForm .blockLabels label, .uniForm .blockLabels .label, .uniForm .inlineLabel span{ padding-bottom: .2em; }
+		.uniForm .inlineLabel input, .uniForm .inlineLabels .inlineLabel input, .uniForm .blockLabels .inlineLabel input{ margin-top: -.3em; }
+	</style>
+	<![endif]-->
+
+	<!-- Demo page js -->
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/ui.core.min.js"></script>
+	<script type="text/javascript" src="js/jquery.uni-form.js"></script>
+	
+	<!-- Star Rating widget stuff here... -->
+	<script type="text/javascript" src="js/ui.stars.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/ui.stars.css"/>
+	<script type="text/javascript">
+		$(function(){
+
+			var $caption, $cap = $("<span/>").addClass("caption");
+
+			// Hide all elements (it's possible to create Stars from hidden elements too)
+			$(".multiField").children().hide();
+
+
+			// Poll-1
+			$caption = $cap.clone();
+			$("#example-1").stars({captionEl: $caption}).append($caption);
+
+			// Poll-2
+			$caption = $cap.clone();
+			$("#example-2").stars({captionEl: $caption}).append($caption);
+
+			// Poll-3
+			$caption = $cap.clone();
+			$("#example-3").stars({captionEl: $caption}).append($caption);
+
+			// Poll-4
+			$caption = $cap.clone();
+			$("#example-4").stars({captionEl: $caption}).append($caption);
+
+			// Poll-5
+			$caption = $cap.clone();
+			$("#example-5").stars({inputType: "select", captionEl: $caption}).append($caption);
+			
+			// Poll-6
+			$caption = $cap.clone();
+			$("#example-6")
+				.stars({
+					inputType: "select",
+					cancelValue: 999,
+					cancelShow: false,
+					captionEl: $caption
+				})
+				.append($caption);
+		});
+	</script>
+
+</head>
+
+<body>
+
+
+	<div class="pageDesc">
+		<p>
+			Handling multiple Star Rating widgets (added caption elements)
+		</p>
+		<p>		
+			NOTE: Callback function isn't used, since the Stars selection is sent as a hidden input on FORM submission.
+		</p>
+	</div>
+
+
+	<form class="uniForm" action="demo7.php" method="post">
+
+		<fieldset class="inlineLabels">
+			
+			<legend>
+				Polls (<a href="demo7a.html" class="">before</a>|<a href="demo7b.html" class="">after1</a>|<a href="demo7c.html" class="unlink">after2</a>)
+			</legend>
+
+			<div class="ctrlHolder">
+				<p class="label">Poll-1</p>
+				<div class="multiField starify" id="example-1">
+					<label for="vote-1_1" class="blockLabel"><input type="radio" name="poll-1" id="vote-1_1" value="Poor" /> Poor</label>
+					<label for="vote-1_2" class="blockLabel"><input type="radio" name="poll-1" id="vote-1_2" value="Average" /> Average</label>
+					<label for="vote-1_3" class="blockLabel"><input type="radio" name="poll-1" id="vote-1_3" value="Excellent" /> Excellent</label>
+				</div>
+			</div>
+
+			<div class="ctrlHolder">
+				<p class="label">Poll-2</p>
+				<div class="multiField starify" id="example-2">
+					<label for="vote-2_1" class="blockLabel"><input type="radio" name="poll-2" id="vote-2_1" value="Poor" /> Poor</label>
+					<label for="vote-2_2" class="blockLabel"><input type="radio" name="poll-2" id="vote-2_2" value="Average" checked="checked" /> Average</label>
+					<label for="vote-2_3" class="blockLabel"><input type="radio" name="poll-2" id="vote-2_3" value="Excellent" /> Excellent</label>
+				</div>
+			</div>
+
+			<div class="ctrlHolder">
+				<p class="label">Poll-3</p>
+				<div class="multiField" id="example-3">
+					<label for="vote-3_1" class="blockLabel"><input type="radio" name="poll-3" id="vote-3_1" value="1" title="Poor" /> Poor</label>
+					<label for="vote-3_2" class="blockLabel"><input type="radio" name="poll-3" id="vote-3_2" value="2" title="Average" /> Average</label>
+					<label for="vote-3_3" class="blockLabel"><input type="radio" name="poll-3" id="vote-3_3" value="3" title="Excellent" /> Excellent</label>
+					<label for="vote-3_0" class="blockLabel"><input type="radio" name="poll-3" id="vote-3_0" value="0" title="Not Applicable" /> Not Applicable</label>
+				</div>
+				<p class="formHint">NOTE: &quot;Not Applicable&quot; is considered as a &quot;Cancel Rating&quot; when it's value is equal to &quot;cancelValue&quot;</p>
+			</div>
+
+			<div class="ctrlHolder">
+				<p class="label">Poll-4</p>
+				<div class="multiField" id="example-4">
+					<label for="vote-4_1" class="blockLabel"><input type="radio" name="poll-4" id="vote-4_1" value="1" title="Poor" /> Poor</label>
+					<label for="vote-4_2" class="blockLabel"><input type="radio" name="poll-4" id="vote-4_2" value="2" title="Average" checked="checked" /> Average</label>
+					<label for="vote-4_3" class="blockLabel"><input type="radio" name="poll-4" id="vote-4_3" value="3" title="Excellent" /> Excellent</label>
+					<label for="vote-4_0" class="blockLabel"><input type="radio" name="poll-4" id="vote-4_0" value="0" title="Not Applicable" /> Not Applicable</label>
+				</div>
+			</div>
+
+			<div class="ctrlHolder">
+				<p class="label">Poll-5</p>
+				<div class="multiField" id="example-5">
+					<p class="blockLabel">
+
+						<select name="poll-5">
+							<option value="1">Poor</option>
+							<option value="2">Average</option>
+							<option value="3">Excellent</option>
+						</select>
+
+					</p>
+				</div>
+			</div>
+
+			<div class="ctrlHolder">
+				<p class="label">Poll-6</p>
+				<div class="multiField" id="example-6">
+					<p class="blockLabel">
+
+						<select name="poll-6">
+							<option value="999">Rate this:</option>
+							<option value="1">Poor</option>
+							<option value="2">Average</option>
+							<option value="3">Excellent</option>
+						</select>
+
+					</p>
+				</div>
+				<p class="formHint">NOTE: &quot;Rate this&quot; is considered as a &quot;Cancel Rating&quot; when it's value is equal to &quot;cancelValue&quot;</p>
+				<p class="formHint">TIP: Use <code>{cancelShow: false}</code> to remove &quot;Cancel Rating&quot; icon, when not needed...</p>
+			</div>
+
+
+			<div class="buttonHolder">
+				<button type="reset" class="resetButton">Reset</button>
+				<button type="submit" class="primaryAction">Submit</button>
+			</div>
+
+		</fieldset>
+		
+	</form>
+
+
+</body>
+</html>
