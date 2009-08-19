@@ -7,6 +7,12 @@ $j.fn.tagName = function() {
     return this.get(0).tagName;
 }
 
+
+// JavaScript Document
+/*************************************************
+	PhotoSmash JS
+/*************************************************/
+
 $j(document).ready(function() { 
 	//Show and hide the Loading icon on Ajax start/end
 	$j("#bwbps_loading")
@@ -42,6 +48,8 @@ $j(document).ready(function() {
 		
 		bwbpsAddPSSettingsMassUpdateActions();
 	}
+	
+	
 });
 
 function bwbpsAjaxLoadImage(myForm){

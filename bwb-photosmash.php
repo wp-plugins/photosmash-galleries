@@ -3,12 +3,15 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.3.02
+Version: 0.3.03
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
  
-/** LICENSE: GPL
+/** 
+ * Copyright 2009  Byron W Bennett (email: bwbnet@gmail.com)
+ *
+ * LICENSE: GPL
  *
  * This work is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -25,10 +28,19 @@ Author URI: http://www.whypad.com/
  * Boston, MA 02110-1301 USA
 */
 
+//VERSION - Update PhotoSmash Extend!!!
+define('PHOTOSMASHVERSION', '0.3.03');
+
+
+//Database Verifications
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_galleries');
+define('PHOTOSMASHVERIFYFIELD', 'rating_position');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
+define("PSRATINGSTABLE", $wpdb->prefix."bwbps_imageratings");
+define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
 define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
 define("PSFORMSTABLE", $wpdb->prefix."bwbps_forms");
 define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
@@ -250,7 +262,11 @@ class BWB_PhotoSmash{
 				'sort_field' => 0,
 				'sort_order' => 0,
 				'contrib_gal_on' => 0,
-				'suppress_contrib_posts' => 0
+				'suppress_contrib_posts' => 0,
+				'poll_id' => 0,
+				'rating_position' => 0,
+				'rating_allow_anon' => 0,
+				'version' => PHOTOSMASHVERSION
 			);
 			if(!$psOptions){
 				add_option($this->adminOptionsName, $psAdminOptions);
@@ -392,7 +408,6 @@ class BWB_PhotoSmash{
 	
 	//Prints out the Admin Options Page
 	function loadAdminPage(){
-		$this->verifyDatabase(); //Check that the database is up to date
 		
 		if(!$this->psAdmin){
 			require_once("admin/bwbps-admin.php");
@@ -402,7 +417,6 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadGallerySettings(){
-		$this->verifyDatabase(); //Check that the database is up to date
 		
 		if(!$this->psAdmin){
 			require_once("admin/bwbps-admin.php");
@@ -413,7 +427,6 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadPhotoManager(){
-		$this->verifyDatabase(); //Check that the database is up to date
 	
 		if(!$this->psAdmin){
 			require_once("admin/bwbps-admin.php");
@@ -425,7 +438,6 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadLayoutsEditor(){
-		$this->verifyDatabase(); //Check that the database is up to date
 		
 		require_once("admin/bwbps-layouts.php");
 		$layouts = new BWBPS_LayoutsEditor();		
@@ -433,7 +445,6 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadFieldEditor(){
-		$this->verifyDatabase(); //Check that the database is up to date
 		
 		require_once("admin/bwbps-fieldeditor.php");
 		$fieldEditor = new BWBPS_FieldEditor($this->psOptions);		
@@ -441,7 +452,6 @@ class BWB_PhotoSmash{
 	}
 	
 	function loadFormEditor(){
-		$this->verifyDatabase(); //Check that the database is up to date
 		
 		require_once("admin/bwbps-formeditor.php");
 		$psform = new BWBPS_FormEditor($this->psOptions);		
@@ -1136,12 +1146,24 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 				
 		wp_register_script('bwbps_js', WP_PLUGIN_URL . '/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
 		wp_enqueue_script('bwbps_js');
+		/*
+		//enqueue jQuery Star Rating Plugin
+		wp_register_script('jquery_metadata'
+			, WP_PLUGIN_URL . '/photosmash-galleries/js/jquery.MetaData.js'
+			, array('jquery'), '1.0');
+		wp_enqueue_script('jquery_metadata');
+		*/
+		
+		//enqueue jQuery Star Rating Plugin
+		wp_register_script('jquery_starrating'
+			, WP_PLUGIN_URL . '/photosmash-galleries/js/star.rating.js'
+			, array('jquery'), '1.0');
+		wp_enqueue_script('jquery_starrating');
 		
 		if($this->psOptions['use_customfields']){
 			//enqueue jQuery DatePicker
-			wp_register_script('jquery_datepicker' 
-				, get_bloginfo('wpurl') 
-				. '/wp-content/plugins/photosmash-galleries/js/ui.datepicker.js'
+			wp_register_script('jquery_datepicker'
+				, WP_PLUGIN_URL . '/photosmash-galleries/js/ui.datepicker.js'
 				, array('jquery'), '1.0');
 			wp_enqueue_script('jquery_datepicker');
 		
@@ -1156,6 +1178,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	<?php
 	if(!$this->psOptions['exclude_default_css']){  ?>
 	<link rel="stylesheet" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/css/bwbps.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/css/rating.css" type="text/css" media="screen" />
 	<?php 
 	}
 	
@@ -1173,11 +1196,13 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	var displayedGalleries = "";
 	var bwbpsAjaxURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax.php";
 	var bwbpsAjaxUserURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_useractions.php";
+	var bwbpsAjaxRateImage = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_rateimage.php";
 	var bwbpsAjaxUpload = "<?php 
 		echo WP_PLUGIN_URL."/photosmash-galleries/ajax_upload.php";
 		?>";
 	var bwbpsImagesURL = "<?php echo PSIMAGESURL; ?>";
 	var bwbpsThumbsURL = "<?php echo PSTHUMBSURL; ?>";
+	var bwbpsPhotoSmashURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/";
 	var bwbpsBlogURL = "<?php echo PSBLOGURL; ?>";
 	
 	function bwbpsAlternateUploadFunction(data, statusText, form_pfx){
@@ -1446,22 +1471,26 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	function verifyDatabase(){
 		global $wpdb;
 		
+		if(isset($_REQUEST['bwbpsRunDBUpdate'])){ return; }
 			
-		$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
+		$sql = "SELECT * FROM ".PHOTOSMASHVERIFYTABLE." LIMIT 1";
 	
 		$ret = $wpdb->get_row($sql);
-	
-		//if(!$ret){return false;}
+		
+		if(! $ret ){
+				echo "<div class='message error'><h2>PhotoSmash Database - Needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Click <a href='admin.php?page=psInfo&amp;bwbpsRunDBUpdate=1'>here</a> to Update the DB and view Plugin Info.</p></div>";
+			return;
+		}
 	
 		//Field to be checked against database
-		$col = 'default_image';
+		$col = PHOTOSMASHVERIFYFIELD;
 	
 		foreach($wpdb->get_col_info('name') as $name){
 			$colname[] = $name;
 		}
 		
 		if(! in_array($col, $colname) ){
-				echo "<div class='message error'><h2>PhotoSmash Database - Needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Please visit <a href='admin.php?page=psInfo'>Plugin Info</a> and run the Update DB (look for button in database section).</p></div>";
+				echo "<div class='message error'><h2>PhotoSmash Database needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Click <a href='admin.php?page=psInfo&amp;bwbpsRunDBUpdate=1'>here</a> to Update the DB and view Plugin Info.</p></div>";
 		}
 						
 		
@@ -1614,7 +1643,7 @@ function bwbps_contributor_gallery(){
 }
 
 
-
+add_action('admin_notices', array(&$bwbPS, 'verifyDatabase'));
 
 //Call the Function that will Add the Options Page
 add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));

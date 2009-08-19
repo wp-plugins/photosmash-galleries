@@ -125,6 +125,12 @@ div.bwbps_pag_2{
 	margin: 2px;
 }
 
+.bwbps_image_div {
+	
+	position: relative;
+
+}
+
 
 .ps-submit input, .ps-submit {
 	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;

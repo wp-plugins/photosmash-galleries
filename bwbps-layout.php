@@ -12,6 +12,8 @@ class BWBPS_Layout{
 	
 	var $layouts;
 	
+	var $ratings;
+	
 	//Constructor
 	function BWBPS_Layout($options, $cfList){
 		$this->psOptions = $options;
@@ -63,7 +65,35 @@ class BWBPS_Layout{
 		global $post;
 		global $wpdb;
 				
-		$admin = current_user_can('level_10');		
+		$admin = current_user_can('level_10');
+		
+		//Instantiate the Ratings class if needed
+		if($g['poll_id']){
+			
+			$rate = true;	//Boolean for quick reference to add ratings
+			
+			if( !isset($this->ratings) ){
+				require_once('bwbps-rating.php');
+				$this->ratings = new BWBPS_Rating();
+			}
+			unset($rating);
+			
+			if(!$this->psOptions['rating_allow_anon'] && !is_user_logged_in()){
+				$allow_anon = 0;
+			} else {
+				$allow_anon = 1;
+			}
+			
+			$rating = array( 
+				'image_id' => 0,
+				'gallery_id' => $g['gallery_id'],
+				'poll_id' => $g['poll_id'],
+				'avg_rating' => 0,
+				'rating_cnt' => 0,
+				'rating_position' => $g['rating_position'],
+				'allow_rating' => $allow_anon
+			);
+		}
 
 		if(!$image){
 		
@@ -178,11 +208,41 @@ class BWBPS_Layout{
 		
 		
 		if($images){
+			//Add SetID and Layout ID for use Insert Sets - PhotoSmash Extend
+			$images[0]['pext_insert_setid'] = (int)$g['pext_insert_setid'];
+			$images[0]['pext_layout_id'] = ($layout ? $layout->layout_id : false);
+			$images = apply_filters('bwbps_gallery_loop', $images);
+		
 			if($this->psOptions['img_targetnew']){
 				$g['url_attr']['imagetargblank'] = " target='_blank' ";
 			}
 					
 			foreach($images as $image){
+				
+				//Handle PSmashExtend Inserts
+				if( $image['pext_insert'] ){
+				
+					if(!$layout){
+						$psTable .= $this->getStandardLayout($g, $image);
+					} else {
+						$psTable .= $image['pext_insert'];
+					}
+					continue;
+				
+				}
+				
+				//Handle Rating Code
+				if($rate){
+					$rating['image_id'] = $image['psimageID'];
+					$rating['avg_rating'] = $image['avg_rating'];
+					$rating['rating_cnt'] = $image['rating_cnt'];
+										
+					$image['ps_rating'] = $this->ratings->get_rating($rating);
+			
+				} else {
+					$image['ps_rating'] = "";
+				}
+			
 				if( $g['suppress_no_image'] && !$image['file_type'] 
 					&& !$image['file_name'] ){
 					continue;	
@@ -287,9 +347,15 @@ class BWBPS_Layout{
 		
 		//Gallery Wrapper
 		
+		if($rate){
+				$ratetoggle = "<span class='bwbps-rating-toggle'><a href='javascript: void(0);'"
+					. " onclick='bwbpsToggleRatings(". $g['gallery_id'] 
+					. "); return false;' title='Toggle image ratings'>Toggle ratings</a></span><div style='clear: both; margin: 0; padding: 0;'></div>";			
+		}
+		
 		if(!$layout){
 			//Standard Wrapper
-			$ret = "<div class='bwbps_gallery_div' id='bwbps_galcont_".$g['gallery_id']."'>
+			$ret = "<div class='bwbps_gallery_div' id='bwbps_galcont_".$g['gallery_id']."'>".$ratetoggle."
 			<table><tr><td>";
 			
 			$ret .= "<ul id='bwbps_stdgal_".$g['gallery_id']."' class='bwbps_gallery'>".$psTable;
@@ -306,6 +372,8 @@ class BWBPS_Layout{
 				$ret = str_replace('[gallery_id]',$g['gallery_id'], $ret);
 				$ret = str_replace('[gallery_name]',$g['gallery_name'], $ret);
 				
+				$psTable = $ratetoggle . $psTable;
+				
 				if(strpos($layout->wrapper, '[gallery]')){
 					$ret = str_replace('[gallery]',$psTable, $ret);
 				}else {
@@ -315,6 +383,8 @@ class BWBPS_Layout{
 			} else {
 				$ret = $psTable;
 			}
+			
+			
 			
 			$ret .= $nav;
 			
@@ -330,6 +400,7 @@ class BWBPS_Layout{
 			//Need the insertion point to create a holder for adding new images.			
 			$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
 		}
+	
 		
 		return $ret;
 	}
@@ -433,17 +504,40 @@ class BWBPS_Layout{
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
 	function getStandardLayout($g, $image){
+		
+		if( $image['pext_insert'] ){
+		
+			$insertclass = ' pext_insert';
+		
+		}
+		
+		
 		$ret = "<li class='psgal_".$g['gallery_id']." "
-					.$g['modClass']."' id='psimg_".$image['psimageID']."'"
+					.$g['modClass']. $insertclass 
+					. "' id='psimg_".$image['psimageID']."'"
 					.$g['imgsPerRowHTML'].">
 					<div id='psimage_".$image['psimageID']."' "
-					.$g['captionwidth'].">";
+					.$g['captionwidth']." class='bwbps_image_div'>";
+					
+		//Handle PSmashExtend Insert
+		if( $image['pext_insert'] ){
+			
+			$ret .= $image['pext_insert'];
+			$ret .= "</div>".$g['modMenu']."</li>";					
+				
+			return $ret;
+		
+		}
 					
 		// Get File Field
 		$fileField = $this->getFileField($g, $image);	
 		if($fileField)
 		{
-			$ret .= $image['imgurl'] . $fileField . $image['imgurl_close'];
+			if(!$g['rating_position'] ){
+				$ret .= $image['ps_rating'].$image['imgurl'] . $fileField . $image['imgurl_close'];
+			} else {
+				$ret .= $image['imgurl'] . $fileField . $image['imgurl_close'];
+			}
 		}
 		
 		// Get Caption
@@ -452,6 +546,10 @@ class BWBPS_Layout{
 		{
 			if( $fileField ) { $ret .= "<br/>"; }
 			$ret .= $image['capurl'] . $scaption . $image['capurl_close'];
+			
+			if($image['ps_rating'] && $g['rating_position']){
+				$ret .= $image['ps_rating'];
+			}
 		}
 				
 		$ret .= "</div>".$g['modMenu']."</li>";					
@@ -922,7 +1020,11 @@ class BWBPS_Layout{
 			
 			case '[url]' :
 				$ret = $image['url'];
-				break;			
+				break;
+
+			case '[ps_rating]' :
+				$ret = $image['ps_rating'];
+				break;
 			
 			default :
 				break;
@@ -934,7 +1036,7 @@ class BWBPS_Layout{
 			
 			
 			if((int)trim($image['post_id'])){
-				echo $image['image_id'];
+
 				$imglink = get_permalink((int)$image['post_id']);
 			} else {
 				if((int)$g['post_id']){

@@ -131,7 +131,11 @@ class BWBPS_Admin{
 				'sort_field' => 0,
 				'sort_order' => 0,
 				'contrib_gal_on' => 0,
-				'suppress_contrib_posts' => 0
+				'suppress_contrib_posts' => 0,
+				'poll_id' => 0,
+				'rating_position' => 0,
+				'rating_allow_anon' => 0,
+				'version' => PHOTOSMASHVERSION
 		);
 	}
 	
@@ -237,6 +241,8 @@ class BWBPS_Admin{
 			if(isset($_POST['ps_auto_add'])){
 				$ps['auto_add'] = (int)$_POST['ps_auto_add'];
 			}
+			
+			$ps['version'] = PHOTOSMASHVERSION;
 
 
 			$ps['thumb_aspect'] = (int)$_POST['ps_thumb_aspect'];
@@ -341,6 +347,10 @@ class BWBPS_Admin{
 			
 			$ps['sort_order'] = (int)$_POST['ps_sort_order'];
 			
+			$ps['poll_id'] = (int)$_POST['ps_poll_id'];
+			$ps['rating_position'] = (int)$_POST['ps_rating_position'];
+			$ps['rating_allow_anon'] = isset($_POST['ps_rating_allow_anon']) ? 1 : 0;
+			
 			/* Contributor Gallery */
 			$ps['contrib_gal_on'] = isset($_POST['ps_contrib_gal_on']) ? 1 : 0;
 			$ps['suppress_contrib_posts'] = isset($_POST['ps_suppress_contrib_posts']) ? 1 : 0;
@@ -405,9 +415,14 @@ class BWBPS_Admin{
 			$d['sort_field'] = (int)$_POST['gal_sort_field'];
 			$d['sort_order'] = (int)$_POST['gal_sort_order'];
 			
+			$d['poll_id'] = (int)$_POST['gal_poll_id'];
+			$d['rating_position'] = (int)$_POST['gal_rating_position'];
+			
 			
 			if($d['thumb_width']==0) $d['thumb_width'] = $psOptions['thumb_width'];
 			if($d['thumb_height']==0) $d['thumb_height'] = $psOptions['thumb_height'];
+			
+			
 			
 			
 			$tablename = $wpdb->prefix.'bwbps_galleries';
@@ -632,7 +647,29 @@ if($psOptions['use_advanced'] ==1){
 						<input type="checkbox" name="gal_nofollow_caption" <?php if($galOptions['nofollow_caption'] == 1) echo 'checked'; ?> /> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
-		
+			
+			<tr>
+				<th>Rating type:</th>
+				<td>
+					<select name="gal_poll_id">
+						<option value="0" <?php if(!$galOptions['poll_id']) echo 'selected=selected'; ?>>None</option>
+						<option value="-1" <?php if($galOptions['poll_id'] == -1) echo 'selected=selected'; ?>>Standard 5 Star</option>
+						<!--
+						<option value="-2" <?php if($galOptions['poll_id'] == -2) echo 'selected=selected'; ?>>Standard Vote Up/Down</option>
+						-->
+					</select>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Rating position:</th>
+				<td>
+					<select name="gal_rating_position">
+						<option value="0" <?php if(!$galOptions['rating_position']) echo 'selected=selected'; ?>>Overlay thumbnail</option>
+						<option value="1" <?php if($galOptions['rating_position'] ==1) echo 'selected=selected'; ?>>Beneath caption</option>
+					</select>
+				</td>
+			</tr>
 	</table>
 </div>
 <div id='bwbps_uploading'>
@@ -1198,6 +1235,37 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			
 			</tr>
+			
+			<tr>
+				<th>Default rating type:</th>
+				<td>
+					<select name="ps_poll_id">
+						<option value="0" <?php if(!$psOptions['poll_id']) echo 'selected=selected'; ?>>None</option>
+						<option value="-1" <?php if($psOptions['poll_id'] == -1) echo 'selected=selected'; ?>>Standard 5 Star</option>
+						<!--
+						<option value="-2" <?php if($psOptions['poll_id'] == -2) echo 'selected=selected'; ?>>Standard Vote Up/Down</option>
+						-->
+					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_poll_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default rating position:</th>
+				<td>
+					<select name="ps_rating_position">
+						<option value="0" <?php if(!$psOptions['rating_position']) echo 'selected=selected'; ?>>Overlay thumbnail</option>
+						<option value="1" <?php if($psOptions['rating_position'] ==1) echo 'selected=selected'; ?>>Beneath caption</option>
+					</select> <a href='javascript: void(0);' class='psmass_update' id='save_ps_rating_position' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Allow anonymous ratings:</th>
+				<td>
+					<input type="checkbox" name="ps_rating_allow_anon" <?php if( $psOptions['rating_allow_anon'] == 1) echo 'checked'; ?>/>  Ratings will be logged by user IP 
+				</td>
+			</tr>
+			
 		</table>
 	</div>
 	<div id='bwbps_uploading'>

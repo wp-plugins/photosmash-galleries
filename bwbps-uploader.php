@@ -791,7 +791,16 @@ class BWBPS_Uploader{
 			$d['sort_field'] = isset($data['sort_field']) ? (int)$data['sort_field'] : (int)$this->psOptions['sort_field'];
 			
 			$d['sort_order'] = isset($data['sort_order']) ? (int)$data['sort_order'] : (int)$this->psOptions['sort_order'];
-						
+			
+			$d['poll_id'] = isset($data['poll_id']) ? (int)$data['poll_id'] : (int)$this->psOptions['poll_id'];
+			
+			$d['rating_position'] = isset($data['rating_position']) ? (int)$data['rating_position'] : (int)$this->psOptions['rating_position'];
+			
+			//PhotoSmash Extend settings
+			$d['pext_insert_setid'] = isset($data['pext_insert_setid']) ? (int)$data['pext_insert_setid'] : ((isset($psmashExtend->insertSets)) ? 
+				$psmashExtend->insertSets->options['default_set'] : 0);
+			
+			//Save the gallery			
 			$tablename = $wpdb->prefix.'bwbps_galleries';
 			
 			//Create new Gallery Record

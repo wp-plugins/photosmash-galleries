@@ -3,14 +3,15 @@
 class BWBPS_Info{
 	
 	var $message;
-	var $msgclass;
+	var $msgclass = "updated fade";
 
 	//Constructor
 	function BWBPS_Info(){
 		
-		if(isset($_POST['bwbpsRunDBUpdate'])){
+		if(isset($_REQUEST['bwbpsRunDBUpdate'])){
 			require_once("bwbps-init.php");
 			$initer = new BWBPS_Init();
+			$this->message = "<p>Database updated.</p>";
 		}
 		
 		if(isset($_POST['bwbpsFix777'])){
@@ -49,7 +50,7 @@ class BWBPS_Info{
 		
 		<?php
 			if($this->message){
-				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
+				echo '<div id="message" class="'.$this->msgclass.'">'.$this->message.'</div>';
 			}
 			
 			//Add Nonce for security
@@ -476,7 +477,7 @@ class BWBPS_Info{
 		// Check UID in folder and Script
 		// Read http://www.php.net/manual/en/features.safe-mode.php to understand safe_mode
 		if ( SAFE_MODE ) {
-				$message  = 'SAFE MODE Restriction in effect. You may need to create the folders manually';
+				$message  .= '<p>SAFE MODE Restriction in effect. You may need to create the folders manually</p>';
 				$message .= '<br />When safe_mode is on, PHP checks to see if the owner of the current script matches the owner of the file to be operated on by a file function or its directory';
 				return $message;
 			

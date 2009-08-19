@@ -3,8 +3,8 @@ Contributors: bennebw
 Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
-Tested up to: 2.8.2
-Stable tag: 0.3.02
+Tested up to: 2.8.4
+Stable tag: 0.3.03
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -16,6 +16,7 @@ For support and more documentation, visit the plugin's new homepage: [PhotoSmash
 
 *   User contributable photo galleries
 *   AJAX photo uploads
+*	Star Ratings for images
 *   Control who can upload images: admin only, authors & contributors (and higher), or registered users and higher
 *   Moderate images uploaded by registered users (Admins and authors are automatically approved)
 *   Receive email alerts for new images that need to be moderated
@@ -122,3 +123,11 @@ Using PhotoSmash is extremely simple:
 1.  You will receive an email alert for photos requiring moderation.  These alerts use a pseudo-cron like scheduling scheme that is triggered whenever someone views one of your blog?s pages.  You can set the alert program to check every 10 minutes, 1 hour, or 1  day, or not at all.
 1.  To edit a photo?s caption, go to the PhotoSmash options page in wp-admin.  Select the desired gallery from the drop down and click Edit.  When the page comes back, the images for that gallery will show up at the bottom of the page.  There will be text boxes beneath image allowing you to edit captions.  Click save to save caption edits.  Approve buttons will be present for images needing moderation.  Delete will be available for all images.
 1.  To integrate with Lightbox or Shadowbox, simply include the correct ?rel? information in the Gallery specific options on the PhotoSmash options page.  You can set your general PhotoSmash default rel in PhotoSmash Defaults section so that any newly created galleries will automatically get the rel.   For Lightbox, set the rel to lightbox.  Shadowbox can use lightbox or shadowbox.  To group a galleries images together as an album for Shadowbox, use something like:  shadowbox[album] as the gallery?s rel.
+
+== Acknowledgements ==
+
+PhotoSmash, like most open source applications, has benefitted from the millions of hours of development and bug crushing that the open source world has put in.  Here are a few of the many projects that have influenced, informed, or otherwise enabled PhotoSmash. Thanks to you all!
+
+*	Colin Verot - Upload Class - PhotoSmash uses this php class for handling image uploads - [class.upload](http://www.verot.net/php_class_upload.htm "Verot.net")
+*	Alex Rabe - NextGEN Gallery - the heavyweight champ of photo galleries in WordPress (an excellent choice if you don't need the features of PhotoSmash) - PhotoSmash borrows several ideas and a little code - [NextGen Gallery](http://alexrabe.boelinger.com/wordpress-plugins/nextgen-gallery/ "NextGEN Gallery")
+*	Milan Petrovic - GD Star Ratings - Milan granted PhotoSmash permission to use one of his star sets.  He informs me that he plans to enable GDSR to rate images and links in the near future (so check it out to see if it's in there now!).  I plan to add support for GDSR when this occurs. - [GD Star Rating](http://www.gdstarrating.com/ "Star Rating System for WordPress)

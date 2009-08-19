@@ -22,7 +22,33 @@ class BWBPS_Init{
 					$charset_collate .= " COLLATE $wpdb->collate";
 			}
 			
+			$icnt = 0;
+			
+			
+			//Drop Existing Indices...sorry about this...it's been duplicating some of them
+			//At some point, I'll pull out the loop since it shouldn't happen once everyone runs
+			//this update
+			for($i = 0; $i < 40; $i++){
+				//Images Table
+				if($i > 0){ $indexname = '_'.$i;}
+				$sql = "ALTER TABLE " . $table_name .
+				" DROP INDEX image_id". $indexname;
+				$wpdb->query($sql);
+				
+				$sql = "ALTER TABLE " . $table_name .
+				" DROP INDEX gallery_id". $indexname;
+				$wpdb->query($sql);
+				
+				//Image Ratings Table
+				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
+				"DROP INDEX image_id". $indexname;
+				$wpdb->query($sql);
+				
+			}
+
+			
 			//Create the Images table
+			$table_name = $wpdb->prefix . "bwbps_images";
 			$sql = "CREATE TABLE " . $table_name . " (
 				image_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				gallery_id BIGINT(20) NOT NULL,
@@ -44,14 +70,12 @@ class BWBPS_Init{
 				seq BIGINT(11) NOT NULL,
 				avg_rating FLOAT(8,4) NOT NULL,
 				rating_cnt BIGINT(11) NOT NULL,
+				votes_up BIGINT(20),
+				votes_down BIGINT(20),
 				PRIMARY KEY   (image_id),
 				INDEX (gallery_id)
 				)  $charset_collate;";
 			dbDelta($sql);
-			
-			$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
-				"DROP INDEX image_id";
-			$wpdb->query($sql);
 			
 						
 			//Create the Gallery Table
@@ -89,21 +113,27 @@ class BWBPS_Init{
 				use_customform TINYINT(1),
 				custom_formid INT(4),
 				use_customfields TINYINT(1),
-				cover_imageid BIGINT(20),
+				cover_imageid INT(4),
 				status TINYINT(1),
 				sort_field TINYINT(1),
 				sort_order TINYINT(1),
+				poll_id INT(4),
+				rating_position INT(4),
+				pext_insert_setid INT(4),
 				PRIMARY KEY  (gallery_id))
 				$charset_collate
 				;";
 			dbDelta($sql);
 			
-			//Create the Image Ratings table (future use)
+			//Create the IMAGE RATINGS table (future use)
 			$table_name = $wpdb->prefix . "bwbps_imageratings";
 			$sql = "CREATE TABLE " . $table_name . " (
 				rating_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				image_id BIGINT(20) NOT NULL,
+				gallery_id BIGINT(20),
+				poll_id BIGINT(20),
 				user_id BIGINT(20) NOT NULL,
+				user_ip VARCHAR(30) ,
 				rating TINYINT(1) NOT NULL,
 				comment VARCHAR(250) NOT NULL,
 				updated_date TIMESTAMP NOT NULL,
@@ -113,7 +143,42 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
-			/* Create the PhotoSmash HTML layouts table
+			
+			
+			/* 
+			* RATINGS SUMMARY
+			* Summarizes ratings by Image, Gallery, Poll
+			*/
+			$table_name = $wpdb->prefix . "bwbps_ratingssummary";
+			
+			//Delete the old indices
+			
+			$sql = "ALTER TABLE " . $table_name .
+				" DROP INDEX image_id";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE " . $table_name .
+				" DROP INDEX gallery_poll";
+			$wpdb->query($sql);
+			
+			//create the table
+			$sql = "CREATE TABLE " . $table_name . " (
+				rating_id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				image_id BIGINT(20) NOT NULL,
+				gallery_id BIGINT(20),
+				poll_id BIGINT(20),
+				avg_rating FLOAT(8,4) NOT NULL,
+				rating_cnt BIGINT(11) NOT NULL,
+				updated_date TIMESTAMP NOT NULL,
+				PRIMARY KEY  (rating_id),
+				INDEX (image_id),
+				INDEX gallery_poll (gallery_id, poll_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+			/* 
+			* LAYOUTS
+			* Create the PhotoSmash HTML layouts table
 			* HTML layouts are templates that lets you
 			* create a predefined HTML layout with shortcodes to display
 			* galleries
@@ -150,7 +215,7 @@ class BWBPS_Init{
 			dbDelta($sql);
 			
 			
-						
+			//FIELDS
 			//Create the Fields table
 			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_fields (
 				field_id INT(11) NOT NULL AUTO_INCREMENT,
@@ -174,7 +239,8 @@ class BWBPS_Init{
 				"DROP INDEX field_id";
 			$wpdb->query($sql);
 			
-			//Create the Supple Lookup Table
+			//LOOKUP
+			//Create the Custom Data Lookup Table
 			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_lookup (
 				id INT(11) NOT NULL AUTO_INCREMENT,
 				field_id INT(4) ,
@@ -186,6 +252,7 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
+			//CUSTOMDATA
 			//SQL for table creation & updating
 			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_customdata (
 				id INT(11) NOT NULL AUTO_INCREMENT,
