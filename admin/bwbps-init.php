@@ -11,8 +11,7 @@ class BWBPS_Init{
 		
 		global $wpdb;
 		
-		$table_name = $wpdb->prefix . "bwbps_images";
-				
+						
 			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 			
 			if ( $wpdb->has_cap( 'collation' ) ) {
@@ -28,6 +27,9 @@ class BWBPS_Init{
 			//Drop Existing Indices...sorry about this...it's been duplicating some of them
 			//At some point, I'll pull out the loop since it shouldn't happen once everyone runs
 			//this update
+			
+			/*
+			
 			for($i = 0; $i < 40; $i++){
 				//Images Table
 				if($i > 0){ $indexname = '_'.$i;}
@@ -45,7 +47,23 @@ class BWBPS_Init{
 				$wpdb->query($sql);
 				
 			}
+			
+				
+				//This was causing problems for a user who had
+				//some weird SQL Mode settings
 
+			*/
+			
+			$table_name = $wpdb->prefix . "bwbps_images";
+			
+			$sql = "ALTER TABLE " . $table_name .
+				" DROP INDEX image_id";
+			$wpdb->query($sql);
+				
+			$sql = "ALTER TABLE " . $table_name .
+				" DROP INDEX gallery_id";
+			$wpdb->query($sql);
+							
 			
 			//Create the Images table
 			$table_name = $wpdb->prefix . "bwbps_images";
@@ -124,6 +142,11 @@ class BWBPS_Init{
 				$charset_collate
 				;";
 			dbDelta($sql);
+			
+			//Image Ratings Table
+			$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
+				"DROP INDEX image_id";
+			$wpdb->query($sql);
 			
 			//Create the IMAGE RATINGS table (future use)
 			$table_name = $wpdb->prefix . "bwbps_imageratings";

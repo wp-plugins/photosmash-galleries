@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
 Tested up to: 2.8.4
-Stable tag: 0.3.02
+Stable tag: 0.3.05
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -74,17 +74,23 @@ It should be relatively straight forward to change the look and feel through thi
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
+= 0.3.05 - 08/19/2009 =
+
+    * Removed code in Database Update that was removing duplicate indices - this was causing users with certain SQL Mode settings to experience errors.
+    * Note - there may be a problem with star ratings with IE 6.  Further testing will ensue.  If you experience problems with Star Ratings, please report them.  Thanks!
+
+
 = 0.3.04 - 08/19/2009 =
 
     * Fixed a conflict with Contact Form 7 where duplicate creation of esc_attr functions was occuring 
     * Added template tags:  
-          o show_photosmash_gallery(optional $attr);  â€“ echoes a gallery â€“ the $attr param can be a gallery ID or an array of parameters that you can also use in shortcodes. 
+          o show_photosmash_gallery(optional $attr);  – echoes a gallery – the $attr param can be a gallery ID or an array of parameters that you can also use in shortcodes. 
           o get_photosmash_gallery(optional $attr);  -  same as show except returns a gallery as a string that you can use in PHP 
 
 = 0.3.03 - 08/19/2009 =
 
-    * Added Star Rating system â€“ thanks to GD Star Ratings for use of the star set (used by permission).  2 placement options (beneath caption or overlay image [default]).  Design of star rating system enables extensions.  Next up is a vote up/down optionâ€¦not implemented yet. 
-    * Improved the Admin messaging â€“ database message now contains a link that updates the database when clicked.
+    * Added Star Rating system – thanks to GD Star Ratings for use of the star set (used by permission).  2 placement options (beneath caption or overlay image [default]).  Design of star rating system enables extensions.  Next up is a vote up/down option…not implemented yet. 
+    * Improved the Admin messaging – database message now contains a link that updates the database when clicked.
 
 = 0.3.02 - 08/01/2009 =
 
