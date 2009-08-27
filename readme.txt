@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
 Tested up to: 2.8.4
-Stable tag: 0.3.06
+Stable tag: 0.3.07
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -73,6 +73,10 @@ It should be relatively straight forward to change the look and feel through thi
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.3.07 – 08/27/2009 =
+
+    * Fixed database update message – was displaying in error for MySQL 4 users. MySQL 4 doesn’t allow WHERE in the SHOW COLUMNS statement…have to use LIKE. MySQL 5 users were not affected by this.
 
 = 0.3.06 – 08/27/2009 =
 
