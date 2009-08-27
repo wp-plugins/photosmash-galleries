@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.3.05
+Version: 0.3.06
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -33,8 +33,8 @@ define('PHOTOSMASHVERSION', '0.3.03');
 
 
 //Database Verifications
-define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_galleries');
-define('PHOTOSMASHVERIFYFIELD', 'rating_position');
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_images');
+define('PHOTOSMASHVERIFYFIELD', 'votes_sum');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -169,6 +169,8 @@ class BWB_PhotoSmash{
 	var $galleries;
 	
 	var $images;
+	
+	var $footerJS; // Load this up with Javascript...PS uses wp_footer hook to put Javascript in footer
 	
 	//Constructor
 	function BWB_PhotoSmash(){
@@ -1483,8 +1485,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		if(isset($_REQUEST['bwbpsRunDBUpdate'])){ return; }
 			
 		$sql = "SELECT * FROM ".PHOTOSMASHVERIFYTABLE." LIMIT 1";
+		
+		$sql = "SHOW COLUMNS FROM ".PHOTOSMASHVERIFYTABLE . " WHERE Field = '". PHOTOSMASHVERIFYFIELD ."'";
 	
-		$ret = $wpdb->get_row($sql);
+		$ret = $wpdb->get_results($sql);
 		
 		if(! $ret ){
 				echo "<div class='message error'><h2>PhotoSmash Database - Needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Click <a href='admin.php?page=psInfo&amp;bwbpsRunDBUpdate=1'>here</a> to Update the DB and view Plugin Info.</p></div>";
@@ -1494,11 +1498,15 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		//Field to be checked against database
 		$col = PHOTOSMASHVERIFYFIELD;
 	
-		foreach($wpdb->get_col_info('name') as $name){
-			$colname[] = $name;
+		foreach($ret as $fld){
+
+			if( PHOTOSMASHVERIFYFIELD == $fld->Field ){
+				$field_found = true;	
+			}
+			
 		}
 		
-		if(! in_array($col, $colname) ){
+		if(! $field_found ){
 				echo "<div class='message error'><h2>PhotoSmash Database needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Click <a href='admin.php?page=psInfo&amp;bwbpsRunDBUpdate=1'>here</a> to Update the DB and view Plugin Info.</p></div>";
 		}
 						
@@ -1634,6 +1642,71 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	}
 	
 	
+	/**
+	 * Injects JavaScript into the Footer - called by PhotoSmash through wp_footer hook
+	 * To use, just...global the $bwbPS object and add to either $bwbPS->addFooterJS($js) 
+	 * or $bwbPS->addFooterReady($js);
+	 */
+	function injectFooterJavaScript(){
+	
+		if(!$this->footerJS && !$this->footerReady){ return; }
+	
+		$ret = "
+		<!-- PhotoSmash JavaScript  -->
+		<script type='text/javascript'>
+		". $this->footerJS."
+		
+		";
+		
+		if($this->footerReady){
+		
+			$ret .= "
+			// On Document Ready
+			jQuery(document).ready(function() {
+			". $this->footerReady . "
+			
+			});
+			";
+		
+		}
+			
+		$ret .="
+		</script>
+		";
+		
+		echo $ret;
+	
+	}
+	
+	/**
+	 * Adds JavaScript that will be inserted into the Footer wrapped in Script tags
+	 * 
+	 */
+	function addFooterJS($js){
+		
+		if($js){
+		
+			$this->footerJS .= "
+			
+			".$js;
+		
+		}
+	}
+
+	/**
+	 * Adds JavaScript that will be inserted into the Footer wrapped 
+	 * in Script tags and jQuery(document).ready() function
+	 * 
+	 */
+	function addFooterReady($js){
+		if($js){
+		
+			$this->footerReady .= "
+			
+			".$js;
+		
+		}
+	}	
 	
 	
 } //End of BWB_PhotoSmash Class
@@ -1686,6 +1759,8 @@ array(&$bwbPS, 'init'));
 add_action('init', array(&$bwbPS, 'enqueueBWBPS'), 1);
 
 add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
+
+add_action('wp_footer', array(&$bwbPS, 'injectFooterJavascript'), 100);
 
 add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
 

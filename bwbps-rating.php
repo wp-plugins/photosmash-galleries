@@ -14,13 +14,16 @@ class BWBPS_Rating{
 	var $average = 0;
 	var $votes;
 	var $status;
+	var $rating_nonce;
 	
 	function BWBPS_Rating(){
+			
+		$this->rating_nonce = wp_create_nonce  ('bwbps-image-rating');
 			
 	}
 	
 
-	function set_score($score){
+	function set_score($score, $is_vote = false){
 		global $wpdb,  $user_ID;
 		
 		$data['image_id'] = (int)$_REQUEST['image_id'];
@@ -59,7 +62,7 @@ class BWBPS_Rating{
 						
 			if($ret){				
 				//Update the Summary tables
-				$ret = $this->updateRatingSummary($data);
+				$ret = $this->updateSummaries($data);
 				echo "Vote updated.";
 						
 			} else {
@@ -80,7 +83,7 @@ class BWBPS_Rating{
 			if($ret){		
 			
 				//Update the Summary tables
-				$ret = $this->updateRatingSummary($data);
+				$ret = $this->updateSummaries($data);
 				echo "Vote added.";
 				
 			} else {
@@ -93,11 +96,82 @@ class BWBPS_Rating{
 				
 		return;
 			
-		
-			
+
 	}
 	
-	function updateRatingSummary(&$data){
+	function updateSummaries(&$data){
+	
+		//Figure out Poll Type
+		switch ($data['poll_id']){
+			
+			case -1 :
+				$poll_type = "stars";
+				break;
+				
+			case -2 :
+				$poll_type = "vote";
+				break;
+			
+			case -3 :
+				$poll_type = "vote";
+				break;
+			
+			default :
+				//when extension is written, we'll need to retrieve poll type from db
+				$poll_type = "stars";
+				break;			
+		
+		}
+		
+		if($poll_type == "stars"){
+			$this->updateStarSummaries(&$data);
+		} else {
+			$this->updateVoteSummaries(&$data);
+		}
+	
+	}
+	
+	function updateVoteSummaries(&$data){
+		global $wpdb;
+			
+	
+		$query = $wpdb->get_row("SELECT SUM(rating) as sum_rating, "
+			. " COUNT(rating) as rating_cnt FROM " . PSRATINGSTABLE 
+			. " WHERE image_id = " . (int)$data['image_id'] 
+			. " AND gallery_id = " . (int)$data['gallery_id'] 
+			. " AND poll_id = " . (int)$data['poll_id'], ARRAY_A );
+			
+	
+			$upd['votes_sum'] = 	$query['sum_rating'];
+			$upd['votes_cnt'] = $query['rating_cnt'];
+				
+		
+		$where['image_id'] = $data['image_id'];
+		//Update Images table first...only uses image_id and poll_id in where
+		$ret2 = $wpdb->update(PSIMAGESTABLE, $upd, $where);
+		
+		//Update Ratings Summary table
+			$sum['avg_rating'] = $upd['votes_sum'];
+			$sum['rating_cnt'] = $upd['votes_cnt'];
+			$where['gallery_id'] = $data['gallery_id'];
+			$where['poll_id'] = $data['poll_id'];
+			$ret2 = $wpdb->update(PSRATINGSSUMMARYTABLE, $sum, $where);
+			
+			
+			if(! $ret2 ){
+			
+				$sum['image_id'] = $data['image_id'];
+				$sum['gallery_id'] = $data['gallery_id'];
+				$sum['poll_id'] = $data['poll_id'];
+				$wpdb->insert(PSRATINGSSUMMARYTABLE, $sum);
+			
+			}	
+		
+		return;
+	}
+	
+	
+	function updateStarSummaries(&$data){
 		global $wpdb;
 			
 	
@@ -123,7 +197,7 @@ class BWBPS_Rating{
 			
 			
 			if(! $ret2 ){
-			
+				$upd['poll_id'] = $data['poll_id'];
 				$upd['image_id'] = $data['image_id'];
 				$upd['gallery_id'] = $data['gallery_id'];
 				$wpdb->insert(PSRATINGSSUMMARYTABLE, $upd);
@@ -155,9 +229,6 @@ class BWBPS_Rating{
 	*/
 	function get_rating($o_rating){
 		
-		//$ret = "<div class='rating_wrapper'>"; 
-		
-		//$status = $this->getRatingForm($o_rating );
 		switch ($o_rating['poll_id']) {
 		
 			case 0 :
@@ -165,7 +236,11 @@ class BWBPS_Rating{
 				break;
 			
 			case -2 :
-				$ret .=  $this->getVotingHTML($o_rating);
+				$ret .=  $this->getVotingHTML($o_rating, 0);
+				break;
+				
+			case -3 :
+				$ret .=  $this->getVotingHTML($o_rating, 1);
 				break;
 			
 			case -1 :
@@ -173,7 +248,6 @@ class BWBPS_Rating{
 				break;
 		}	
 		
-		//$ret .= "</div>";
 		return $ret;
 	}
 
@@ -186,28 +260,30 @@ class BWBPS_Rating{
 	 * @params $status - is either the status of "already voted" or the Ratings Form
 	*/
 	function getRatingHTML($o_rating, $status){
+	
+		global $bwbPS;
 
-		$nonce= wp_create_nonce  ('bwbps-image-rating');
+		$nonce = $this->rating_nonce;
 		
 		$vars = "image_id=".(int)$o_rating['image_id']
 			. '&gallery_id='.$o_rating['gallery_id']."&poll_id=".(int)$o_rating['poll_id']."&_wpnonce="
 			.$nonce;
 
-		$position = $o_rating['rating_position'] ? "" : 'bwb-top-right';
+		$position = $o_rating['rating_position'] ? "bwbps-rating-incaption" : 'bwbps-rating bwb-top-right';
 		$cur = round($o_rating["avg_rating"],0);
 		$avg = round($o_rating["avg_rating"],1);
 		$ret = '
-		<div id="psstar-'.$o_rating["image_id"].'" class="bwbps-rating '
+		<div id="psstar-'.$o_rating["image_id"].'" class="'
 		. $position . ' bwbps-rating-gal-' . $o_rating['gallery_id'] . '">&nbsp;</div>
-		<script type="text/javascript">
-jQuery(document).ready(function() {
+		';
+		
+		//Add JavaScript to the PhotoSmash JS Footer 
+		$bwbPS->addFooterReady('		
 	jQuery("#psstar-'.$o_rating["image_id"].'").psrating("' .$vars. '", {maxvalue: 5, curvalue: '
-		.$cur.', rating_cnt: ' .$o_rating["rating_cnt"]. ', avg_rating: ' . $avg 
-		. ', rating_position: ' . $o_rating["rating_position"] . ', allow_rating: '
-		. $o_rating["allow_rating"] . '});
-		});
-</script>';
-
+		.$cur.', rating_cnt: ' .(int)$o_rating["rating_cnt"]. ', avg_rating: ' . $avg 
+		. ', rating_position: ' . (int)$o_rating["rating_position"] . ', allow_rating: '
+		. (int)$o_rating["allow_rating"] . '});');
+		
 		return $ret;
 	
 	}
@@ -219,27 +295,32 @@ jQuery(document).ready(function() {
 	 * @params $o_rating - an array that includes entity, gallery, poll, etc
 	 * @params $status - is either the status of "already voted" or the Ratings Form
 	*/
-	function getVotingHTML($o_rating) {
+	function getVotingHTML($o_rating, $up_only) {
 		
-		$o_rating['ps_poll_type'] = "voting";
+		global $bwbPS;
 		
-		$nonce= wp_create_nonce  ('bwbps-image-rating');
-		
+		$nonce = $this->rating_nonce;
+				
 		$vars = "image_id=".(int)$o_rating['image_id']
-			. '&gallery_id='.$o_rating['gallery_id']."&poll_id=".(int)$o_rating['poll_id']."&_wpnonce="
-			.$nonce;
-			
-		$ret = '
-		<div id="ps-vote-'.$o_rating["image_id"].'" class="ps-voting">&nbsp;</div>
-		<script type="text/javascript">
-jQuery(document).ready(function() {
-	jQuery("#star-'.$o_rating["image_id"].'").rating("' .$vars. '", {maxvalue: 5, curvalue: '
-		.$o_rating["avg_rating"].', totalratings: '
-		.$o_rating["rating_cnt"].'});
-		});
-</script>';
+			. "&gallery_id=".$o_rating['gallery_id']."&poll_id=".(int)$o_rating['poll_id']."&_wpnonce="
+			.$nonce . "&uponly=" . (int)$up_only;
 
-		return $o_rating;
+		$position = $o_rating['rating_position'] ? "bwbps-voting-incaption" : 'bwbps-voting bwbps-voting-bkg bwb-top-right';
+		$curvalue = (int)$o_rating["votes_sum"];
+		$cnt = (int)$o_rating["votes_cnt"];
+		$ret = '
+		<div id="psvote-'.$o_rating["image_id"].'" class="'
+		. $position . ' bwbps-rating-gal-' . $o_rating['gallery_id'] . '">&nbsp;</div>
+		';
+		
+		//Add JavaScript to the PhotoSmash JS Footer 
+		$bwbPS->addFooterReady('jQuery("#psvote-'.$o_rating["image_id"].'").psvoting("' 
+		.$vars. '", {maxvalue: 1, curvalue: '
+		.$curvalue.', rating_cnt: ' .$cnt. ', avg_rating: ' . $curvalue 
+		. ', rating_position: ' . (int)$o_rating["rating_position"] . ', allow_rating: '
+		. $o_rating["allow_rating"] . ', uponly: ' . $up_only.'});');
+
+		return $ret;
 	
 	}
 

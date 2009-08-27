@@ -380,7 +380,7 @@ class BWBPS_Admin{
 	{
 		global $wpdb;
 		//This section saves Gallery specific settings
-			$gallery_id = $this->gallery_id;
+			$gallery_id = (int)$this->gallery_id;
 			$d['status'] = isset($_POST['gal_status']) ? 1 : 0;
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
 			$d['gallery_type'] = (int)$_POST['gal_gallery_type'];
@@ -441,9 +441,32 @@ class BWBPS_Admin{
 				}
 			}else{
 				$where['gallery_id'] = $gallery_id;
-				$wpdb->update($tablename, $d, $where);
-				$this->message .= "Gallery Updated: ".$d['gallery_name'];
-			}		
+				$updated = $wpdb->update($tablename, $d, $where);
+				
+				$this->message .= "<p>Gallery Updated: ".$d['gallery_name']. "</p>";
+				
+				if($updated){
+					//Recalc Image Ratings
+					$ratesumtable = PSRATINGSSUMMARYTABLE;
+					$imagetable = PSIMAGESTABLE;
+					
+					$sql = "UPDATE $imagetable LEFT JOIN $ratesumtable ON  
+						$imagetable.image_id = $ratesumtable.image_id 
+						AND $imagetable.gallery_id = $ratesumtable.gallery_id
+						AND $ratesumtable.poll_id = " . $d['poll_id'] ."
+						SET $imagetable.votes_cnt = $ratesumtable.rating_cnt
+						, $imagetable.votes_sum = $ratesumtable.avg_rating
+						, $imagetable.rating_cnt = $ratesumtable.rating_cnt
+						, $imagetable.avg_rating = $ratesumtable.avg_rating
+						WHERE $imagetable.gallery_id = $gallery_id";
+												
+					$updated = $wpdb->query($sql);
+					
+					$this->message .= "<p>Image ratings updated: ".$updated."</p>";
+				
+				}
+
+			}
 	}
 	
 	function getGalleryDefaults(){
@@ -654,9 +677,11 @@ if($psOptions['use_advanced'] ==1){
 					<select name="gal_poll_id">
 						<option value="0" <?php if(!$galOptions['poll_id']) echo 'selected=selected'; ?>>None</option>
 						<option value="-1" <?php if($galOptions['poll_id'] == -1) echo 'selected=selected'; ?>>Standard 5 Star</option>
-						<!--
+
 						<option value="-2" <?php if($galOptions['poll_id'] == -2) echo 'selected=selected'; ?>>Standard Vote Up/Down</option>
-						-->
+						
+						<option value="-3" <?php if($galOptions['poll_id'] == -3) echo 'selected=selected'; ?>>Standard Vote Up</option>
+
 					</select>
 				</td>
 			</tr>
@@ -1242,9 +1267,11 @@ if($psOptions['use_customform']){ ?>
 					<select name="ps_poll_id">
 						<option value="0" <?php if(!$psOptions['poll_id']) echo 'selected=selected'; ?>>None</option>
 						<option value="-1" <?php if($psOptions['poll_id'] == -1) echo 'selected=selected'; ?>>Standard 5 Star</option>
-						<!--
+
 						<option value="-2" <?php if($psOptions['poll_id'] == -2) echo 'selected=selected'; ?>>Standard Vote Up/Down</option>
-						-->
+						
+						<option value="-3" <?php if($psOptions['poll_id'] == -3) echo 'selected=selected'; ?>>Standard Vote Up</option>
+
 					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_poll_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 
 				</td>
 			</tr>

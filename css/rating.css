@@ -1,6 +1,5 @@
 .bwbps-rating {
 clear:both;
-cursor:pointer;
 display:block;
 margin: 0 !important;
 width: 98px;
@@ -13,12 +12,17 @@ font-size: 9px;
 	padding: 2px 1px 3px 5px;
 	height: 40px;
 	width: 96px;
-	
+	background: none;
 }
 
 
 .bwbps-rating-hover {
 	background:transparent url(images/rating-bkg.png) no-repeat;
+}
+
+.bwbps-rating-incaption {
+	width: 96px;
+	margin: auto;
 }
 
 .bwbps-rating-info {
@@ -113,4 +117,52 @@ margin:0;
 
 div.bwbps-norate a:hover{
 	background-position:0 0 !important;
+}
+
+/* *************  VOTING *************  */
+
+div.bwbps-voting {
+clear:both;
+display:block;
+margin: 0 !important;
+padding: 0;
+width: 64px;
+z-index: 50;
+height: 70px;
+}
+
+.bwbps-voting-bkg {
+	background:transparent url(images/voting-bkg0.png) no-repeat;
+}
+
+.bwbps-voting-hover {
+	background:transparent url(images/voting-bkg.png) no-repeat;
+}
+
+.bwbps-vote-data {
+	padding-top: 6px;
+}
+
+div.bwbps-vote-total {
+	font-size: 16px;
+}
+
+span.bwbps-vote-total {
+	margin-left: 10px;
+}
+
+.bwbps-vote-info {
+	padding-top: 4px;
+	font-size: 9px;
+	line-height: 1.1em;
+}
+.bwbps-vote-links {
+	padding-top: 3px;
+}
+
+.bwbps-vote-small {
+	font-size: 8px !important;
+	width: 58px;
+	height: 17px;
+	overflow: hidden;
 }

@@ -141,7 +141,8 @@ class BWBPS_Uploader{
 			$this->echoJSON();
 			exit();
 		}
-		$this->user_level = current_user_can('level_1');
+		//Determine if user is author above...if so, no moderation
+		$this->user_level = current_user_can('level_2');
 	}
 	
 	/* 

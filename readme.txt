@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
 Tested up to: 2.8.4
-Stable tag: 0.3.05
+Stable tag: 0.3.06
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -73,6 +73,19 @@ It should be relatively straight forward to change the look and feel through thi
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.3.06 – 08/27/2009 =
+
+    * Changed pagination to show only 5 pages at a time. Added First, Last, and ellipses.
+    * Fixed the situation when showing Ratings beneath the Caption…rating wasn’t showing when there was no caption
+    * Fixed the code that verifies if the database tables are up to date. Now using SHOW COLUMNS sql. Wasn’t getting anything when table was empty.
+    * Changed moderation rules so that users with the Contributor role now receive moderation when moderation is turned on. Notes:
+          o Useful for setups where users create a new WordPress post by uploading an image through PhotoSmash (this functionality is coming to the PhotoSmash Extend plugin)
+          o Roles that get moderated when moderation is turned on in a gallery: Anybody (not logged in), Subscriber, Contributor
+          o Roes that don’t get moderated even when moderation is on: Authors and Admins
+    * Vote Up/Vote Down – will work similarly to Star Ratings, except…it’s voting up or down
+    * Added code to bwb-photosmash.php to give a way to collect and insert Javascript code into the footer. This will save a lot of script tags and jQuery(document).ready() functions, and will collect JS nice and neatly in the footer. If you do a global on the $bwbPS object in PHP, you can easily add javascript to the footer using these 2 functions: $bwbPS->addFooterJS($js); or $bwbPS->addFooterReady($js); PhotoSmash takes care of putting in new lines to separate multiple JS calls, as well as takes care of the Script tags and the document.ready function…it’s easy ;-)
+
 
 = 0.3.05 - 08/19/2009 =
 

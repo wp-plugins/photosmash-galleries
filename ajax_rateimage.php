@@ -38,6 +38,11 @@ class BWBPS_AJAXRateImage{
 				case 'rateimage';
 					$this->saveImageRating();
 					break;
+					
+				case 'voteimage';
+					$this->saveImageVote();
+					break;
+			
 			
 				default :
 					break;
@@ -80,9 +85,37 @@ class BWBPS_AJAXRateImage{
 		if(isset($_POST['rating'])){
 			$score = (int)$_POST['rating'];
 			
-			if( is_numeric($score) && $score <=5 && $score >=1 ){
+			if( $score <=5 && $score >=1 ){
 				$rating = new BWBPS_Rating();
 				$rating->set_score($score);
+								
+			} else {
+				echo "Invalid score";
+			}
+		}	
+		
+	}
+	
+	/*
+	 * Set IMAGE VOTING
+	 *
+	*/	
+	function saveImageVote(){
+		
+		require_once('bwbps-rating.php');
+		
+		if(!$this->psOptions['rating_allow_anon'] && !is_user_logged_in()){
+		
+			echo "log in";
+			return;
+		}
+		
+		if(isset($_POST['rating'])){
+			$score = (int)$_POST['rating'];
+			
+			if( $score === 1 || $score === -1 ){
+				$rating = new BWBPS_Rating();
+				$rating->set_score($score, true);
 								
 			} else {
 				echo "Invalid score";

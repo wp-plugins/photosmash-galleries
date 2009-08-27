@@ -19,6 +19,161 @@ options
 
 ************************************************/
 
+jQuery.fn.psvoting = function(url, options) {
+
+
+	if(url == null) {
+		return;
+	}
+		
+	url = bwbpsAjaxRateImage + "?action=voteimage&" + url;
+
+	var settings = {
+	url : url, // post changes to 
+	increment : 1, // value to increment by
+	maxvalue  : 5,   // max number of stars
+	curvalue  : 0,    // number of selected stars
+	uponly : 0,		// only show up voting link
+	rating_cnt : 0
+	};
+
+	if(options) {
+	jQuery.extend(settings, options);
+	};
+
+	var container = jQuery(this);
+
+	var startitle = "";
+	jQuery.extend(container, {
+	url: settings.url
+	});
+
+	var innerbox = jQuery('<div></div>');
+	
+	container.empty().append(innerbox);
+	
+	var votetotal;
+	var votinglinks;
+	
+	var voteinfo;
+	
+	//If the Postion is Top-Right (value == 0)
+	if(!settings.rating_position){
+		innerbox.addClass("bwbps-vote-data");
+	
+		var allowrate = settings.allow_rating ? 'bwbps-star' : 'bwbps-star bwbps-norate';
+	
+		
+	
+		votetotal = jQuery('<div class="bwbps-vote-total">' + settings.curvalue + '</div>');
+		voteinfo = jQuery('<div class="bwbps-vote-info" style="display:none;"># votes: ' + settings.rating_cnt + '</div>');
+
+	
+		innerbox.append(votetotal);
+		
+		votinglinks = jQuery('<div class="bwbps-vote-links"></div>');
+		innerbox.append(votinglinks);
+			
+	} else {
+		
+		//For Position beneath caption - place Voting Links first, then Vote count
+		votetotal = jQuery('<span class="bwbps-vote-total">[' + settings.curvalue + ']</span>');
+		
+		voteinfo = jQuery('<div class="bwbps-vote-info"># votes: ' + settings.rating_cnt + '</div>');
+
+		
+		votinglinks = jQuery('<span></span>');
+		
+		innerbox.append(votinglinks);
+		innerbox.append(votetotal);
+		
+	}
+	
+	innerbox.append(voteinfo);
+	
+	var voteupbutton;
+	if(!settings.uponly){ 
+		voteupbutton = '<img src="' + bwbpsPhotoSmashURL + 'images/thumb_up.png" alt="vote up" />';
+	} else {
+		voteupbutton = 'Vote';
+	}
+	
+	var upvote = jQuery('<a href="#up" title="Vote up"></a>').html(voteupbutton);
+	
+	
+
+	//Add the Up Vote
+	upvote.click(function(){
+		votetotal.empty();
+		votetotal.addClass("bwbps-vote-small");
+		votetotal.html('saving...');
+			
+		jQuery.post(container.url, {
+			"rating": 1 
+		}, function(data){ 
+			votetotal.addClass("bwbps-vote-small");
+			votetotal.empty().html(data);
+		});
+		
+		return false;
+		
+	});
+	
+	votinglinks.append(upvote);
+	
+	//Add the Down Vote if uponly is false
+	if(!settings.uponly){
+		
+		votinglinks.append("&nbsp;");
+		
+		var downvote = jQuery('<a href="#up" title="Vote down"><img src="' + bwbpsPhotoSmashURL + 'images/thumb_down.png" alt="vote down" /></a>');
+
+		//Add the Up Vote
+		downvote.click(function(){
+			
+			votetotal.empty();
+			votetotal.addClass("bwbps-vote-small");
+			votetotal.html('saving...');
+				
+			jQuery.post(container.url, {
+				"rating": -1 
+			}, function(data){ 
+				votetotal.addClass("bwbps-vote-small");
+				votetotal.empty().html(data);
+			});
+			
+			return false;
+			
+		});
+		
+		votinglinks.append(downvote);	
+	}
+  
+
+	
+	//If the Postion is Top-Right (value == 0)
+	if(!settings.rating_position){
+	//Add mouseover to display info box (top-right position only);
+		container
+		.mouseover(function(){
+			container.addClass('bwbps-voting-hover').end();
+			container.removeClass('bwbps-voting-bkg').end();
+			voteinfo.show();
+		})
+		.mouseout(function(){
+			container.addClass('bwbps-voting-bkg').end();
+			container.removeClass('bwbps-voting-hover').end();
+			voteinfo.hide();
+		});
+	}
+	    	
+}
+
+
+/*
+ *  STAR RATING
+ *
+ */
 jQuery.fn.psrating = function(url, options) {
 	
 	if(url == null) return;
@@ -26,7 +181,6 @@ jQuery.fn.psrating = function(url, options) {
 	var settings = {
     url : url, // post changes to 
     increment : 1, // value to increment by
-    maxvalue  : 5,   // max number of stars
     curvalue  : 0    // number of selected stars
   };
 	
@@ -101,10 +255,7 @@ jQuery.fn.psrating = function(url, options) {
   	})
 	.mouseout(function(){
 		
-		var relatedTarget =  event.relatedTarget ? event.relatedTarget : event.toElement;
-		
-		if( innerbox.find(event.toElement).length > 0 ) { alert('yes'); return;}
-		
+		var relatedTarget =  event.relatedTarget ? event.relatedTarget : event.toElement;		
 		innerbox.removeClass('bwbps-rating-hover').end();
 		infobox.hide();
 		

@@ -55,14 +55,16 @@ class BWBPS_Init{
 			*/
 			
 			$table_name = $wpdb->prefix . "bwbps_images";
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
 			
-			$sql = "ALTER TABLE " . $table_name .
-				" DROP INDEX image_id";
-			$wpdb->query($sql);
-				
-			$sql = "ALTER TABLE " . $table_name .
-				" DROP INDEX gallery_id";
-			$wpdb->query($sql);
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX image_id";
+				$wpdb->query($sql);
+					
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX gallery_id";
+				$wpdb->query($sql);
+			}
 							
 			
 			//Create the Images table
@@ -88,8 +90,8 @@ class BWBPS_Init{
 				seq BIGINT(11) NOT NULL,
 				avg_rating FLOAT(8,4) NOT NULL,
 				rating_cnt BIGINT(11) NOT NULL,
-				votes_up BIGINT(20),
-				votes_down BIGINT(20),
+				votes_sum BIGINT(11),
+				votes_cnt BIGINT(11),
 				PRIMARY KEY   (image_id),
 				INDEX (gallery_id)
 				)  $charset_collate;";
@@ -143,10 +145,16 @@ class BWBPS_Init{
 				;";
 			dbDelta($sql);
 			
-			//Image Ratings Table
-			$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
-				"DROP INDEX image_id";
-			$wpdb->query($sql);
+			
+			//Drop Old Index
+			$table_name = $wpdb->prefix . "bwbps_imageratings";
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+
+				//Image Ratings Table
+				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
+					"DROP INDEX image_id";
+				$wpdb->query($sql);
+			}
 			
 			//Create the IMAGE RATINGS table (future use)
 			$table_name = $wpdb->prefix . "bwbps_imageratings";
@@ -172,17 +180,21 @@ class BWBPS_Init{
 			* RATINGS SUMMARY
 			* Summarizes ratings by Image, Gallery, Poll
 			*/
-			$table_name = $wpdb->prefix . "bwbps_ratingssummary";
 			
-			//Delete the old indices
+			$table_name = $wpdb->prefix . "bwbps_ratingssummary";			
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
 			
-			$sql = "ALTER TABLE " . $table_name .
-				" DROP INDEX image_id";
-			$wpdb->query($sql);
+				//Delete the old indices
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX image_id";
+				$wpdb->query($sql);
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX gallery_poll";
+				$wpdb->query($sql);
 			
-			$sql = "ALTER TABLE " . $table_name .
-				" DROP INDEX gallery_poll";
-			$wpdb->query($sql);
+			}
 			
 			//create the table
 			$sql = "CREATE TABLE " . $table_name . " (
@@ -258,9 +270,15 @@ class BWBPS_Init{
 			
 			dbDelta($sql);
 			
-			$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_lookup ".
-				"DROP INDEX field_id";
-			$wpdb->query($sql);
+			//Drop Old Index
+			$table_name = $wpdb->prefix . "bwbps_lookup";
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			
+				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_lookup ".
+					"DROP INDEX field_id";
+				$wpdb->query($sql);
+				
+			}
 			
 			//LOOKUP
 			//Create the Custom Data Lookup Table

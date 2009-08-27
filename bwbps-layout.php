@@ -90,6 +90,8 @@ class BWBPS_Layout{
 				'poll_id' => $g['poll_id'],
 				'avg_rating' => 0,
 				'rating_cnt' => 0,
+				'vote_sum' => 0,
+				'vote_cnt' => 0,
 				'rating_position' => $g['rating_position'],
 				'allow_rating' => $allow_anon
 			);
@@ -236,6 +238,8 @@ class BWBPS_Layout{
 					$rating['image_id'] = $image['psimageID'];
 					$rating['avg_rating'] = $image['avg_rating'];
 					$rating['rating_cnt'] = $image['rating_cnt'];
+					$rating['votes_sum'] = $image['votes_sum'];
+					$rating['votes_cnt'] = $image['votes_cnt'];
 										
 					$image['ps_rating'] = $this->ratings->get_rating($rating);
 			
@@ -533,6 +537,7 @@ class BWBPS_Layout{
 		$fileField = $this->getFileField($g, $image);	
 		if($fileField)
 		{
+			//Add Rating as an Overlay of Image if $g['rating_position'] == FALSE
 			if(!$g['rating_position'] ){
 				$ret .= $image['ps_rating'].$image['imgurl'] . $fileField . $image['imgurl_close'];
 			} else {
@@ -547,9 +552,11 @@ class BWBPS_Layout{
 			if( $fileField ) { $ret .= "<br/>"; }
 			$ret .= $image['capurl'] . $scaption . $image['capurl_close'];
 			
-			if($image['ps_rating'] && $g['rating_position']){
-				$ret .= $image['ps_rating'];
-			}
+		}
+		
+		//Add Rating After Caption if $g['rating_position'] == TRUE
+		if($image['ps_rating'] && $g['rating_position']){
+			$ret .= $image['ps_rating'];
 		}
 				
 		$ret .= "</div>".$g['modMenu']."</li>";					
@@ -1382,14 +1389,50 @@ class BWBPS_Layout{
 		
 		if($othergals){ $othergals = "&amp;".$othergals; }
 		
+		$page_numstop = $total_pages;
+		
+		$page_numstart = 1;
+		
 		//Build PREVIOUS link
+		if($page > 3 && $total_pages > 5){
+			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=1".$othergals."'>first</a>";
+			$frontellip = "&#8230;";
+			
+			
+			if($page > ($total_pages - 3)){
+				$page_numstart = $total_pages - 4;
+			} else {
+				$page_numstart = $page - 2;
+			}
+					
+		}
+		
+		if($total_pages > 5 && $page < $total_pages - 2){
+		
+			if( $page > 3 ){
+				if( $page + 2 < $total_pages){
+					$backellip = "&#8230;";
+					$page_numstop = $page + 2;
+				}					
+					
+			} else {
+				$page_numstop = 5;
+				$backellip = "&#8230;";
+
+			}
+		}
+		
 		if($page > 1){
 			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($page-1).$othergals."'>&#9668;</a>";
+			
 		}
+		
+		if($frontellip){ $nav[] = $frontellip; }
 		
 		if($total_pages > 1){
 			
-			for($page_num = 1; $page_num <= $total_pages; $page_num++){
+			$icnt = 0;
+			for($page_num = $page_numstart; $page_num <= $page_numstop; $page_num++){
 				if($page == $page_num){ 
 					$nav[] = "<span>".$page."</span>";
 				}else{
@@ -1399,8 +1442,17 @@ class BWBPS_Layout{
 			
 		}
 		
+		if($backellip){
+			$nav[] = $backellip;
+		}
+		
+		//Build NEXT LINK
 		if($page < $total_pages){
 			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($page+1).$othergals."'>&#9658;</a>";
+		}
+		
+		if($total_pages > 5 && $page < ($total_pages - 2)){
+			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($total_pages).$othergals."'>last</a>";
 		}
 		
 		$snav = "";
