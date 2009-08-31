@@ -23,37 +23,7 @@ class BWBPS_Init{
 			
 			$icnt = 0;
 			
-			
-			//Drop Existing Indices...sorry about this...it's been duplicating some of them
-			//At some point, I'll pull out the loop since it shouldn't happen once everyone runs
-			//this update
-			
-			/*
-			
-			for($i = 0; $i < 40; $i++){
-				//Images Table
-				if($i > 0){ $indexname = '_'.$i;}
-				$sql = "ALTER TABLE " . $table_name .
-				" DROP INDEX image_id". $indexname;
-				$wpdb->query($sql);
-				
-				$sql = "ALTER TABLE " . $table_name .
-				" DROP INDEX gallery_id". $indexname;
-				$wpdb->query($sql);
-				
-				//Image Ratings Table
-				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
-				"DROP INDEX image_id". $indexname;
-				$wpdb->query($sql);
-				
-			}
-			
-				
-				//This was causing problems for a user who had
-				//some weird SQL Mode settings
-
-			*/
-			
+						
 			$table_name = $wpdb->prefix . "bwbps_images";
 			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
 			
@@ -80,6 +50,10 @@ class BWBPS_Init{
 				file_type TINYINT(1),
 				file_name TEXT NOT NULL,
 				file_url TEXT,
+				thumb_url TEXT,
+				medium_url TEXT,
+				image_url TEXT,
+				wp_attach_id BIGINT(11),
 				url VARCHAR(250) NOT NULL,
 				custom_fields TEXT,
 				updated_by BIGINT(20) NOT NULL,
@@ -94,6 +68,35 @@ class BWBPS_Init{
 				votes_cnt BIGINT(11),
 				PRIMARY KEY   (image_id),
 				INDEX (gallery_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+			
+			//IMAGE CATEGORIES
+			$table_name = $wpdb->prefix . "bwbps_categories";
+			
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			
+				//Delete the old indices
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX image_id";
+				$wpdb->query($sql);
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX category_id";
+				$wpdb->query($sql);
+			
+			}
+			
+			$sql = "CREATE TABLE " . $table_name . " (
+				id BIGINT(11) NOT NULL AUTO_INCREMENT,
+				image_id BIGINT(20) NOT NULL,
+				category_id BIGINT(20),
+				updated_date TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				INDEX (image_id),
+				INDEX (category_id)
 				)  $charset_collate;";
 			dbDelta($sql);
 			
@@ -116,6 +119,9 @@ class BWBPS_Init{
 				thumb_aspect TINYINT(1),
 				thumb_width INT(4),
 				thumb_height INT(4),
+				medium_aspect TINYINT(1),
+				medium_width INT(4),
+				medium_height INT(4),
 				image_aspect TINYINT(1),
 				image_width INT(4),
 				image_height INT(4),

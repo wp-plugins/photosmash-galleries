@@ -29,7 +29,6 @@ $j(document).ready(function() {
 			}
 		bwbpsUploadStatus = false;
 	});
-
 	
 	
 	$j('.bwbps_uploadform').submit(function() { 
@@ -37,7 +36,6 @@ $j(document).ready(function() {
 		bwbpsAjaxLoadImage(this);
 		return false; 
 	});
-//	onsubmit="bwbpsSubmitForm(\'' . $g["pfx"] . '\' ); return false;" enctype="multipart/form-data"
 	
 	//make sure the upload form radio button is on Select file
 	$j(".init_radio").attr("checked","checked");
@@ -205,7 +203,13 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 		
 		if (data.db_saved > 0 ) {
 			//We got an image back...show it
-			$j('#' + form_pfx + 'bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
+			
+			if( data.thumb_fullurl ){
+				$j('#' + form_pfx + 'bwbps_result').html('<img src="' + data.thumb_fullurl +'" />'); 
+			} else {
+				$j('#' + form_pfx + 'bwbps_result').html('<img src="' + bwbpsThumbsURL + data.img+'" />'); 
+			}
+			
 			
 			if(data.message == undefined){	
 				data.message = "";
@@ -274,10 +278,23 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			} else {
 				imgdiv = $j('<div></div>').css('width', data.thumb_width).css('margin', 'auto');
 			}
+						
+			var ahref;	// The image's link
 			
-			var ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel);
+			//Handle the new upload method
+			if( data.thumb_fullurl ){
 			
-			$j('<img src="' + bwbpsThumbsURL + data.img+'" />').appendTo(ahref);
+				ahref = $j('<a></a>').attr('href', data.image_url).attr('rel',data.imgrel);
+				$j('<img src="' + data.thumb_fullurl +'" />').appendTo(ahref);
+				
+			} else {
+			
+				ahref = $j('<a></a>').attr('href', bwbpsImagesURL + data.img).attr('rel',data.imgrel);
+				$j('<img src="' + bwbpsThumbsURL + data.img +'" />').appendTo(ahref);
+				
+			}
+			
+			
 					
 			if(data.show_imgcaption > 0){
 				$j('<br />').appendTo(ahref);
@@ -294,7 +311,7 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			
 			
 		} else {
-			$j('#' + form_pfx + 'bwbps_message').html( data.error); 
+			$j('#' + form_pfx + 'bwbps_message').html( "Image not saved: " + data.error); 
 		}
 	} else {
 		$j('#' + form_pfx + 'bwbps_message').html('Unknown error!'); 

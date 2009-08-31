@@ -28,7 +28,7 @@ class BWBPS_Admin{
 		//Reset PS General Settings to Default
 		if(isset($_POST['reset_bwbPSDefaults'])){
 			check_admin_referer( 'update-gallery');
-			$this->psOptions = $this->getPSOptionsDefaults();
+			$this->psOptions = $this->getPSDefaultOptions();
 			update_option('BWBPhotosmashAdminOptions', $this->psOptions);
 		}
 		
@@ -72,7 +72,7 @@ class BWBPS_Admin{
 				$psAdminOptions[$key] = $option;
 			}
 		}
-		
+			
 		if (!array_key_exists('use_thickbox', $psAdminOptions)) {
 			$psAdminOptions['use_thickbox']=1;
 		}
@@ -81,62 +81,13 @@ class BWBPS_Admin{
 	}
 	
 	
-	function getPSOptionsDefaults()
+	function getPSDefaultOptions()
 	{
-		//get some defaults if nothing is in the database
-		return array(
-				
-				'auto_add' => 0,
-				'img_perpage' => 0,
-				'img_perrow' => 0,
-				'thumb_aspect' => 0,
-				'thumb_width' => 125,
-				'thumb_height' => 125,
-				'image_aspect' => 0,
-				'image_width' => 0,
-				'image_height' => 0,
-				'img_rel' => 'lightbox[album]',
-				'add_text' => 'Add Photo',
-				'gallery_caption' => 'PhotoSmash Gallery',
-				'upload_form_caption' => 'Select an image to upload:',
-				'img_class' => 'ps_images',
-				'show_caption' => 1,
-				'nofollow_caption' => 1,
-				'alert_all_uploads' => 0,
-				'img_alerts' => 3600,
-				'show_imgcaption' => 1,
-				'contrib_role' => 10,
-				'img_status' => 0,
-				'last_alert' => 0,
-				'use_advanced' => 0,
-				'use_urlfield' => 0,
-				'use_customform' => 0,
-				'use_customfields' => 0,
-				'use_thickbox' => 1,
-				'use_alt_ajaxscript' => 0,
-				'alt_ajaxscript' => '',
-				'alt_javascript' => '',
-				'uploadform_visible' => 0,
-				'use_manualform' => 0,
-				'layout_id' => -1,
-				'caption_targetnew' => 0,
-				'img_targetnew' => 0,
-				'custom_formid' => 0,
-				'use_donelink' => 0,
-				'css_file' => '',
-				'exclude_default_css' => 0,
-				'date_format' => 'm/d/Y',
-				'upload_authmessage' => '',
-				'imglinks_postpages_only' => 0,
-				'sort_field' => 0,
-				'sort_order' => 0,
-				'contrib_gal_on' => 0,
-				'suppress_contrib_posts' => 0,
-				'poll_id' => 0,
-				'rating_position' => 0,
-				'rating_allow_anon' => 0,
-				'version' => PHOTOSMASHVERSION
-		);
+	
+		global $bwbPS;
+		
+		return $bwbPS->getPSDefaultOptions();
+	
 	}
 	
 	
@@ -210,11 +161,39 @@ class BWBPS_Admin{
 		global $wpdb;
 		if(current_user_can('level_10')){
 			if($imgid){
-				$filename = $wpdb->get_var($wpdb->prepare("SELECT file_name FROM "
-					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid));
-				if($filename){
-					unlink(PSIMAGESPATH.$filename);
-					unlink(PSTHUMBSPATH.$filename);
+				$row = $wpdb->get_row($wpdb->prepare(
+					"SELECT file_name, thumb_url, medium_url, image_url FROM "
+					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid), ARRAY_A);
+				if($row){
+				
+					if( $row['file_name'] && is_file( PSIMAGESPATH.$row['file_name'] )){
+						unlink(PSIMAGESPATH.$row['file_name']);
+					}
+					
+					if( $row['file_name'] && is_file( PSTHUMBSPATH.$row['file_name'] )){
+						unlink(PSTHUMBSPATH.$row['file_name']);
+					}
+					
+					// PhotoSmash now uses the WordPress upload folder structure
+					
+					if( $row['thumb_url'] ){
+					
+						$uploads = wp_upload_dir();
+						
+						if( is_file($uploads['basedir'] . '/' . $row['thumb_url']) ){
+							unlink($uploads['basedir'] . '/' . $row['thumb_url']);
+						}
+						
+						if( is_file($uploads['basedir'] . '/' . $row['medium_url']) ){
+							unlink($uploads['basedir'] . '/' . $row['medium_url']);
+						}
+						
+						if( is_file($uploads['basedir'] . '/' . $row['image_url']) ){
+							unlink($uploads['basedir'] . '/' . $row['image_url']);
+						}
+					
+					}
+					
 				}
 			
 				$ret = $wpdb->query($wpdb->prepare('DELETE FROM '.
@@ -222,6 +201,15 @@ class BWBPS_Admin{
 				
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
 					.' WHERE image_id = %d', $imgid));
+					
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSRATINGSTABLE
+					.' WHERE image_id = %d', $imgid));
+				
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSRATINGSSUMMARYTABLE
+					.' WHERE image_id = %d', $imgid));
+					
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
+					.' WHERE image_id = %d', $imgid));	
 					
 				
 			} else {$ret = 0;}
@@ -243,11 +231,18 @@ class BWBPS_Admin{
 			}
 			
 			$ps['version'] = PHOTOSMASHVERSION;
+					
+			$ps['use_wp_upload_functions'] = isset($_POST['ps_use_wp_upload_functions']) ? 1 : 0;
+			$ps['add_to_wp_media_library'] = isset($_POST['ps_add_to_wp_media_library']) ? 1 : 0;
 
 
 			$ps['thumb_aspect'] = (int)$_POST['ps_thumb_aspect'];
 			$ps['thumb_width'] = (int)$_POST['ps_thumb_width'];
 			$ps['thumb_height'] = (int)$_POST['ps_thumb_height'];
+			
+			$ps['medium_aspect'] = (int)$_POST['ps_medium_aspect'];
+			$ps['medium_width'] = (int)$_POST['ps_medium_width'];
+			$ps['medium_height'] = (int)$_POST['ps_medium_height'];
 			
 			$ps['image_aspect'] = (int)$_POST['ps_image_aspect'];
 			$ps['image_width'] = (int)$_POST['ps_image_width'];
@@ -389,6 +384,10 @@ class BWBPS_Admin{
 			$d['thumb_aspect'] = (int)$_POST['gal_thumb_aspect'];
 			$d['thumb_width'] = (int)$_POST['gal_thumb_width'];
 			$d['thumb_height'] = (int)$_POST['gal_thumb_height'];
+			
+			$d['medium_aspect'] = (int)$_POST['gal_medium_aspect'];
+			$d['medium_width'] = (int)$_POST['gal_medium_width'];
+			$d['medium_height'] = (int)$_POST['gal_medium_height'];
 			
 			$d['image_aspect'] = (int)$_POST['gal_image_aspect'];
 			$d['image_width'] = (int)$_POST['gal_image_width'];
@@ -764,7 +763,8 @@ if($psOptions['use_advanced'] ==1){
 					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
-	<tr>
+			
+			<tr>
 				<th>Thumbnail width (px):</th>
 				<td>
 					<input type='text' name="gal_thumb_width" value='<?php echo (int)$galOptions['thumb_width'];?>'/>
@@ -774,6 +774,28 @@ if($psOptions['use_advanced'] ==1){
 				<th>Thumbnail height (px):</th>
 				<td>
 					<input type='text' name="gal_thumb_height" value='<?php echo (int)$galOptions['thumb_height'];?>'/>
+				</td>
+			</tr>
+						
+			<tr>
+				<th>Medium style:</th>
+				<td>
+					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Medium width (px):</th>
+				<td>
+					<input type='text' name="gal_medium_width" value='<?php echo (int)$galOptions['medium_width'];?>'/>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Medium height (px):</th>
+				<td>
+					<input type='text' name="gal_medium_height" value='<?php echo (int)$galOptions['medium_height'];?>'/>
 				</td>
 			</tr>
 			
@@ -1055,10 +1077,33 @@ if($psOptions['use_customform']){ ?>
 					<input type='text' name="gal_thumb_width" value='<?php echo (int)$galOptions['thumb_width'];?>'/>
 				</td>
 			</tr>
+			
 			<tr>
 				<th>Thumbnail height (px):</th>
 				<td>
 					<input type='text' name="gal_thumb_height" value='<?php echo (int)$galOptions['thumb_height'];?>'/>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Medium style:</th>
+				<td>
+					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Medium width (px):</th>
+				<td>
+					<input type='text' name="gal_medium_width" value='<?php echo (int)$galOptions['medium_width'];?>'/>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Medium height (px):</th>
+				<td>
+					<input type='text' name="gal_medium_height" value='<?php echo (int)$galOptions['medium_height'];?>'/>
 				</td>
 			</tr>
 			
@@ -1297,6 +1342,20 @@ if($psOptions['use_customform']){ ?>
 	</div>
 	<div id='bwbps_uploading'>
 		<table class="form-table">
+				
+			<tr>
+				<th>Use WordPress Upload process:</th>
+				<td>
+					<input type="checkbox" name='ps_use_wp_upload_functions' <?php if($psOptions['use_wp_upload_functions'] == 1) echo 'checked'; ?>>
+					Use built-in WordPress upload functions.
+					<p>
+						<input type="checkbox" name='ps_add_to_wp_media_library' <?php if($psOptions['add_to_wp_media_library'] == 1) echo 'checked'; ?>> Add images the WordPress Media Library
+					</p><p><b>Don't use these if you're using custom upload code</b>...until you change your upload code to work with the new code in bwbps-wp-uploader.php</p>
+					<p><b>Benefits?</b><ol><li>Fixes folder issues some people have had</li><li>Adds images to the WP Media Library...so you can edit them through WP functionality.</li></ol></p>
+				</td>
+			</tr>
+		
+		
 			<tr>
 				<th>Default Minimum role to upload photos:</th>
 				<td>
@@ -1369,6 +1428,7 @@ if($psOptions['use_customform']){ ?>
 	</div>
 	<div id="bwbps_thumbnails">
 		<table class="form-table">
+			
 			<tr>
 				<th>Default thumb style:</th>
 				<td>
@@ -1376,16 +1436,40 @@ if($psOptions['use_customform']){ ?>
 					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 				</td>
 			</tr>
+			
 			<tr>
 				<th>Default thumb width (px):</th>
 				<td>
 					<input type='text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
+			
 			<tr>
 				<th>Default thumb height (px):</th>
 				<td>
 					<input type='text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default medium style:</th>
+				<td>
+					<input type="radio" name="ps_medium_aspect" value="0" <?php if((int)$psOptions['medium_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_medium_aspect" value="1" <?php if((int)$psOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default medium width (px):</th>
+				<td>
+					<input type='text' name="ps_medium_width" value='<?php echo (int)$psOptions['medium_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default medium height (px):</th>
+				<td>
+					<input type='text' name="ps_medium_height" value='<?php echo (int)$psOptions['medium_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			
@@ -1668,6 +1752,8 @@ if($psOptions['use_customform']){ ?>
 		$images = $this->getImagesQuery($gallery_id);
 		$admin = current_user_can('level_10');
 		
+		$uploads = wp_upload_dir();
+		
 		$imgcnt =0;
 		if($images){
 		//Get image count
@@ -1699,6 +1785,22 @@ if($psOptions['use_customform']){ ?>
 					break;
 			}
 			
+			if ( !$image->thumb_url ){
+				
+				$image->thumb_url = PSTHUMBSURL.$image->file_name;
+				$image->image_url = PSIMAGESURL.$image->file_name;
+						
+			} else {
+			
+				// Add the Uploads base URL to the image urls.
+				// This way if the user ever moves the blog, everything might still work ;-) 
+				// set $uploads at top of function...only do it once
+				$image->thumb_url = $uploads['baseurl'] . '/' . $image->thumb_url;
+				$image->medium_url = $uploads['baseurl'] . '/' . $image->medium_url;
+				$image->image_url = $uploads['baseurl'] . '/' . $image->image_url;
+			
+			}
+			
 			$galupdate = $this->getGalleryDDL($image->gallery_id, "skipnew"
 				, "g".$image->image_id, "bwbps_set_imggal", 15, false);
 			
@@ -1714,10 +1816,10 @@ if($psOptions['use_customform']){ ?>
 			
 			//Image HTML
 			
-			$psTable .= "<td class='psgal_".$image->gallery_id." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='".PSIMAGESURL.$image->file_name."' rel='"
-				.$g['img_rel']."' title='".str_replace("'","",$image->image_caption)
-				."'><span id='psimage_".$image->image_id."'><img src='".PSTHUMBSURL
-				.$image->image_name."' ".$modClass." /></span></a></td>";
+			$psTable .= "<td class='psgal_".$image->gallery_id." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='". $image->image_url."' rel='"
+				. $g['img_rel']."' title='".str_replace("'","",$image->image_caption)
+				. "'><span id='psimage_".$image->image_id."'><img src='"
+				. $image->thumb_url ."' ".$modClass." /></span></a></td>";
 			
 			
 			// IMAGE DETAILS
@@ -1739,8 +1841,15 @@ if($psOptions['use_customform']){ ?>
 				$fileURLData = "<br/>File data: " . $image->file_url;
 			} else { $fileURLData = ""; }
 			
-			$psTable .= "<br/><b>Details: </b>(image id: ".$image->image_id.")<br/>Gallery: <a href='admin.php?page=managePhotoSmashImages&amp;psget_gallery_id="
-			.$image->gallery_id."'>id(".$image->gallery_id.") ".$image->gallery_name."</a><br/>Uploaded by: ".$this->calcUserName($image->user_login, $image->user_nicename, $image->display_name)."<br/>Date: ".$image->created_date. $fileURLData . "</td>";
+			$psTable .= "<br/><b>Details: </b>(image id: "
+				. $image->image_id.")<br/>Gallery: <a href='admin.php?"
+				. "page=managePhotoSmashImages&amp;psget_gallery_id="
+				. $image->gallery_id."'>id(".$image->gallery_id.") "
+				. $image->gallery_name."</a><br/>Image name: "
+				. $image->image_name . "<br/>Uploaded by: "
+				. $this->calcUserName($image->user_login, $image->user_nicename
+				, $image->display_name)."<br/>Date: ".$image->created_date
+				. $fileURLData . "</td>";
 			if($i == 1){
 				$psTable .= "</tr><tr>";
 				$i = 0;

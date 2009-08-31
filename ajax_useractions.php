@@ -12,12 +12,17 @@ if(!function_exists('json_encode')){
 }
 
 $bwbpsuploaddir = wp_upload_dir();
+
+
+define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
+define("PSRATINGSTABLE", $wpdb->prefix."bwbps_imageratings");
+define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
+define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
+define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
+
 define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
-define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
-define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
-
 
 class BWBPS_AJAX{
 	
@@ -95,7 +100,7 @@ class BWBPS_AJAX{
 				} else {
 					$status = 0;
 				}
-				$row = $wpdb->get_row($wpdb->prepare("SELECT file_name, post_id FROM "
+				$row = $wpdb->get_row($wpdb->prepare("SELECT * FROM "
 					.PSIMAGESTABLE. " WHERE image_id = %d AND user_id = %d AND status < $status ", $imgid, $user_ID));
 					
 				if(!$row){
@@ -104,10 +109,36 @@ class BWBPS_AJAX{
 					echo json_encode($json);
 					return;
 				}
-				if($row->file_name){
-					unlink(PSIMAGESPATH.$row->file_name);
-					unlink(PSTHUMBSPATH.$row->file_name);
+				
+				if($row->file_name || $row->thumb_url){
+					
+					// Legacy code - PhotoSmash originally used its own folders for uploads
+					if( is_file(PSIMAGESPATH.$row->file_name) ){
+						unlink(PSIMAGESPATH.$row->file_name);
+					}
+					
+					if( is_file(PSTHUMBSPATH.$row->file_name) ){
+						unlink(PSTHUMBSPATH.$row->file_name);
+					}
+					
+					// PhotoSmash now uses the WordPress upload folder structure
+					$uploads = wp_upload_dir();
+					
+					if( is_file($uploads['basedir'] . '/' . $row->thumb_url) ){
+						unlink($uploads['basedir'] . '/' . $row->thumb_url);
+					}
+					
+					if( is_file($uploads['basedir'] . '/' . $row->medium_url) ){
+						unlink($uploads['basedir'] . '/' . $row->medium_url);
+					}
+					
+					if( is_file($uploads['basedir'] . '/' . $row->image_url) ){
+						unlink($uploads['basedir'] . '/' . $row->image_url);
+					}
+					
 				}
+
+				
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
 					PSIMAGESTABLE.' WHERE image_id = %d AND user_ID = %d AND status < '
@@ -116,6 +147,15 @@ class BWBPS_AJAX{
 				if($json['status']){
 					$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
 						.' WHERE image_id = %d', $imgid));
+					
+					$wpdb->query($wpdb->prepare('DELETE FROM '. PSRATINGSTABLE
+						.' WHERE image_id = %d', $imgid));
+					
+					$wpdb->query($wpdb->prepare('DELETE FROM '. PSRATINGSSUMMARYTABLE
+						.' WHERE image_id = %d', $imgid));
+						
+					$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
+						.' WHERE image_id = %d', $imgid));	
 						
 					//Delete the related post if directed to
 					if( $deletePost && $row->post_id ){

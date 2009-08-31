@@ -43,6 +43,7 @@ class BWBPS_Layout{
 			, 'eval'
 			, 'post_id'
 			, 'post_url'
+			, 'ps_rating'
 		);
 	}
 	
@@ -66,6 +67,8 @@ class BWBPS_Layout{
 		global $wpdb;
 				
 		$admin = current_user_can('level_10');
+		
+		$uploads = wp_upload_dir();
 		
 		//Instantiate the Ratings class if needed
 		if($g['poll_id']){
@@ -248,13 +251,32 @@ class BWBPS_Layout{
 				}
 			
 				if( $g['suppress_no_image'] && !$image['file_type'] 
-					&& !$image['file_name'] ){
+					&& !$image['file_name'] && !$image['thumb_url'] ){
 					continue;	
 				}
 				if( !$image['file_type'] 
-					&& !$image['file_name'] && $g['default_image']){
+					&& !$image['file_name'] && $g['default_image'] 
+					&& !$image['thumb_url'] ){
 					$image['file_name'] = $g['default_image'];
+				} 
+				
+				if( !$image['thumb_url'] ){
+				
+					$image['thumb_url'] = PSTHUMBSURL.$image['file_name'];
+					$image['medium_url'] = PSTHUMBSURL.$image['file_name'];
+					$image['image_url'] = PSIMAGESURL.$image['file_name'];
+				
+				} else {
+				
+					// Add the Uploads base URL to the image urls.
+					// This way if the user ever moves the blog, everything might still work ;-) 
+					// set $uploads at top of function...only do it once
+					$image['thumb_url'] = $uploads['baseurl'] . '/' . $image['thumb_url'];
+					$image['medium_url'] = $uploads['baseurl'] . '/' . $image['medium_url'];
+					$image['image_url'] = $uploads['baseurl'] . '/' . $image['image_url'];
+				
 				}
+				
 				$imgNum++;
 				//Pagination - not the most efficient, 
 				//but there shouldn't be thousands of images in a gallery
@@ -461,7 +483,7 @@ class BWBPS_Layout{
 						if($this->validURL($image['user_url'])){
 							$theurl = $image['user_url'];
 						} else {
-							$theurl = PSIMAGESURL.$image['file_name'];
+							$theurl = $image['image_url'];
 							$image['special_url'] = false;
 						}
 					}
@@ -476,13 +498,13 @@ class BWBPS_Layout{
 															
 				} else {
 			
-					$image['imgurl'] = "<a href='".PSIMAGESURL
-						.$image['file_name']."'"
+					$image['imgurl'] = "<a href='"
+						.$image['image_url']."'"
 						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
 						.$g['url_attr']['imagetargblank'].">";
 						
-					$image['capurl'] = "<a href='".PSIMAGESURL
-						.$image['file_name']."'"
+					$image['capurl'] = "<a href='"
+						.$image['image_url']."'"
 						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
 						.$g['url_attr']['imagetargblank'].">";
 				
@@ -671,17 +693,17 @@ class BWBPS_Layout{
 		$ftype = (int)$image['file_type'];
 		
 		if($is_thumb){
-			$psg_imagesurl = PSTHUMBSURL;
+			$psg_imagesurl = $image['thumb_url'];
 		} else {
-			$psg_imagesurl = PSIMAGESURL;
+			$psg_imagesurl = $image['image_url'];
 		}
 		
 		switch ( true ) {
 		 
 			case ( $ftype == 0 || $ftype == 1 ) :	//image
 			
-				if($image['file_name']){
-				$ret = "<img src='".$psg_imagesurl.$image['file_name']."'".$g['imgclass']
+				if($image['image_url']){
+				$ret = "<img src='".$psg_imagesurl."'".$g['imgclass']
 					." alt='".$image['img_alt']."' />";
 				} else { $ret = ""; }
 			
@@ -726,6 +748,7 @@ class BWBPS_Layout{
 			
 			case ( $ftype == 4 ) :	//video
 				
+				/*  Doesn't Work
 				
 				$thumbheight = "";
 				$thumbwidth = "";
@@ -750,6 +773,7 @@ class BWBPS_Layout{
 					
 				} 
 				
+				*/
 				
 				break;
 			
@@ -843,10 +867,10 @@ class BWBPS_Layout{
 				break;
 				
 			case '[linked_image]' :
-				if($image['file_name']){
+				if($image['thumb_url']){
 				  
 					$ret = $image['imgurl']."
-						<img src='".PSIMAGESURL.$image['file_name']."'".$g['imgclass']
+						<img src='".$image['image_url']."'".$g['imgclass']
 						. " alt='".$image['img_alt']."' />"
 						. $image['imgurl_close'];
 						
@@ -854,10 +878,10 @@ class BWBPS_Layout{
 				break;
 				
 			case '[thumbnail]' :
-				if($image['file_name']){
+				if($image['thumb_url']){
 				
 					$ret = $image['imgurl']."
-						<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
+						<img src='".$image['thumb_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' />"
 						.$image['imgurl_close'];
 					
@@ -866,10 +890,22 @@ class BWBPS_Layout{
 				break;
 			
 			case '[thumb]' :
-				if($image['file_name']){
+				if($image['thumb_url']){
 				
 					$ret = $image['imgurl']."
-						<img src='".PSTHUMBSURL.$image['file_name']."'".$g['imgclass']
+						<img src='".$image['thumb_url']."'".$g['imgclass']
+						." alt='".$image['img_alt']."' />"
+						.$image['imgurl_close'];
+					
+				} else { $ret = ""; }
+				
+				break;
+			
+			case '[medium]' :
+				if($image['thumb_url']){
+				
+					$ret = $image['imgurl']."
+						<img src='".$image['medium_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' />"
 						.$image['imgurl_close'];
 					
@@ -931,7 +967,7 @@ class BWBPS_Layout{
 					if((int)$g['post_id']){
 						$ret = get_permalink((int)$g['post_id']);
 					} else {
-						$ret = PSIMAGESURL.$image['file_name'];
+						$ret = $image['image_url'];
 					}
 				}
 				
@@ -946,7 +982,7 @@ class BWBPS_Layout{
 				break;
 			
 			case '[file_name]' :
-				$ret = $image['file_name'];
+				$ret = $image['image_name'];
 				break;
 			
 			case '[date_added]' :

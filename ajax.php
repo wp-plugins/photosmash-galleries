@@ -12,12 +12,16 @@ if(!function_exists('json_encode')){
 }
 
 $bwbpsuploaddir = wp_upload_dir();
+
+define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
+define("PSRATINGSTABLE", $wpdb->prefix."bwbps_imageratings");
+define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
+define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
+define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
+
 define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
 define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
 define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
-define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
-define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
-
 
 class BWBPS_AJAX{
 	
@@ -159,11 +163,35 @@ class BWBPS_AJAX{
 			$imgid = (int)$_POST['image_id'];
 			$json['image_id'] = $imgid;
 			if($imgid){
-				$filename = $wpdb->get_var($wpdb->prepare("SELECT file_name FROM "
-					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid));
-				if($filename){
-					unlink(PSIMAGESPATH.$filename);
-					unlink(PSTHUMBSPATH.$filename);
+				
+				$row = $wpdb->get_row($wpdb->prepare(
+					"SELECT file_name, thumb_url, medium_url, image_url, wp_attach_id FROM "
+					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid), ARRAY_A);
+				if($row){
+				
+					if( is_file( PSIMAGESPATH.$row['file_name'] )){
+						unlink(PSIMAGESPATH.$row['file_name']);
+					}
+					
+					if( is_file( PSTHUMBSPATH.$row['file_name'] )){
+						unlink(PSTHUMBSPATH.$row['file_name']);
+					}
+					
+					// PhotoSmash now uses the WordPress upload folder structure
+					$uploads = wp_upload_dir();
+					
+					if( is_file($uploads['basedir'] . '/' . $row['thumb_url']) ){
+						unlink($uploads['basedir'] . '/' . $row['thumb_url']);
+					}
+					
+					if( is_file($uploads['basedir'] . '/' . $row['medium_url']) ){
+						unlink($uploads['basedir'] . '/' . $row['medium_url']);
+					}
+					
+					if( is_file($uploads['basedir'] . '/' . $row['image_url']) ){
+						unlink($uploads['basedir'] . '/' . $row['image_url']);
+					}
+					
 				}
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
@@ -171,6 +199,26 @@ class BWBPS_AJAX{
 				
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
 					.' WHERE image_id = %d', $imgid));
+					
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSRATINGSTABLE
+					.' WHERE image_id = %d', $imgid));
+				
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSRATINGSSUMMARYTABLE
+					.' WHERE image_id = %d', $imgid));
+					
+				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
+					.' WHERE image_id = %d', $imgid));
+					
+				if((int)$row['wp_attach_id']){
+					
+					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->posts
+						.' WHERE ID = %d', (int)$row['wp_attach_id']));
+				
+					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->postmeta
+						.' WHERE post_id = %d', (int)$row['wp_attach_id']));	
+				
+				}
+					
 					
 				if( !$filename ){ $filename = ""; } else { $filename = " - ".$filename; }
 				$json['action'] = 'deleted'.$filename;

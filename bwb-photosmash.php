@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.3.07
+Version: 0.3.08
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -29,23 +29,27 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.3.03');
+define('PHOTOSMASHVERSION', '0.3.08');
 
 
 //Database Verifications
 define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_images');
-define('PHOTOSMASHVERIFYFIELD', 'votes_sum');
+define('PHOTOSMASHVERIFYFIELD', 'wp_attach_id');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
+
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
 define("PSRATINGSTABLE", $wpdb->prefix."bwbps_imageratings");
 define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
+define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
+define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
+
 define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
 define("PSFORMSTABLE", $wpdb->prefix."bwbps_forms");
 define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
 define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
-define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
+
 
 //Set the Upload Path
 define('PSBLOGURL', get_bloginfo('wpurl')."/");
@@ -145,7 +149,7 @@ if( ! function_exists('esc_attr_e') ){
 	}
 }
 
-//include ('ajax_upload.php');
+
 class BWB_PhotoSmash{
 
 	var $customFormVersion = 14;  //Increment this to force PS to update the Custom Fields Option
@@ -174,7 +178,7 @@ class BWB_PhotoSmash{
 	
 	//Constructor
 	function BWB_PhotoSmash(){
-		$this->psOptions = $this->getPSDefaultOptions();
+		$this->psOptions = $this->getPSOptions();
 		
 		if($this->psOptions['use_customfields']){
 			$this->loadCustomFormOptions();
@@ -211,7 +215,7 @@ class BWB_PhotoSmash{
 	}
 	
 	//Returns an array of default options
-	function getPSDefaultOptions()
+	function getPSOptions()
 	{
 		$psOptions = get_option($this->adminOptionsName);
 		if($psOptions && !empty($psOptions))
@@ -221,13 +225,48 @@ class BWB_PhotoSmash{
 				$psAdminOptions[$key] = $option;
 			}
 		}else{
-			$psAdminOptions = array(
+		
+			$psAdminOptions = $this->getPSDefaultOptions();
+			
+			if(!$psOptions){
+				add_option($this->adminOptionsName, $psAdminOptions);
+			} else {
+				update_option($this->adminOptionsName, $psAdminOptions);
+			}
+		}
+		if (!array_key_exists('use_thickbox', $psAdminOptions)) {
+				$psAdminOptions['use_thickbox']=1;
+				$runUpdate = true;
+		}
+		
+		if (!array_key_exists('date_format', $psAdminOptions)) {
+				$psAdminOptions['date_format']='m/d/Y';
+				$runUpdate = true;
+		}
+		
+		if($runUpdate){
+				update_option($this->adminOptionsName, $psAdminOptions);
+		}
+		
+		return $psAdminOptions;
+	}
+	
+	
+	function getPSDefaultOptions(){
+		
+		//get some defaults if nothing is in the database
+		return array(
 				'auto_add' => 0,
-				'img_perrow' => 0,
 				'img_perpage' => 0,
+				'img_perrow' => 0,
+				'use_wp_upload_functions' => 1,
+				'add_to_wp_media_library' => 1,
 				'thumb_aspect' => 0,
 				'thumb_width' => 125,
 				'thumb_height' => 125,
+				'medium_aspect' => 0,
+				'medium_width' => 300,
+				'medium_height' => 300,
 				'image_aspect' => 0,
 				'image_width' => 0,
 				'image_height' => 0,
@@ -237,10 +276,10 @@ class BWB_PhotoSmash{
 				'upload_form_caption' => 'Select an image to upload:',
 				'img_class' => 'ps_images',
 				'show_caption' => 1,
+				'nofollow_caption' => 1,
 				'alert_all_uploads' => 0,
 				'img_alerts' => 3600,
 				'show_imgcaption' => 1,
-				'nofollow_caption' => 1,
 				'contrib_role' => 10,
 				'img_status' => 0,
 				'last_alert' => 0,
@@ -272,28 +311,8 @@ class BWB_PhotoSmash{
 				'rating_position' => 0,
 				'rating_allow_anon' => 0,
 				'version' => PHOTOSMASHVERSION
-			);
-			if(!$psOptions){
-				add_option($this->adminOptionsName, $psAdminOptions);
-			} else {
-				update_option($this->adminOptionsName, $psAdminOptions);
-			}
-		}
-		if (!array_key_exists('use_thickbox', $psAdminOptions)) {
-				$psAdminOptions['use_thickbox']=1;
-				$runUpdate = true;
-		}
-		
-		if (!array_key_exists('date_format', $psAdminOptions)) {
-				$psAdminOptions['date_format']='m/d/Y';
-				$runUpdate = true;
-		}
-		
-		if($runUpdate){
-				update_option($this->adminOptionsName, $psAdminOptions);
-		}
-		
-		return $psAdminOptions;
+		);
+	
 	}
 	
 	function getstdFieldList(){
@@ -931,9 +950,14 @@ function getGallery($g){
 			}
 			$data['img_perrow'] = isset($g['img_perrow']) ? (int)$g['img_perrow'] : (int)$psoptions['img_perrow'];
 			$data['img_perpage'] = isset($g['img_perpage']) ? (int)$g['img_perpage'] : (int)$psoptions['img_perpage'];
+			
 			$data['thumb_aspect'] = isset($g['thumb_aspect']) ? (int)$g['thumb_aspect'] : (int)$psoptions['thumb_aspect'];
 			$data['thumb_width'] = isset($g['thumb_width']) ? (int)$g['thumb_width'] : (int)$psoptions['thumb_width'];
 			$data['thumb_height'] =  isset($g['thumb_height']) ? (int)$g['thumb_height'] : (int)$psoptions['thumb_height'];
+			
+			$data['medium_aspect'] = isset($g['medium_aspect']) ? (int)$g['medium_aspect'] : (int)$psoptions['medium_aspect'];
+			$data['medium_width'] = isset($g['medium_width']) ? (int)$g['medium_width'] : (int)$psoptions['medium_width'];
+			$data['medium_height'] =  isset($g['medium_height']) ? (int)$g['medium_height'] : (int)$psoptions['medium_height'];
 			
 			$data['image_aspect'] = isset($g['image_aspect']) ? (int)$g['image_aspect'] : (int)$psoptions['image_aspect'];
 						
@@ -1183,6 +1207,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	//Add CSS
 	function injectBWBPS_CSS(){
+	
+		$this->addFooterJS('
+			var tb_pathToImage = "'. get_bloginfo('wpurl') . '/' . WPINC .'/js/thickbox/loadingAnimation.gif";
+			var tb_closeImage = "'. get_bloginfo('wpurl') . '/' . WPINC .'/js/thickbox/tb-close.png";
+		');
+	
 	?>
 	<link rel="stylesheet" href="<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/thickbox.css" type="text/css" media="screen" />
 	
@@ -1202,14 +1232,16 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	<link rel="stylesheet" type="text/css" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/css/ui.datepicker.css" />
 	
     <script type="text/javascript">
-    var tb_pathToImage = "<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/loadingAnimation.gif";
-    var tb_closeImage = "<?php bloginfo('wpurl'); ?>/<?php echo WPINC; ?>/js/thickbox/tb-close.png";
 	var displayedGalleries = "";
 	var bwbpsAjaxURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax.php";
 	var bwbpsAjaxUserURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_useractions.php";
 	var bwbpsAjaxRateImage = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/ajax_rateimage.php";
 	var bwbpsAjaxUpload = "<?php 
-		echo WP_PLUGIN_URL."/photosmash-galleries/ajax_upload.php";
+		if( $this->psOptions['use_wp_upload_functions'] ){
+			echo WP_PLUGIN_URL."/photosmash-galleries/ajax-wp-upload.php";
+		} else {
+			echo WP_PLUGIN_URL."/photosmash-galleries/ajax_upload.php";
+		}
 		?>";
 	var bwbpsImagesURL = "<?php echo PSIMAGESURL; ?>";
 	var bwbpsThumbsURL = "<?php echo PSTHUMBSURL; ?>";
@@ -1237,6 +1269,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	</script>
 	<?php
 	}
+	    
 
 	//Add Javascript variables to Admin header
 	function injectAdminJS()
@@ -1489,7 +1522,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		$ret = $wpdb->get_results($sql);
 		
 		if(! $ret ){
-				echo "<div class='message error'><h2>PhotoSmash Database - Needs to be Updated</h2><p>Your PhotoSmash database is missing field(s) due to an update of the Plugin. This will prevent it from operating properly.  Click <a href='admin.php?page=psInfo&amp;bwbpsRunDBUpdate=1'>here</a> to Update the DB and view Plugin Info.</p></div>";
+				echo "<div class='message error'><h2>PhotoSmash Database - Needs to be Updated</h2>"
+				. "<p>The PhotoSmash database is <b>missing field: "
+				. PHOTOSMASHVERIFYFIELD. "</b> in <b>table: " . PHOTOSMASHVERIFYTABLE 
+				. "</b>.</p><p> Update required. Click <a href='admin.php?page=psInfo&amp;bwbpsRunDBUpdate=1'>here</a> to Update the DB and view Plugin Info.</p></div>";
 			return;
 		}
 	

@@ -12,8 +12,6 @@ if(function_exists('check_ajax_referer') && !check_ajax_referer( "bwb_upload_pho
 	exit();
 };
 
-//Upload Class by Colin Verot
-require_once('classes/upload/class.upload.php');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -34,16 +32,6 @@ define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
 define("PSTABLEPREFIX", $wpdb->prefix."bwbps_");
 define("PSTEMPPATH",PSUPLOADPATH."/bwbpstemp/");
 
-
-//Set SAFE_MODE constant
-if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
-	// if sever did in in a other way
-	if ( ini_get('safe_mode') == 'off' ) define('SAFE_MODE', FALSE);
-	else define( 'SAFE_MODE', ini_get('safe_mode') );
-} else {
-	define( 'SAFE_MODE', ini_get('safe_mode') );
-}
-
 class BWBPS_Uploader{
 	var $bwbpsCF;	//var to hold Save Custom Fields Class
 	var $psOptions;	//var for Standard PS Options
@@ -55,6 +43,8 @@ class BWBPS_Uploader{
 	var $imageData; //This gets populated with Image data on Image Save
 	var $customData; //This gets populated with the custom fields data on Custom Field Save
 	var $badImage; //Set to true if allowNoImage == false and file mime != image and file type = 0
+	
+	var $file;
 	
 	/* 
 	 * Constructor
@@ -75,52 +65,13 @@ class BWBPS_Uploader{
 		}
 		
 		$this->json['custom_callback'] = 0;
-		$this->json['thumb_fullurl'] = false;
 	}
 	
-	/* 
-	 * Set Custom Callback in JSON - 
-	 * @param $useCustomCallback - true or false
-	 */
-	 function setCustomCallback($useCustomCallback){
-	 	
-	 	if($useCustomCallback){
-	 		$this->json['custom_callback'] = 1;	
-	 	} else {
-	 		$this->json['custom_callback'] = 0;
-	 	}
-	 }
 	
-	
-	/* 
-	 * Set Gallery Variable - 
-	 * @param $g - a gallery array
-	 */
-	function setGallery($g){
-		$this->g = $g;
-		$this->json['gallery_id'] = (int)$this->g['gallery_id'];
-	}
-		
-	function getGallerySettings($gallery_id){
-		global $wpdb;
-		
-		if(!$gallery_id){
-			$gallery_id = (int)$this->json['gallery_id'];
-		}
-		
-		if($gallery_id){
-			$g = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".PSGALLERIESTABLE
-					." WHERE gallery_id = %d", $gallery_id), ARRAY_A);
-		}
-
-		return $g;
-	}
-
-	function psValidateURL($url)
-	{
-			return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $url)) ? FALSE : TRUE;
-	}
-	
+	/*
+	 *	Step 1:	Verify User rights
+	 *
+	*/	
 	function verifyUserRights($g){
 		
 		if($g['contrib_role'] == -1){
@@ -137,7 +88,7 @@ class BWBPS_Uploader{
 		}
 		
 		if(!$this->user_level){
-			$this->json['message'] = "Current user does not have authorization for uploading to this gallery.";
+			$this->json['message'] = "You do not have authorization for uploading to this gallery.";
 			$this->json['succeed'] = "false";
 			$this->echoJSON();
 			exit();
@@ -146,56 +97,57 @@ class BWBPS_Uploader{
 		$this->user_level = current_user_can('level_2');
 	}
 	
-	/* 
-	 * Get the Temporary File Name of the Uploaded (or URL inserted) File
-	 * --- use this filename in the creation of the New Upload Class instance
-	 */
-	function importImageFromURL($fileFieldNumber){
-		$image_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];
+	
+	/*	
+	 *	STEP 2:   Get Image Settings
+	 *
+	*/
+	
+	function getImageSettings($g)
+	{
+		$this->json['succeed'] = 'false'; 
+		$this->json['size'] = $_POST['MAX_FILE_SIZE'];
 		
+		$this->json['form_name'] = $_POST['bwbps_formname'];
 		
-		if(!$this->psValidateURL($image_url)){
-			return "";		
+		$this->json['post_id'] = (int)$_POST['bwbps_post_id'];
+		
+		$this->json['file_type'] = (int)$_POST['bwbps_file_type'];
+		
+		$this->json['image_caption'] = $this->getImageCaption();
+		
+		//$this->json['image_caption'] = htmlentities($this->json['image_caption'], ENT_QUOTES);
+		
+		//Get URL
+		$bwbps_url = esc_url_raw($_POST['bwbps_url']);
+				
+		if($this->psValidateURL($bwbps_url)){
+			$this->json['url'] = $bwbps_url;
+		} else {
+			$this->json['url'] = '';//$bwbps_url;
 		}
-			
-		if(!file_exists(PSTEMPPATH)){
-			if(!mkdir(PSTEMPPATH, 0755)){
-				$this->json['message'] = 
-					"Unable to create the Temp directory for storing URL files: "
-					.PSTEMPPATH.".";
-				$this->echoJSON();
-				exit();		
-			}
+		
+		//Get Image/Thumbnail information for JSON results
+		$this->json['img'.$this->imageNumber] = '';
+		$this->json['imgrel'] = $g['img_rel'];
+		$this->json['show_imgcaption'] = $g['show_imgcaption'];
+		$this->json['thumb_width'] = $g['thumb_width'] < 12 ? 12 : $g['thumb_width'] + 4;
+		$this->json['thumb_height'] = $g['thumb_height'] < 12 ? 12 : $g['thumb_height'] +4;
+		//Image per row
+		if($g['img_perrow'] && $g['img_perrow']>0){
+				$this->json['li_width'] = floor((1/((int)$g['img_perrow']))*100);
+		} else {
+				$this->json['li_width'] = 0;
 		}
-		chmod(PSTEMPPATH, 0755);
-		
-		/* *************  Gets an Image from a URL   *************** */
-		$basename = basename($image_url);
-		$tempname = PSTEMPPATH.$basename;
-		
-		$ch = curl_init();
-		$timeout = 0;
-		curl_setopt ($ch, CURLOPT_URL, $image_url);
-		curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);	
-		
-		// Getting binary data
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);	
-		
-		$image = curl_exec($ch);
-		curl_close($ch);
-		
-		$fp = fopen($tempname,'w');
-		fwrite($fp, $image);
-		fclose($fp);
-		
-		return $tempname;
+	
 	}
 	
-	function getFileHandle($fileFieldNumber = ""){
-		//Clean up old handle if exists
-		if($this->handle){ $this->destroyHandle();}
-		
+	/*	
+	 *	STEP 3:   Get File Handle
+	 *
+	*/
+	function getFileType($fileFieldNumber = ""){
+				
 		//Figure out the File Type that was uploaded
 		if(isset($_POST['bwbps_filetype'.$fileFieldNumber])){
 			$filetype = (int)$_POST['bwbps_filetype'.$fileFieldNumber];
@@ -207,13 +159,12 @@ class BWBPS_Uploader{
 			
 			case 0 :	//Image upload
 				$this->json['file_type'] = 0;
-				$this->handle = new upload($_FILES['bwbps_uploadfile'.$fileFieldNumber]);
+				
 				break;
 			
 			case 1 :	//URL
 				$this->json['file_type'] = 0;
 				$tempname = $this->importImageFromURL($fileFieldNumber);
-				$this->handle = new upload($tempname);	
 				break;
 			
 			case 2 :	//Direct Link
@@ -257,29 +208,441 @@ class BWBPS_Uploader{
 				
 			case 4 :	//Video File
 				$this->json['file_type'] = 4;
-				$this->handle = new upload($_FILES['bwbps_uploadvid'.$fileFieldNumber]);
 				break;
 			
 			case 5 :	//Image upload for File 2
 				$this->json['file_type'] = 0;
-				$this->handle = new upload($_FILES['bwbps_uploadfile'.$fileFieldNumber]);
 				break;
 				
 			case 6 :	//URL for File 2
 				$this->json['file_type'] = 0;
 				$tempname = $this->importImageFromURL($fileFieldNumber);
-				$this->handle = new upload($tempname);	
+				
 				break;
 			
 			case 7 :	//General Document
 				$this->json['file_type'] = 7;
-				$this->handle = new upload($_FILES['bwbps_uploaddoc'.$fileFieldNumber]);
+				
 				break;
 		}
 			
 		return true;
 	}
+
 	
+	/*	
+	 *	STEP 4:   Process File Upload
+	 *
+	*/
+	function processUpload($g, $fileFieldNumber = "", $allowNoImg=false){
+	
+		$uploads = wp_upload_dir();
+		
+		if(! is_writable($uploads['path']) ){
+			$this->exitUpload("Uploads path is not writable: " . $uploads['path']);
+			return;
+		}
+		
+		
+		$upload = $_FILES['bwbps_uploadfile'.$fileFieldNumber];
+		
+		if( empty($upload['tmp_name'] )){
+			if(!$allowNoImg){
+				$this->exitUpload("No file uploaded.");
+			}
+			return false;
+		}
+		
+		// Handle the uploaded file
+		$file = $this->handle_image_upload($upload);
+		
+		if(!$file ){
+			if(!$allowNoImg){
+				$this->exitUpload("Invalid image file.");
+			}
+			return false;
+		}
+		
+		$relpath = $this->get_relative_path( $file['file'], $uploads );
+		$basename = basename($file['file']);
+				
+		$this->json['image_url'] = $relpath . $basename;
+		$this->json['image_name'.$this->imageNumber] = $basename;
+		
+		// Create Thumbnail & Medium sizes
+		
+		$this->createResized($g, 'thumb', $file, $uploads, $relpath );
+		
+		//Set thumb_fullurl for JSON in callback back on the page
+		$this->json['thumb_fullurl'] = $uploads['baseurl'] . '/'. $this->json['thumb_url'];
+		
+		$this->createResized($g, 'medium', $file, $uploads, $relpath );
+		
+		$this->json['succeed'] = "true";
+		
+		$this->file = $file;
+		
+		return true;
+	
+	}
+	
+	function createResized( $g, $size, $file, $uploads, $relpath ){
+	
+		$resized = image_make_intermediate_size( $file['file'],
+			$g[$size.'_width'], $g[$size.'_height'], !$g[$size.'_aspect']  );
+			
+		if( $resized ){
+		
+			$this->json[$size.'_url'] = $relpath . $resized['file'];
+		
+		} else {
+			
+			//We didn't need to resize it, so just use the same image
+			$this->json[$size.'_url'] = $this->json['image_url'];
+		
+		}
+	
+	}
+	
+	function handle_image_upload($upload){
+		
+		//Check if is image
+		if ( file_is_displayable_image( $upload['tmp_name'] ) ){
+			
+			//handle the uploaded file
+			$overrides = array(
+				'test_form' => false,
+			);
+			
+			$file = wp_handle_upload($upload, $overrides);
+		
+		}
+		
+		return $file;
+	
+	}
+	
+	// NEED TO FIX bwbps-layouts to use $uploads = wp_upload_dir()  && $uploads['basedir???']
+	
+	/**
+	 * Adapted from wp-includes/post.php
+	 * 
+	 * Used to update the file path of the attachment, which uses post meta name
+	 * '_wp_attached_file' to store the path of the attachment.
+	 *
+	 * @since 2.1.0
+	 * @uses apply_filters() Calls 'update_attached_file' on file path and attachment ID.
+	 *
+	 * @param int $attachment_id Attachment ID
+	 * @param string $file File path for the attachment
+	 * @return bool False on failure, true on success.
+	 */
+	function get_relative_path( $filepath, $uploads ) {
+			
+	
+		// Make the file path relative to the upload dir
+		if ( false === $uploads['error'] ) { // Get upload directory
+			if ( 0 === strpos($filepath, $uploads['basedir']) ) {// Check that the upload base exists in the file path
+					$ret = str_replace($uploads['basedir'], '', $filepath); // Remove upload dir from the file path
+					$ret = ltrim($ret, '/');
+					
+					$ret = str_replace(basename($ret), '', $ret);
+			}
+		}
+	
+		return $ret;
+	}
+	
+	function exitUpload($msg){
+	
+		$this->json['message'] = $msg;
+		$this->json['succeed'] = "false";
+		$this->echoJSON();
+		exit();
+	
+	}
+	
+	/*	
+	 *	STEP 5:   Save Image to the Database
+	 *
+	*/
+	function saveImageToDB($g, $bSaveCustomFields=true){
+		global $current_user;
+		global $wpdb;
+		
+			
+		$data['user_id'] = (int)$current_user->ID;
+		$data['gallery_id'] = (int)$this->json['gallery_id'];
+		$data['comment_id'] = -1;
+		$data['post_id'] = (int)$this->json['post_id'];
+		
+		$data['image_name'] = $this->json['image_name'.$this->imageNumber];
+		$data['image_caption'] = $this->json['image_caption'];
+		$data['url'] = $this->json['url'];
+		$data['file_name'] = $this->json['file_name'.$this->imageNumber];
+		
+		$data['file_type'] = (int)$this->json['file_type'];
+		
+		$data['file_url'] = $this->json['file_url'];
+		
+		// Add the 3 image URLs
+		$data['thumb_url'] = $this->json['thumb_url'];
+		$data['medium_url'] = $this->json['medium_url'];
+		$data['image_url'] = $this->json['image_url'];
+		
+		if($this->user_level){
+			$data['status'] = 1;
+		}else{
+			if($g['img_status'] == 1){
+				$data['status'] = 1;
+			} else {
+				$data['status'] = -1;
+				$this->json['message'] = "<span style='color:red;'>Submission is awaiting moderation.</span>";
+			}
+		}
+		
+		if( $this->psOptions['alert_all_uploads'] == 1 || $data['status'] == -1 ) {
+			$data['alerted'] = 0;
+		} else {
+			$data['alerted'] = 1;
+		}
+		$data['updated_by'] = $current_user->ID;
+		$data['created_date'] = date( 'Y-m-d H:i:s');
+		$data['seq'] = -1;
+		$data['avg_rating'] = 0;
+		$data['rating_cnt'] = 0;
+			
+		//Insert the image into the Images table
+		$this->json['db_saved'] = (int)$wpdb->insert(PSIMAGESTABLE, $data);
+		
+		if( !$this->json['db_saved'] )
+		{
+			$this->json['message'] = "<span class='error'>Failed to save image to Database.</span>";
+			$this->json['succeed'] = "false";
+		}
+		
+		$image_id = $wpdb->insert_id;
+		
+		$data['image_id'] = $image_id;
+		$this->json['image_id'] = $image_id;
+		
+		//Expose the Image Data to external classes
+		$this->imageData = $data;
+		
+		if($image_id && $bSaveCustomFields){
+			$this->saveCustomFields($image_id);
+		}
+		
+		//Trigger for up the Upload Alert Email
+		if($image_id){
+			if( $this->psOptions['img_alerts'] == -1 ) {
+				$this->sendNewImageAlerts();
+			} else {
+				update_option('BWBPhotosmashNeedAlert', 1);
+			}
+		}
+		
+		return $image_id;
+	}
+	
+	
+	/*	
+	 *	STEP 6:   Add Image to WP Media Library
+	 *
+	*/
+	function addToWPMediaLibrary(){
+	
+		if(!$this->file || !$this->json['image_id'] ){ return false; }
+		
+		global $wpdb;
+		
+		$attachment = array
+		(
+			'post_mime_type' => $this->file['type'],
+			'guid' => $this->file['url'],
+			'post_parent' => (int)$this->json['post_id'],
+			'post_title' => $wpdb->escape( $this->json['image_caption'] ),
+			'post_content' => $wpdb->escape( $this->json['image_caption'] )
+		);
+				
+		//insert post attachment
+		$attach_id = wp_insert_attachment( $attachment, $this->file['file'], 
+			(int)$this->json['post_id'] 
+		);
+		
+		//update meta data
+		if( !is_wp_error($attach_id) ){
+		
+			$attach_data = wp_generate_attachment_metadata( $attach_id, $this->file['file'] );
+			wp_update_attachment_metadata( $attach_id,  $attach_data );
+			
+			// Add the Attachment ID to the PS Image record
+			$data = array( 'wp_attach_id' => $attach_id );
+			$where = array( 'image_id' => $this->json['image_id'] );
+						
+			$wpdb->update( PSIMAGESTABLE, $data, $where );
+					
+		} else {
+			return false;
+		}
+		
+		return true;
+		
+	}
+	
+	
+	/* 
+	 * Set Custom Callback in JSON - 
+	 * @param $useCustomCallback - true or false
+	 */
+	 function setCustomCallback($useCustomCallback){
+	 	
+	 	if($useCustomCallback){
+	 		$this->json['custom_callback'] = 1;	
+	 	} else {
+	 		$this->json['custom_callback'] = 0;
+	 	}
+	 }
+	
+	
+	function getImageSizeOptions($g){
+		
+		//image sizing
+		if($g['image_width'] || $g['image_height']){
+			if(!$g['image_width'] || $this->handle->image_src_x < $g['image_width']){
+				$g['image_width'] = $this->handle->image_src_x;
+			}
+			if(!$g['image_height'] || $this->handle->image_src_y < $g['image_height']){
+				$g['image_height'] = $this->handle->image_src_y;
+			}
+			
+			//Figure out whether aspect is to be kept or cropped
+			$this->handle->image_resize = true;
+			if($g['image_aspect'] == 1){
+				$this->handle->image_ratio = true;
+			} else {
+				$this->handle->image_ratio_crop = true;	
+			}
+			
+			if($g['image_width']){
+				$this->handle->image_x = $g['image_width'];
+			}
+			
+			if($g['image_height']){
+				$this->handle->image_y = $g['image_height'];
+			}
+			
+		}
+	
+	
+	}
+	
+	
+	
+	
+	
+	
+	
+	/* 
+	 * Set Gallery Variable - 
+	 * @param $g - a gallery array
+	 */
+	function setGallery($g){
+		$this->g = $g;
+		$this->json['gallery_id'] = (int)$this->g['gallery_id'];
+	}
+		
+	function getGallerySettings($gallery_id){
+		global $wpdb;
+		
+		if(!$gallery_id){
+			$gallery_id = (int)$this->json['gallery_id'];
+		}
+		
+		if($gallery_id){
+			$g = $wpdb->get_row($wpdb->prepare("SELECT * FROM ".PSGALLERIESTABLE
+					." WHERE gallery_id = %d", $gallery_id), ARRAY_A);
+		}
+
+		return $g;
+	}
+
+	function psValidateURL($url)
+	{
+			return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $url)) ? FALSE : TRUE;
+	}
+	
+	
+	
+	/* 
+	 * Get the Temporary File Name of the Uploaded (or URL inserted) File
+	 * --- use this filename in the creation of the New Upload Class instance
+	 */
+	function importImageFromURL($fileFieldNumber){
+		
+		
+		/*
+		http://dtbaker.com.au/random-bits/uploading-a-file-using-curl-in-php.html
+		
+		$ch = curl_init();
+	    curl_setopt($ch, CURLOPT_HEADER, 0);
+	    curl_setopt($ch, CURLOPT_VERBOSE, 0);
+	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible;)");
+	    curl_setopt($ch, CURLOPT_URL, _VIRUS_SCAN_URL);
+	    curl_setopt($ch, CURLOPT_POST, true);
+	    // same as <input type="file" name="file_box">
+	    $post = array(
+	        "file_box"=>"@/path/to/myfile.jpg",
+	    );
+	    curl_setopt($ch, CURLOPT_POSTFIELDS, $post); 
+	    $response = curl_exec($ch);
+	    
+	    */
+	
+	
+		$image_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];
+		
+		
+		if(!$this->psValidateURL($image_url)){
+			return "";		
+		}
+			
+		if(!file_exists(PSTEMPPATH)){
+			if(!mkdir(PSTEMPPATH, 0755)){
+				$this->json['message'] = 
+					"Unable to create the Temp directory for storing URL files: "
+					.PSTEMPPATH.".";
+				$this->echoJSON();
+				exit();		
+			}
+		}
+		chmod(PSTEMPPATH, 0755);
+		
+		/* *************  Gets an Image from a URL   *************** */
+		$basename = basename($image_url);
+		$tempname = PSTEMPPATH.$basename;
+		
+		$ch = curl_init();
+		$timeout = 0;
+		curl_setopt ($ch, CURLOPT_URL, $image_url);
+		curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);	
+		
+		// Getting binary data
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);	
+		
+		$image = curl_exec($ch);
+		curl_close($ch);
+		
+		$fp = fopen($tempname,'w');
+		fwrite($fp, $image);
+		fclose($fp);
+		
+		return $tempname;
+	}
+	
+		
 	function extractYouTubeKey($ytURL){
 		
 		//preg borrowed from SmartYouTube plugin by Vladimir Prelovac
@@ -364,45 +727,7 @@ class BWBPS_Uploader{
 		return strtotime("now").$name;
 	}
 	
-	function getImageSettings($g)
-	{
-		$this->json['succeed'] = 'false'; 
-		$this->json['size'] = $_POST['MAX_FILE_SIZE'];
 		
-		$this->json['form_name'] = $_POST['bwbps_formname'];
-		
-		$this->json['post_id'] = (int)$_POST['bwbps_post_id'];
-		
-		$this->json['file_type'] = (int)$_POST['bwbps_file_type'];
-		
-		$this->json['image_caption'] = $this->getImageCaption();
-		
-		//$this->json['image_caption'] = htmlentities($this->json['image_caption'], ENT_QUOTES);
-		
-		//Get URL
-		$bwbps_url = esc_url_raw($_POST['bwbps_url']);
-				
-		if($this->psValidateURL($bwbps_url)){
-			$this->json['url'] = $bwbps_url;
-		} else {
-			$this->json['url'] = '';//$bwbps_url;
-		}
-		
-		//Get Image/Thumbnail information for JSON results
-		$this->json['img'.$this->imageNumber] = '';
-		$this->json['imgrel'] = $g['img_rel'];
-		$this->json['show_imgcaption'] = $g['show_imgcaption'];
-		$this->json['thumb_width'] = $g['thumb_width'] < 12 ? 12 : $g['thumb_width'] + 4;
-		$this->json['thumb_height'] = $g['thumb_height'] < 12 ? 12 : $g['thumb_height'] +4;
-		//Image per row
-		if($g['img_perrow'] && $g['img_perrow']>0){
-				$this->json['li_width'] = floor((1/((int)$g['img_perrow']))*100);
-		} else {
-				$this->json['li_width'] = 0;
-		}
-	
-	}
-	
 	
 	function getImageCaption(){
 		//Get Caption
@@ -609,78 +934,7 @@ class BWBPS_Uploader{
 	
 	}
 
-	function saveImageToDB($g, $bSaveCustomFields=true){
-		global $current_user;
-		global $wpdb;
-		
-		$data['user_id'] = (int)$current_user->ID;
-		$data['gallery_id'] = (int)$this->json['gallery_id'];
-		$data['comment_id'] = -1;
-		$data['post_id'] = (int)$this->json['post_id'];
-		
-		$data['image_name'] = $this->json['img'.$this->imageNumber];
-		$data['image_caption'] = $this->json['image_caption'];
-		$data['url'] = $this->json['url'];
-		$data['file_name'] = $this->json['img'.$this->imageNumber];
-		
-		$data['file_type'] = (int)$this->json['file_type'];
-		
-		$data['file_url'] = $this->json['file_url'];
-		
-		if($this->user_level){
-			$data['status'] = 1;
-		}else{
-			if($g['img_status'] == 1){
-				$data['status'] = 1;
-			} else {
-				$data['status'] = -1;
-				$this->json['message'] = "Submission is awaiting moderation.";
-			}
-		}
-		
-		if( $this->psOptions['alert_all_uploads'] == 1 || $data['status'] == -1 ) {
-			$data['alerted'] = 0;
-		} else {
-			$data['alerted'] = 1;
-		}
-		$data['updated_by'] = $current_user->ID;
-		$data['created_date'] = date( 'Y-m-d H:i:s');
-		$data['seq'] = -1;
-		$data['avg_rating'] = 0;
-		$data['rating_cnt'] = 0;
-			
-		//Insert the image into the Images table
-		$this->json['db_saved'] = (int)$wpdb->insert(PSIMAGESTABLE, $data);
-		
-		if( !$this->json['db_saved'] )
-		{
-			$this->json['message'] = "<span class='error'>Failed to save image to Database.</span>";
-			$this->json['succeed'] = "false";
-		}
-		
-		$image_id = $wpdb->insert_id;
-		
-		$data['image_id'] = $image_id;
-		$this->json['image_id'] = $image_id;
-		
-		//Expose the Image Data to external classes
-		$this->imageData = $data;
-		
-		if($image_id && $bSaveCustomFields){
-			$this->saveCustomFields($image_id);
-		}
-		
-		//Trigger for up the Upload Alert Email
-		if($image_id){
-			if( $this->psOptions['img_alerts'] == -1 ) {
-				$this->sendNewImageAlerts();
-			} else {
-				update_option('BWBPhotosmashNeedAlert', 1);
-			}
-		}
-		
-		return $image_id;
-	}
+	
 	
 	function saveCustomFields($image_id){
 		//If USE_CUSTOMFIELDS is set in PS Options, then Save Custom Field data
@@ -766,6 +1020,7 @@ class BWBPS_Uploader{
 			$d['gallery_type'] = isset($data['gallery_type']) ? (int)$data['gallery_type'] : 0;
 			$d['caption'] = $data['gallery_name'] ? $data['gallery_name'] : "";
 			$d['post_id'] = $data['post_id'] ? (int)$data['post_id'] : 0;
+			
 			$d['img_perpage'] = $data['img_perpage'] ? (int)$data['img_perpage'] : (int)$this->psOptions['img_perpage'];
 			$d['img_perrow'] = isset($data['img_perrow']) ? (int)$data['img_perrow'] : (int)$this->psOptions['img_perrow'];
 			
