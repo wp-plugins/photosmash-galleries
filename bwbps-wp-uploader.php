@@ -159,12 +159,10 @@ class BWBPS_Uploader{
 			
 			case 0 :	//Image upload
 				$this->json['file_type'] = 0;
-				
 				break;
 			
 			case 1 :	//URL
-				$this->json['file_type'] = 0;
-				$tempname = $this->importImageFromURL($fileFieldNumber);
+				$this->json['file_type'] = 1;
 				break;
 			
 			case 2 :	//Direct Link
@@ -235,28 +233,23 @@ class BWBPS_Uploader{
 	 *
 	*/
 	function processUpload($g, $fileFieldNumber = "", $allowNoImg=false){
-	
+		
 		$uploads = wp_upload_dir();
+	
+		switch ( (int)$this->json['file_type'] ){
 		
-		if(! is_writable($uploads['path']) ){
-			$this->exitUpload("Uploads path is not writable: " . $uploads['path']);
-			return;
+			case 0 :	// File is from a File Upload field
+				$file = $this->processFileFromUpload($g, $uploads
+					, $fileFieldNumber, $allowNoImg);
+				break;
+		
+			case 1 :	// File is from URL
+				$file = $this->processFileFromURL($fileFieldNumber, $allowNoImg);
+				$this->json['file_type'] = 0;
+				break;
 		}
 		
-		
-		$upload = $_FILES['bwbps_uploadfile'.$fileFieldNumber];
-		
-		if( empty($upload['tmp_name'] )){
-			if(!$allowNoImg){
-				$this->exitUpload("No file uploaded.");
-			}
-			return false;
-		}
-		
-		// Handle the uploaded file
-		$file = $this->handle_image_upload($upload);
-		
-		if(!$file ){
+		if( !$file ){
 			if(!$allowNoImg){
 				$this->exitUpload("Invalid image file.");
 			}
@@ -284,10 +277,121 @@ class BWBPS_Uploader{
 		
 		return true;
 	
+	
 	}
 	
-	function createResized( $g, $size, $file, $uploads, $relpath ){
+	/** 
+	 * Get the Image File from a Uploaded File
+	 * 
+	 */
+	function processFileFromUpload($g, $uploads, $fileFieldNumber = "", $allowNoImg=false){
+				
+		if(! is_writable($uploads['path']) ){
+			$this->exitUpload("Uploads path is not writable: " . $uploads['path']);
+			return;
+		}
+		
+		
+		$upload = $_FILES['bwbps_uploadfile'.$fileFieldNumber];
+		
+		if( empty($upload['tmp_name'] )){
+			if(!$allowNoImg){
+				$this->exitUpload("No file uploaded.");
+			}
+			return false;
+		}
+		
+		// Handle the uploaded file
+		$file = $this->handle_image_upload($upload);
 	
+		return $file;
+	
+	}
+	
+	
+	/** 
+	 * Get the Image File from a URL
+	 * 
+	 */
+	function processFileFromURL($fileFieldNumber, $allowNoImg=false){
+					
+		$file_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];	
+		
+		if(!$this->psValidateURL($file_url)){
+			if(!$allowNoImg){
+				$this->exitUpload("Invalid URL.");
+			}
+			return false;		
+		}
+		
+		if (!empty($file_url) ) {
+		
+			$file_array['name'] = basename($file_url);
+		
+			//Download the file using the Snoopy HTTP class
+			$tmp = $this->importImageFromURL($file_url); //download_url($file_url);
+			$file_array['tmp_name'] = $tmp;
+		
+			if ( is_wp_error($tmp) ) {
+				@unlink($file_array['tmp_name']);
+				$file_array['tmp_name'] = '';
+				$this->exitUpload("Downloading the URL failed.");
+			}
+			
+			$overrides = array('test_form'=>false);
+			$file = wp_handle_sideload($file_array, $overrides);
+			
+			
+			
+			if ( isset($file['error']) ) {
+				$this->exitUpload("<span style='color: red;'>File upload_error:</span><p>" . $file['error'] ."</p>");
+			}
+	
+		} else {
+		
+			if(!$allowNoImg){
+				$this->exitUpload("Invalid URL.");
+			}
+			return false;
+		
+		}
+	
+		return $file;
+	}
+	
+	
+	/* 
+	 * Get the Temporary File Name of the Uploaded (or URL inserted) File
+	 * --- use this filename in the creation of the New Upload Class instance
+	 */
+	function importImageFromURL($image_url){	
+					
+		$tempname = wp_tempnam($url);
+
+		
+		/* *************  Gets an Image from a URL   *************** */
+		
+		$ch = curl_init();
+		$timeout = 0;
+		curl_setopt ($ch, CURLOPT_URL, $image_url);
+		curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);	
+		
+		// Getting binary data
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);	
+		
+		$image = curl_exec($ch);
+		curl_close($ch);
+		
+		$fp = fopen($tempname,'w');
+		fwrite($fp, $image);
+		fclose($fp);
+		
+		return $tempname;
+	}
+	
+	
+	function createResized( $g, $size, $file, $uploads, $relpath ){
 		$resized = image_make_intermediate_size( $file['file'],
 			$g[$size.'_width'], $g[$size.'_height'], !$g[$size.'_aspect']  );
 			
@@ -305,6 +409,7 @@ class BWBPS_Uploader{
 	}
 	
 	function handle_image_upload($upload){
+		
 		
 		//Check if is image
 		if ( file_is_displayable_image( $upload['tmp_name'] ) ){
@@ -490,6 +595,20 @@ class BWBPS_Uploader{
 		
 	}
 	
+
+		
+	function extractYouTubeKey($ytURL){
+		
+		//preg borrowed from SmartYouTube plugin by Vladimir Prelovac
+		preg_match_all("/http:\/\/([a-zA-Z0-9\-\_]+\.|)youtube\.com\/watch(\?v\=|\/v\/)([a-zA-Z0-9\-\_]{11})([^<\s]*)/", $ytURL, $matches, PREG_SET_ORDER);
+		
+		if(is_array($matches)){
+			$ret = $matches[0][3];
+		}
+		
+		return $ret;
+	}
+	
 	
 	/* 
 	 * Set Custom Callback in JSON - 
@@ -574,86 +693,7 @@ class BWBPS_Uploader{
 	
 	
 	
-	/* 
-	 * Get the Temporary File Name of the Uploaded (or URL inserted) File
-	 * --- use this filename in the creation of the New Upload Class instance
-	 */
-	function importImageFromURL($fileFieldNumber){
-		
-		
-		/*
-		http://dtbaker.com.au/random-bits/uploading-a-file-using-curl-in-php.html
-		
-		$ch = curl_init();
-	    curl_setopt($ch, CURLOPT_HEADER, 0);
-	    curl_setopt($ch, CURLOPT_VERBOSE, 0);
-	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible;)");
-	    curl_setopt($ch, CURLOPT_URL, _VIRUS_SCAN_URL);
-	    curl_setopt($ch, CURLOPT_POST, true);
-	    // same as <input type="file" name="file_box">
-	    $post = array(
-	        "file_box"=>"@/path/to/myfile.jpg",
-	    );
-	    curl_setopt($ch, CURLOPT_POSTFIELDS, $post); 
-	    $response = curl_exec($ch);
-	    
-	    */
 	
-	
-		$image_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];
-		
-		
-		if(!$this->psValidateURL($image_url)){
-			return "";		
-		}
-			
-		if(!file_exists(PSTEMPPATH)){
-			if(!mkdir(PSTEMPPATH, 0755)){
-				$this->json['message'] = 
-					"Unable to create the Temp directory for storing URL files: "
-					.PSTEMPPATH.".";
-				$this->echoJSON();
-				exit();		
-			}
-		}
-		chmod(PSTEMPPATH, 0755);
-		
-		/* *************  Gets an Image from a URL   *************** */
-		$basename = basename($image_url);
-		$tempname = PSTEMPPATH.$basename;
-		
-		$ch = curl_init();
-		$timeout = 0;
-		curl_setopt ($ch, CURLOPT_URL, $image_url);
-		curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout);	
-		
-		// Getting binary data
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);	
-		
-		$image = curl_exec($ch);
-		curl_close($ch);
-		
-		$fp = fopen($tempname,'w');
-		fwrite($fp, $image);
-		fclose($fp);
-		
-		return $tempname;
-	}
-	
-		
-	function extractYouTubeKey($ytURL){
-		
-		//preg borrowed from SmartYouTube plugin by Vladimir Prelovac
-		preg_match_all("/http:\/\/([a-zA-Z0-9\-\_]+\.|)youtube\.com\/watch(\?v\=|\/v\/)([a-zA-Z0-9\-\_]{11})([^<\s]*)/", $ytURL, $matches, PREG_SET_ORDER);
-		
-		if(is_array($matches)){
-			$ret = $matches[0][3];
-		}
-		
-		return $ret;
-	}
 	
 	
 	function getHandleSettings(){

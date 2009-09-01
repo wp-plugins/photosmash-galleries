@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
 Tested up to: 2.8.4
-Stable tag: 0.3.07
+Stable tag: 0.4.00
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -73,22 +73,31 @@ It should be relatively straight forward to change the look and feel through thi
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+= 0.4.01 â€“ (not yet released) =
 
-= 0.3.07 – 08/27/2009 =
+    * Coming up: mass uploads by Admins!
 
-    * Fixed database update message – was displaying in error for MySQL 4 users. MySQL 4 doesn’t allow WHERE in the SHOW COLUMNS statement…have to use LIKE. MySQL 5 users were not affected by this.
+= 0.4.00 â€“ 09/01/2009 =
 
-= 0.3.06 – 08/27/2009 =
+    * This gets a version bump! Added option [is default for new installs] to use WordPress upload functionality. Can optionally add uploaded images to the WP Media Library. Set these options in PhotoSmash Settingsâ€¦top of the Uploading tab. This is in preparation for the upcoming new WordPress 2.9 media features. By adding these images to the Media Library, you should be able to utilize new features that WordPress builds in. The new WP 2.9 feature set hasnâ€™t been officially announced yet, but stay tuned!!! This should also solve upload issues where people have trouble with folder permissions. I could be wrong, but I think this is pretty big :P
+    * Fixed a couple of annoying ThickBox images that werenâ€™t loading. You have to set the variables in the page footerâ€¦FYI.
+
+
+= 0.3.07 - 08/27/2009 =
+
+    * Fixed database update message - was displaying in error for MySQL 4 users. MySQL 4 doesn't allow WHERE in the SHOW COLUMNS statement-have to use LIKE. MySQL 5 users were not affected by this.
+
+= 0.3.06 - 08/27/2009 =
 
     * Changed pagination to show only 5 pages at a time. Added First, Last, and ellipses.
-    * Fixed the situation when showing Ratings beneath the Caption…rating wasn’t showing when there was no caption
-    * Fixed the code that verifies if the database tables are up to date. Now using SHOW COLUMNS sql. Wasn’t getting anything when table was empty.
+    * Fixed the situation when showing Ratings beneath the Caption-rating wasn't showing when there was no caption
+    * Fixed the code that verifies if the database tables are up to date. Now using SHOW COLUMNS sql. Wasn't getting anything when table was empty.
     * Changed moderation rules so that users with the Contributor role now receive moderation when moderation is turned on. Notes:
           o Useful for setups where users create a new WordPress post by uploading an image through PhotoSmash (this functionality is coming to the PhotoSmash Extend plugin)
           o Roles that get moderated when moderation is turned on in a gallery: Anybody (not logged in), Subscriber, Contributor
-          o Roes that don’t get moderated even when moderation is on: Authors and Admins
-    * Vote Up/Vote Down – will work similarly to Star Ratings, except…it’s voting up or down
-    * Added code to bwb-photosmash.php to give a way to collect and insert Javascript code into the footer. This will save a lot of script tags and jQuery(document).ready() functions, and will collect JS nice and neatly in the footer. If you do a global on the $bwbPS object in PHP, you can easily add javascript to the footer using these 2 functions: $bwbPS->addFooterJS($js); or $bwbPS->addFooterReady($js); PhotoSmash takes care of putting in new lines to separate multiple JS calls, as well as takes care of the Script tags and the document.ready function…it’s easy ;-)
+          o Roes that don't get moderated even when moderation is on: Authors and Admins
+    * Vote Up/Vote Down - will work similarly to Star Ratings, except-it's voting up or down
+    * Added code to bwb-photosmash.php to give a way to collect and insert Javascript code into the footer. This will save a lot of script tags and jQuery(document).ready() functions, and will collect JS nice and neatly in the footer. If you do a global on the $bwbPS object in PHP, you can easily add javascript to the footer using these 2 functions: $bwbPS->addFooterJS($js); or $bwbPS->addFooterReady($js); PhotoSmash takes care of putting in new lines to separate multiple JS calls, as well as takes care of the Script tags and the document.ready function-it's easy ;-)
 
 
 = 0.3.05 - 08/19/2009 =
@@ -101,13 +110,13 @@ Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "C
 
     * Fixed a conflict with Contact Form 7 where duplicate creation of esc_attr functions was occuring 
     * Added template tags:  
-          o show_photosmash_gallery(optional $attr);  – echoes a gallery – the $attr param can be a gallery ID or an array of parameters that you can also use in shortcodes. 
+          o show_photosmash_gallery(optional $attr);  - echoes a gallery - the $attr param can be a gallery ID or an array of parameters that you can also use in shortcodes. 
           o get_photosmash_gallery(optional $attr);  -  same as show except returns a gallery as a string that you can use in PHP 
 
 = 0.3.03 - 08/19/2009 =
 
-    * Added Star Rating system – thanks to GD Star Ratings for use of the star set (used by permission).  2 placement options (beneath caption or overlay image [default]).  Design of star rating system enables extensions.  Next up is a vote up/down option…not implemented yet. 
-    * Improved the Admin messaging – database message now contains a link that updates the database when clicked.
+    * Added Star Rating system - thanks to GD Star Ratings for use of the star set (used by permission).  2 placement options (beneath caption or overlay image [default]).  Design of star rating system enables extensions.   
+    * Improved the Admin messaging - database message now contains a link that updates the database when clicked.
 
 = 0.3.02 - 08/01/2009 =
 

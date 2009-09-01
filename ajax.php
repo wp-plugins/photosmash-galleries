@@ -192,6 +192,28 @@ class BWBPS_AJAX{
 						unlink($uploads['basedir'] . '/' . $row['image_url']);
 					}
 					
+					//Delete images that may be hanging out in the Meta
+					if((int)$row['wp_attach_id']){
+						$meta = get_post_meta((int)$row['wp_attach_id'], '_wp_attachment_metadata', true);
+																		
+						$folders = str_replace(basename($meta['file']), '', $meta['file']);
+						
+						if( is_file($uploads['basedir'] . '/' . $meta['file']) ){
+							unlink($uploads['basedir'] . '/' . $meta['file']);
+						}
+						
+						$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['thumbnail']['file'];
+						if( is_file($url) ){
+							unlink($url);
+						}		
+						
+						$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['medium']['file'];
+						if( is_file($url) ){
+							unlink($url);
+						}			
+						
+					}
+					
 				}
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.

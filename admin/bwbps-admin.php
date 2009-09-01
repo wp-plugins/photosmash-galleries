@@ -162,7 +162,7 @@ class BWBPS_Admin{
 		if(current_user_can('level_10')){
 			if($imgid){
 				$row = $wpdb->get_row($wpdb->prepare(
-					"SELECT file_name, thumb_url, medium_url, image_url FROM "
+					"SELECT file_name, thumb_url, medium_url, image_url, wp_attach_id FROM "
 					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid), ARRAY_A);
 				if($row){
 				
@@ -191,6 +191,28 @@ class BWBPS_Admin{
 						if( is_file($uploads['basedir'] . '/' . $row['image_url']) ){
 							unlink($uploads['basedir'] . '/' . $row['image_url']);
 						}
+						
+						//Delete images that may be hanging out in the Meta
+						if((int)$row['wp_attach_id']){
+							$meta = get_post_meta((int)$row['wp_attach_id'], '_wp_attachment_metadata', true);
+																			
+							$folders = str_replace(basename($meta['file']), '', $meta['file']);
+							
+							if( is_file($uploads['basedir'] . '/' . $meta['file']) ){
+								unlink($uploads['basedir'] . '/' . $meta['file']);
+							}
+							
+							$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['thumbnail']['file'];
+							if( is_file($url) ){
+								unlink($url);
+							}		
+							
+							$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['medium']['file'];
+							if( is_file($url) ){
+								unlink($url);
+							}			
+							
+						}
 					
 					}
 					
@@ -209,7 +231,17 @@ class BWBPS_Admin{
 					.' WHERE image_id = %d', $imgid));
 					
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
-					.' WHERE image_id = %d', $imgid));	
+					.' WHERE image_id = %d', $imgid));
+				
+				if((int)$row['wp_attach_id']){
+					
+					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->posts
+						.' WHERE ID = %d', (int)$row['wp_attach_id']));
+				
+					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->postmeta
+						.' WHERE post_id = %d', (int)$row['wp_attach_id']));	
+				
+				}
 					
 				
 			} else {$ret = 0;}
@@ -756,14 +788,7 @@ if($psOptions['use_advanced'] ==1){
 </div>
 <div id='bwbps_thumbnails'>
 	<table class="form-table">
-			<tr>
-				<th>Thumbnail style:</th>
-				<td>
-					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
-				</td>
-			</tr>
-			
+						
 			<tr>
 				<th>Thumbnail width (px):</th>
 				<td>
@@ -776,14 +801,17 @@ if($psOptions['use_advanced'] ==1){
 					<input type='text' name="gal_thumb_height" value='<?php echo (int)$galOptions['thumb_height'];?>'/>
 				</td>
 			</tr>
-						
-			<tr>
-				<th>Medium style:</th>
+			
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Thumbnail style:</th>
 				<td>
-					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
+
+						
+			
 			
 			<tr>
 				<th>Medium width (px):</th>
@@ -799,14 +827,16 @@ if($psOptions['use_advanced'] ==1){
 				</td>
 			</tr>
 			
-			<tr>
-				<th>Image style:</th>
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Medium style:</th>
 				<td>
-					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
-	<tr>
+			
+			
+			<tr>
 				<th>Max. image width (px):</th>
 				<td>
 					<input type='text' name="gal_image_width" value='<?php echo (int)$galOptions['image_width'];?>'/> 0 will maintain original width
@@ -816,6 +846,14 @@ if($psOptions['use_advanced'] ==1){
 				<th>Max. image height (px):</th>
 				<td>
 					<input type='text' name="gal_image_height" value='<?php echo (int)$galOptions['image_height'];?>'/> 0 will maintain original height
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Image style:</th>
+				<td>
+					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
 	</table>
@@ -1064,14 +1102,8 @@ if($psOptions['use_customform']){ ?>
 					<input type='text' name="gal_upload_form_caption" value='<?php echo $galOptions['upload_form_caption'];?>'/>
 				</td>
 			</tr>
+			
 			<tr>
-				<th>Thumbnail style:</th>
-				<td>
-					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
-				</td>
-			</tr>
-	<tr>
 				<th>Thumbnail width (px):</th>
 				<td>
 					<input type='text' name="gal_thumb_width" value='<?php echo (int)$galOptions['thumb_width'];?>'/>
@@ -1085,14 +1117,14 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			
-			<tr>
-				<th>Medium style:</th>
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Thumbnail style:</th>
 				<td>
-					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
-			
+						
 			<tr>
 				<th>Medium width (px):</th>
 				<td>
@@ -1107,14 +1139,15 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			
-			<tr>
-				<th>Image style:</th>
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Medium style:</th>
 				<td>
-					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
-	<tr>
+			
+			<tr>
 				<th>Max. image width (px):</th>
 				<td>
 					<input type='text' name="gal_image_width" value='<?php echo (int)$galOptions['image_width'];?>'/> 0 will maintain original width
@@ -1124,6 +1157,14 @@ if($psOptions['use_customform']){ ?>
 				<th>Max. image height (px):</th>
 				<td>
 					<input type='text' name="gal_image_height" value='<?php echo (int)$galOptions['image_height'];?>'/> 0 will maintain original height
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Image style:</th>
+				<td>
+					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
 				</td>
 			</tr>
 	</table>
@@ -1429,14 +1470,7 @@ if($psOptions['use_customform']){ ?>
 	<div id="bwbps_thumbnails">
 		<table class="form-table">
 			
-			<tr>
-				<th>Default thumb style:</th>
-				<td>
-					<input type="radio" name="ps_thumb_aspect" value="0" <?php if((int)$psOptions['thumb_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
-				</td>
-			</tr>
-			
+						
 			<tr>
 				<th>Default thumb width (px):</th>
 				<td>
@@ -1451,14 +1485,14 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			
-			<tr>
-				<th>Default medium style:</th>
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Default thumb style:</th>
 				<td>
-					<input type="radio" name="ps_medium_aspect" value="0" <?php if((int)$psOptions['medium_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_medium_aspect" value="1" <?php if((int)$psOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+					<input type="radio" name="ps_thumb_aspect" value="0" <?php if((int)$psOptions['thumb_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 				</td>
 			</tr>
-			
+						
 			<tr>
 				<th>Default medium width (px):</th>
 				<td>
@@ -1473,14 +1507,14 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			
-			<tr>
-				<th>Default image style:</th>
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Default medium style:</th>
 				<td>
-					<input type="radio" name="ps_image_aspect" value="0" <?php if((int)$psOptions['image_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_image_aspect" value="1" <?php if((int)$psOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
-					<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+					<input type="radio" name="ps_medium_aspect" value="0" <?php if((int)$psOptions['medium_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_medium_aspect" value="1" <?php if((int)$psOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 				</td>
 			</tr>
+			
 			<tr>
 				<th>Default max image width (px):</th>
 				<td>
@@ -1491,6 +1525,15 @@ if($psOptions['use_customform']){ ?>
 				<th>Default max image height (px):</th>
 				<td>
 					<input type='text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 0 will maintain original height
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default image style:</th>
+				<td>
+					<input type="radio" name="ps_image_aspect" value="0" <?php if((int)$psOptions['image_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_image_aspect" value="1" <?php if((int)$psOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
+					<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
 				</td>
 			</tr>
 		</table>
