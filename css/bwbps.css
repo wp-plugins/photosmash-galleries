@@ -1,3 +1,31 @@
+/* Admin styles */
+.bwbps_imgbox{
+	float: left;
+	height:140px;
+	width:125px;
+	background-color: white;
+	margin: 5px;
+	border: 1px solid #f0f0f0;
+
+}
+
+.bwbps_imgbox div{
+	font-size: 10px;
+	line-height: 1.2em;
+}
+
+.bwbps_theimage{
+	height:100px;
+	margin:10px auto 2px;
+	width:95px;
+}
+
+.bwbps-sel{
+
+	background-color: #C7EFB3;
+
+}
+
 ul.bwbps_gallery, ul.bwbps_gallery li
 {
 	list-style: none;
@@ -232,6 +260,11 @@ div.bwbps_pag_2{
 .form-bwbps td{
 	font-size: 12px;
 	padding-bottom: 10px;
+}
+
+.ps-hint {
+	font-size: 12px;
+	color: #777;
 }
 /* Caution! Ensure accessibility in print and other media types... */
 @media projection, screen { /* Use class for showing/hiding tab content, so that visibility can be better controlled in different media types... */

@@ -47,7 +47,11 @@ class BWBPS_AJAX{
 				break;
 		
 			case 'delete' :
-				$this->deleteImage();
+				$this->deleteImage(true);
+				break;
+				
+			case 'remove' :
+				$this->deleteImage(false);
 				break;
 	
 			case 'savecaption' :
@@ -157,7 +161,7 @@ class BWBPS_AJAX{
 		echo json_encode($json);
 	}
 
-	function deleteImage(){
+	function deleteImage($delete_med_lib=true){
 		global $wpdb;
 		if(current_user_can('level_10')){
 			$imgid = (int)$_POST['image_id'];
@@ -177,41 +181,44 @@ class BWBPS_AJAX{
 						unlink(PSTHUMBSPATH.$row['file_name']);
 					}
 					
+					if($delete_med_lib){
 					// PhotoSmash now uses the WordPress upload folder structure
-					$uploads = wp_upload_dir();
-					
-					if( is_file($uploads['basedir'] . '/' . $row['thumb_url']) ){
-						unlink($uploads['basedir'] . '/' . $row['thumb_url']);
-					}
-					
-					if( is_file($uploads['basedir'] . '/' . $row['medium_url']) ){
-						unlink($uploads['basedir'] . '/' . $row['medium_url']);
-					}
-					
-					if( is_file($uploads['basedir'] . '/' . $row['image_url']) ){
-						unlink($uploads['basedir'] . '/' . $row['image_url']);
-					}
-					
-					//Delete images that may be hanging out in the Meta
-					if((int)$row['wp_attach_id']){
-						$meta = get_post_meta((int)$row['wp_attach_id'], '_wp_attachment_metadata', true);
-																		
-						$folders = str_replace(basename($meta['file']), '', $meta['file']);
+						$uploads = wp_upload_dir();
 						
-						if( is_file($uploads['basedir'] . '/' . $meta['file']) ){
-							unlink($uploads['basedir'] . '/' . $meta['file']);
+						if( is_file($uploads['basedir'] . '/' . $row['thumb_url']) ){
+							unlink($uploads['basedir'] . '/' . $row['thumb_url']);
 						}
 						
-						$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['thumbnail']['file'];
-						if( is_file($url) ){
-							unlink($url);
-						}		
+						if( is_file($uploads['basedir'] . '/' . $row['medium_url']) ){
+							unlink($uploads['basedir'] . '/' . $row['medium_url']);
+						}
 						
-						$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['medium']['file'];
-						if( is_file($url) ){
-							unlink($url);
-						}			
-						
+						if( is_file($uploads['basedir'] . '/' . $row['image_url']) ){
+							unlink($uploads['basedir'] . '/' . $row['image_url']);
+						}
+					
+					
+						//Delete images that may be hanging out in the Meta
+						if((int)$row['wp_attach_id']){
+							$meta = get_post_meta((int)$row['wp_attach_id'], '_wp_attachment_metadata', true);
+																			
+							$folders = str_replace(basename($meta['file']), '', $meta['file']);
+							
+							if( is_file($uploads['basedir'] . '/' . $meta['file']) ){
+								unlink($uploads['basedir'] . '/' . $meta['file']);
+							}
+							
+							$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['thumbnail']['file'];
+							if( is_file($url) ){
+								unlink($url);
+							}		
+							
+							$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['medium']['file'];
+							if( is_file($url) ){
+								unlink($url);
+							}			
+							
+						}
 					}
 					
 				}
@@ -231,7 +238,7 @@ class BWBPS_AJAX{
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
 					.' WHERE image_id = %d', $imgid));
 					
-				if((int)$row['wp_attach_id']){
+				if((int)$row['wp_attach_id'] && $delete_med_lib ){
 					
 					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->posts
 						.' WHERE ID = %d', (int)$row['wp_attach_id']));

@@ -260,6 +260,7 @@ class BWBPS_Uploader{
 		$basename = basename($file['file']);
 				
 		$this->json['image_url'] = $relpath . $basename;
+		$this->json['image_fullurl'] = $uploads['baseurl'] . '/' . $this->json['image_url'];
 		$this->json['image_name'.$this->imageNumber] = $basename;
 		
 		// Create Thumbnail & Medium sizes
@@ -278,6 +279,35 @@ class BWBPS_Uploader{
 		return true;
 	
 	
+	}
+	
+	/**
+	 * Adapted from wp-includes/post.php
+	 * 
+	 * Used to update the file path of the attachment, which uses post meta name
+	 * '_wp_attached_file' to store the path of the attachment.
+	 *
+	 * @since 2.1.0
+	 * @uses apply_filters() Calls 'update_attached_file' on file path and attachment ID.
+	 *
+	 * @param int $attachment_id Attachment ID
+	 * @param string $file File path for the attachment
+	 * @return bool False on failure, true on success.
+	 */
+	function get_relative_path( $filepath, $uploads ) {
+			
+	
+		// Make the file path relative to the upload dir
+		if ( false === $uploads['error'] ) { // Get upload directory
+			if ( 0 === strpos($filepath, $uploads['basedir']) ) {// Check that the upload base exists in the file path
+					$ret = str_replace($uploads['basedir'], '', $filepath); // Remove upload dir from the file path
+					$ret = ltrim($ret, '/');
+					
+					$ret = str_replace(basename($ret), '', $ret);
+			}
+		}
+	
+		return $ret;
 	}
 	
 	/** 
@@ -427,36 +457,7 @@ class BWBPS_Uploader{
 	
 	}
 	
-	// NEED TO FIX bwbps-layouts to use $uploads = wp_upload_dir()  && $uploads['basedir???']
-	
-	/**
-	 * Adapted from wp-includes/post.php
-	 * 
-	 * Used to update the file path of the attachment, which uses post meta name
-	 * '_wp_attached_file' to store the path of the attachment.
-	 *
-	 * @since 2.1.0
-	 * @uses apply_filters() Calls 'update_attached_file' on file path and attachment ID.
-	 *
-	 * @param int $attachment_id Attachment ID
-	 * @param string $file File path for the attachment
-	 * @return bool False on failure, true on success.
-	 */
-	function get_relative_path( $filepath, $uploads ) {
-			
-	
-		// Make the file path relative to the upload dir
-		if ( false === $uploads['error'] ) { // Get upload directory
-			if ( 0 === strpos($filepath, $uploads['basedir']) ) {// Check that the upload base exists in the file path
-					$ret = str_replace($uploads['basedir'], '', $filepath); // Remove upload dir from the file path
-					$ret = ltrim($ret, '/');
-					
-					$ret = str_replace(basename($ret), '', $ret);
-			}
-		}
-	
-		return $ret;
-	}
+		
 	
 	function exitUpload($msg){
 	

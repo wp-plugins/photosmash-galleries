@@ -2,6 +2,7 @@ var $j = jQuery.noConflict();
 var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
 var bwbpsUploadStatus = false;
+var bwbpsAllImport = 0; //variable for handling Admin Import toggling
 
 $j.fn.tagName = function() {
     return this.get(0).tagName;
@@ -49,6 +50,63 @@ $j(document).ready(function() {
 	
 	
 });
+
+/* -------- ADMIN Image Importer Functions ------------ */
+function bwbpsActivateImageImports(){
+
+	jQuery('.bwbps-imagesforsel').val('');
+
+	jQuery('.bwbps-notsel').click(function(){
+			var tid = this.id;
+			var t = $j(this);
+			
+			if(bwbpsAllImport){
+			
+				if(bwbpsAllImport == 1){
+					$j("#" + tid + "sel" ).val('');
+				} else {
+					$j("#" + tid + "sel" ).val('1');
+				}
+			
+			}
+			
+			var tpar = t.parent().parent();
+			
+			if(!$j("#" + tid + "sel" ).val() ){
+							
+				tpar.addClass('bwbps-sel');
+				$j("#" + tid + "sel" ).val(tid);
+							
+			} else {
+				
+				tpar.removeClass('bwbps-sel');
+				
+				$j("#" + tid + "sel" ).val('');
+							
+			}
+			
+			return false;
+		}
+	);
+
+}
+
+function bwbpsToggleImportImg(img){
+
+}
+
+function bwbpsToggleAllImportImages(tog){
+
+	if(tog){
+		bwbpsAllImport = 1;	//Turn on all images
+	} else {
+		bwbpsAllImport = 2;	//Turn off all images
+	}
+	
+	$j('.bwbps-notsel').click();
+	bwbpsAllImport = 0;
+}
+
 
 function bwbpsAjaxLoadImage(myForm){
 
@@ -284,7 +342,7 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			//Handle the new upload method
 			if( data.thumb_fullurl ){
 			
-				ahref = $j('<a></a>').attr('href', data.image_url).attr('rel',data.imgrel);
+				ahref = $j('<a></a>').attr('href', data.image_fullurl).attr('rel',data.imgrel);
 				$j('<img src="' + data.thumb_fullurl +'" />').appendTo(ahref);
 				
 			} else {
@@ -416,7 +474,8 @@ function bwbpsModerateImage(action, image_id)
 	var myaction = false;
 	var actiontext = "";
 	
-	if(action == 'bury'){ myaction = "delete"; actiontext = "delete this image "; }
+	if(action == 'remove'){ myaction = "remove"; actiontext = "remove this image from gallery (leaves Media Library images in tact) "; }
+	if(action == 'bury'){ myaction = "delete"; actiontext = "delete this image (will DELETE Media Library images too...use Remove if you don't want to) "; }
 	if(action == 'approve'){ myaction = "approve"; actiontext = "approve this image ";}
 	if(action == 'review'){ myaction = "review"; actiontext = "mark this image as reviewed ";}
 	if(action == 'savecaption'){ myaction = 'savecaption'; actiontext = "save image data ";}

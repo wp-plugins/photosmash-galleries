@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.4.00
+Version: 0.4.01
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -29,7 +29,7 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.3.08');
+define('PHOTOSMASHVERSION', '0.4.01');
 
 
 //Database Verifications
@@ -159,7 +159,12 @@ class BWB_PhotoSmash{
 	var $manualFormCount = 0;
 	var $loadedGalleries;
 	var $moderateNonceCount = 0;
-	var $psAdmin;
+	
+	var $uploads; 	//WP uploads folder array info on uploads folder
+	
+	var $psAdmin;  //Admin object
+	var $psImporter;	//Importer object
+	
 		
 	var $psOptions;
 	var $psLayout;
@@ -178,7 +183,12 @@ class BWB_PhotoSmash{
 	
 	//Constructor
 	function BWB_PhotoSmash(){
+		
+		$this->uploads = wp_upload_dir();
+				
 		$this->psOptions = $this->getPSOptions();
+		
+		
 		
 		if($this->psOptions['use_customfields']){
 			$this->loadCustomFormOptions();
@@ -398,6 +408,9 @@ class BWB_PhotoSmash{
 			add_submenu_page(basename(__FILE__), __('Database Viewer'), __('Photo Manager'), 9,  
 			'managePhotoSmashImages', array(&$bwbPS, 'loadPhotoManager'));
 			
+			add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 9,  
+			'importPSImages', array(&$bwbPS, 'loadImageImporter'));
+			
 			//Advanced Features (Layouts and Custom Fields
 			if($this->psOptions['use_advanced'] == 1){
 				$bshowadv = true;
@@ -459,6 +472,18 @@ class BWB_PhotoSmash{
 		$this->psAdmin->printManageImages();
 		
 		return true;
+	}
+	
+	function loadImageImporter(){
+	
+		if(!$this->psImporter){
+			require_once("admin/bwbps-importer.php");
+			$this->psImporter = new BWBPS_Importer($this->psOptions);
+		}
+		$this->psImporter->printImageImporter();
+		
+		return true;
+	
 	}
 	
 	function loadLayoutsEditor(){
@@ -1245,6 +1270,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		?>";
 	var bwbpsImagesURL = "<?php echo PSIMAGESURL; ?>";
 	var bwbpsThumbsURL = "<?php echo PSTHUMBSURL; ?>";
+	var bwbpsUploadsURL = "<?php echo $this->uploads['baseurl'] . "/"; ?>";
 	var bwbpsPhotoSmashURL = "<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/";
 	var bwbpsBlogURL = "<?php echo PSBLOGURL; ?>";
 	

@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
 Tested up to: 2.8.4
-Stable tag: 0.4.00
+Stable tag: 0.4.01
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -15,7 +15,9 @@ PhotoSmash Galleries makes it easy to create photo galleries in posts or pages t
 For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
 *   User contributable photo galleries
-*   AJAX photo uploads
+*	Add images to the WordPress Media Library so you can use them in blog posts, etc
+*	Multiple simultaneous image uploads in Admin, using the WordPress Media Library, then import images to PhotoSmash!
+*   AJAX photo uploads from within Posts and Pages
 *	Star Ratings for images
 *   Control who can upload images: admin only, authors & contributors (and higher), or registered users and higher
 *   Moderate images uploaded by registered users (Admins and authors are automatically approved)
@@ -73,14 +75,16 @@ It should be relatively straight forward to change the look and feel through thi
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
-= 0.4.01 â€“ (not yet released) =
+= 0.4.01 – 09/04/2009 =
 
-    * Coming up: mass uploads by Admins!
+    * Added ability to Import images to PhotoSmash galleries from the WordPress Media Library.  This lets you use the WP Media uploader (multiple simultaneous uploads) in Admin, then import them into galleries.
+    * Changed the default delete from deleting the Media Library images to be on-demand in Photo Manager.  Deleting a gallery does not delete Media Library images now.  Too much risk.
+    * Fixed a javascript bug - when uploading images with the new (0.4.00) WP upload functionality, the link to the image was broken until you reloaded the page.
 
-= 0.4.00 â€“ 09/01/2009 =
+= 0.4.00 – 09/01/2009 =
 
-    * This gets a version bump! Added option [is default for new installs] to use WordPress upload functionality. Can optionally add uploaded images to the WP Media Library. Set these options in PhotoSmash Settingsâ€¦top of the Uploading tab. This is in preparation for the upcoming new WordPress 2.9 media features. By adding these images to the Media Library, you should be able to utilize new features that WordPress builds in. The new WP 2.9 feature set hasnâ€™t been officially announced yet, but stay tuned!!! This should also solve upload issues where people have trouble with folder permissions. I could be wrong, but I think this is pretty big :P
-    * Fixed a couple of annoying ThickBox images that werenâ€™t loading. You have to set the variables in the page footerâ€¦FYI.
+    * This gets a version bump! Added option [is default for new installs] to use WordPress upload functionality. Can optionally add uploaded images to the WP Media Library. Set these options in PhotoSmash Settings…top of the Uploading tab. This is in preparation for the upcoming new WordPress 2.9 media features. By adding these images to the Media Library, you should be able to utilize new features that WordPress builds in. The new WP 2.9 feature set hasn’t been officially announced yet, but stay tuned!!! This should also solve upload issues where people have trouble with folder permissions. I could be wrong, but I think this is pretty big :P
+    * Fixed a couple of annoying ThickBox images that weren’t loading. You have to set the variables in the page footer…FYI.
 
 
 = 0.3.07 - 08/27/2009 =

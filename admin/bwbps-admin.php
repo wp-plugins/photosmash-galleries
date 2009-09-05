@@ -176,7 +176,7 @@ class BWBPS_Admin{
 					
 					// PhotoSmash now uses the WordPress upload folder structure
 					
-					if( $row['thumb_url'] ){
+					if( $row['thumb_url'] && !$row['wp_attach_id'] ){
 					
 						$uploads = wp_upload_dir();
 						
@@ -192,6 +192,7 @@ class BWBPS_Admin{
 							unlink($uploads['basedir'] . '/' . $row['image_url']);
 						}
 						
+						/*
 						//Delete images that may be hanging out in the Meta
 						if((int)$row['wp_attach_id']){
 							$meta = get_post_meta((int)$row['wp_attach_id'], '_wp_attachment_metadata', true);
@@ -213,6 +214,7 @@ class BWBPS_Admin{
 							}			
 							
 						}
+						*/
 					
 					}
 					
@@ -233,6 +235,8 @@ class BWBPS_Admin{
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
 					.' WHERE image_id = %d', $imgid));
 				
+				/*		We'e not going to ZAP Media Library images
+				
 				if((int)$row['wp_attach_id']){
 					
 					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->posts
@@ -242,7 +246,7 @@ class BWBPS_Admin{
 						.' WHERE post_id = %d', (int)$row['wp_attach_id']));	
 				
 				}
-					
+				*/	
 				
 			} else {$ret = 0;}
 		} else {
@@ -1855,7 +1859,7 @@ if($psOptions['use_customform']){ ?>
 				.$image->post_id."' title='Edit related post.'>". $image->post_id . "</a>";
 			}
 			
-			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a>";
+			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a> ";
 			
 			//Image HTML
 			
@@ -1885,7 +1889,7 @@ if($psOptions['use_customform']){ ?>
 			} else { $fileURLData = ""; }
 			
 			$psTable .= "<br/><b>Details: </b>(image id: "
-				. $image->image_id.")<br/>Gallery: <a href='admin.php?"
+				. $image->image_id.")<br/>WP media id: " . $image->wp_attach_id."<br/>Gallery: <a href='admin.php?"
 				. "page=managePhotoSmashImages&amp;psget_gallery_id="
 				. $image->gallery_id."'>id(".$image->gallery_id.") "
 				. $image->gallery_name."</a><br/>Image name: "

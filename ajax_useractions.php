@@ -121,21 +121,22 @@ class BWBPS_AJAX{
 						unlink(PSTHUMBSPATH.$row->file_name);
 					}
 					
-					// PhotoSmash now uses the WordPress upload folder structure
-					$uploads = wp_upload_dir();
-					
-					if( is_file($uploads['basedir'] . '/' . $row->thumb_url) ){
-						unlink($uploads['basedir'] . '/' . $row->thumb_url);
+					if(!$row->wp_attach_id){
+						// PhotoSmash now uses the WordPress upload folder structure
+						$uploads = wp_upload_dir();
+						
+						if( is_file($uploads['basedir'] . '/' . $row->thumb_url) ){
+							unlink($uploads['basedir'] . '/' . $row->thumb_url);
+						}
+						
+						if( is_file($uploads['basedir'] . '/' . $row->medium_url) ){
+							unlink($uploads['basedir'] . '/' . $row->medium_url);
+						}
+						
+						if( is_file($uploads['basedir'] . '/' . $row->image_url) ){
+							unlink($uploads['basedir'] . '/' . $row->image_url);
+						}
 					}
-					
-					if( is_file($uploads['basedir'] . '/' . $row->medium_url) ){
-						unlink($uploads['basedir'] . '/' . $row->medium_url);
-					}
-					
-					if( is_file($uploads['basedir'] . '/' . $row->image_url) ){
-						unlink($uploads['basedir'] . '/' . $row->image_url);
-					}
-					
 				}
 
 				
