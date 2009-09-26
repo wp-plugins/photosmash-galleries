@@ -234,9 +234,13 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_id]<span style='font-size: 9px;'></span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[date_added] - <span style='font-size: 9px;'>date image was added</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image] - <span style='font-size: 9px;'>image</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_url] - <span style='font-size: 9px;'>image url - for building a link</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[linked_image] - <span style='font-size: 9px;'>image with link to itself</span></li>
 						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption]</li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption] - <span style='font-size: 9px;'>use length and more attributes like this: [caption length=20 more='see more'] </span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption_escaped] - <span style='font-size: 9px;'>same as above...escaped for use in title or alt attributes</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[full_caption] - <span style='font-size: 9px;'>caption displayed with rules set in Gallery Settings</span></li>
 										

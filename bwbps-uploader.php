@@ -792,6 +792,8 @@ class BWBPS_Uploader{
 			
 			$d['img_class'] = $data['img_class'] ? $data['img_class'] : $this->psOptions['img_class'];
 			
+			$d['anchor_class'] = $data['anchor_class'] ? $data['anchor_class'] : $this->psOptions['anchor_class'];
+			
 			$d['show_imgcaption'] = $data['show_imgcaption'] ? (int)$data['show_imgcaption'] : (int)$this->psOptions['show_imgcaption'];
 			
 			if(isset($data['nofollow_caption'])){

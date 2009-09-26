@@ -44,6 +44,11 @@ class BWBPS_Layout{
 			, 'post_id'
 			, 'post_url'
 			, 'ps_rating'
+			, 'image_url'
+			, 'caption_escaped'
+			, 'thumb_image'
+			, 'thumb_url'
+			, 'thumb_linktoimage'
 		);
 	}
 	
@@ -57,6 +62,7 @@ class BWBPS_Layout{
 			, 'doc'
 			, 'video'
 			, 'youtube'
+			, 'caption_escaped'
 		);
 	}
 	
@@ -124,8 +130,12 @@ class BWBPS_Layout{
 	
 		//Calculate Pagination variables
 		$totRows = $wpdb->num_rows;	// Total # of images (total rows returned in query)
-
-		$perma = get_permalink($post->ID);	//The permalink for this post
+		if($post->photosmash == 'author'){
+			$perma = $post->photosmash_link;
+		} else {
+			$perma = get_permalink($post->ID);	//The permalink for this post
+		}
+		
 		$pagenum = $this->getPageNumbers();
 		
 		//Set to page 1 if not supplied in Get or Post
@@ -200,29 +210,47 @@ class BWBPS_Layout{
 		
 		//get the pagination navigation
 		if($totRows && $g['img_perpage']){
-			$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g, $layout);	
-				//What image # do we begin page with?
-				$lastImg = $pagenum[$g['gallery_id']] * $g['img_perpage'];
-				$startImg = $lastImg - $g['img_perpage'] + 1;
 			
-		} else {
-			$nav = "";
-			$startImg = 0;
-			$lastImg = $totRows + 1;
-		}
+			//What image # do we begin page with?
+			$lastImg = $pagenum[$g['gallery_id']] * $g['img_perpage'];
+			$startImg = $lastImg - $g['img_perpage'] + 1;
+				
+			
+		} 
 		
 		
 		if($images){
 			//Add SetID and Layout ID for use Insert Sets - PhotoSmash Extend
 			$images[0]['pext_insert_setid'] = (int)$g['pext_insert_setid'];
 			$images[0]['pext_layout_id'] = ($layout ? $layout->layout_id : false);
+			$images[0]['pext_start_image'] = $startImg;
+			$images[0]['pext_imgs_perpage'] = $g['img_perpage'];
+			$images[0]['pext_page_number'] = $pagenum[$g['gallery_id']];
 			$images = apply_filters('bwbps_gallery_loop', $images);
+						
+			$totRows = count($images);
+			//get the pagination navigation
+			if($totRows && $g['img_perpage']){
+				$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g, $layout);
+			} else {
+				$nav = "";
+				$startImg = 0;
+				$lastImg = $totRows + 1;
+			}
+			
 		
 			if($this->psOptions['img_targetnew']){
 				$g['url_attr']['imagetargblank'] = " target='_blank' ";
 			}
 					
 			foreach($images as $image){
+			
+				
+				$imgNum++;
+				//Pagination - not the most efficient, 
+				//but there shouldn't be thousands of images in a gallery
+				if($startImg > $imgNum || $lastImg < $imgNum){ continue;}
+				
 				
 				//Handle PSmashExtend Inserts
 				if( $image['pext_insert'] ){
@@ -236,6 +264,7 @@ class BWBPS_Layout{
 				
 				}
 				
+								
 				//Handle Rating Code
 				if($rate){
 					$rating['image_id'] = $image['psimageID'];
@@ -276,11 +305,6 @@ class BWBPS_Layout{
 					$image['image_url'] = $uploads['baseurl'] . '/' . $image['image_url'];
 				
 				}
-				
-				$imgNum++;
-				//Pagination - not the most efficient, 
-				//but there shouldn't be thousands of images in a gallery
-				if($startImg > $imgNum || $lastImg < $imgNum){ continue;}
 			
 				$g['modMenu'] = "";
 				switch ($image['status']) {
@@ -465,6 +489,19 @@ class BWBPS_Layout{
 		
 		if($filetype == 0 || $filetype == 1 || $filetype == 4 )
 		{
+			//Set anchor class ... clear it for special cases below
+			if($g['anchor_class']){
+				$anchor_class = " class='".$g['anchor_class']."'";
+			}
+			$image['the_image_link'] = "<a href='"
+						.$image['image_url']."'"
+						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
+						.$g['url_attr']['imagetargblank'].$anchor_class.">";
+						
+			$image['cap_image_link'] = "<a href='"
+						.$image['image_url']."'"
+						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
+						.$g['url_attr']['imagetargblank'].">";
 			
 			// URL when setting for Front/Cat/Archive pages to link thumbnails to the Post
 			if( !is_single() && $this->psOptions['imglinks_postpages_only'])
@@ -473,16 +510,24 @@ class BWBPS_Layout{
 				$image['imgurl_close'] = "</a>";
 			} else {
 			// Normal URLs
-			
+											
+				
 				//Deal with special cases where the caption style changes 
 				//the thumbnail link.
-				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9){
+				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9 || $g['show_imgcaption'] == 12)
+				{
+
+					
 					if($this->validURL($image['url'])){
 						$theurl = $image['url'];
+						$anchor_class = "";
+
 					} else {
 						if($this->validURL($image['user_url'])){
 							$theurl = $image['user_url'];
+							$anchor_class = "";
 						} else {
+							
 							$theurl = $image['image_url'];
 							$image['special_url'] = false;
 						}
@@ -490,7 +535,7 @@ class BWBPS_Layout{
 				
 					$image['imgurl'] = "<a href='".$theurl."'"
 						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
-						.$g['url_attr']['imagetargblank'].">";
+						.$g['url_attr']['imagetargblank'].$anchor_class.">";
 						
 					$image['capurl'] = "<a href='".$theurl."'"
 						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
@@ -498,16 +543,8 @@ class BWBPS_Layout{
 															
 				} else {
 			
-					$image['imgurl'] = "<a href='"
-						.$image['image_url']."'"
-						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
-						.$g['url_attr']['imagetargblank'].">";
-						
-					$image['capurl'] = "<a href='"
-						.$image['image_url']."'"
-						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
-						.$g['url_attr']['imagetargblank'].">";
-				
+					$image['imgurl'] = $image['the_image_link'];
+					$image['capurl'] = $image['cap_image_link'];
 				}
 				
 				$image['imgurl_close'] = "</a>";
@@ -554,7 +591,8 @@ class BWBPS_Layout{
 			return $ret;
 		
 		}
-					
+		
+		$scaption =  $this->getCaption($g, $image);
 		// Get File Field
 		$fileField = $this->getFileField($g, $image);	
 		if($fileField)
@@ -568,7 +606,7 @@ class BWBPS_Layout{
 		}
 		
 		// Get Caption
-		$scaption =  $this->getCaption($g, $image);
+		//$scaption =  $this->getCaption($g, $image);
 		if($scaption) 
 		{
 			if( $fileField ) { $ret .= "<br/>"; }
@@ -694,9 +732,18 @@ class BWBPS_Layout{
 		
 		if($is_thumb){
 			$psg_imagesurl = $image['thumb_url'];
+			
+			//Set up thumb size
+			if((int)$g['thumb_height'] ){
+				$imagesize = " height=" . (int)$g['thumb_height'];
+			}
+			if( (int)$g['thumb_width'] ){
+				$imagesize .= " width=" . (int)$g['thumb_width'];
+			}		
 		} else {
 			$psg_imagesurl = $image['image_url'];
 		}
+			
 		
 		switch ( true ) {
 		 
@@ -704,21 +751,17 @@ class BWBPS_Layout{
 			
 				if($image['image_url']){
 				$ret = "<img src='".$psg_imagesurl."'".$g['imgclass']
-					." alt='".$image['img_alt']."' />";
+					." alt='".$image['img_alt']."' $imagesize />";
 				} else { $ret = ""; }
 			
 				break;
 			
 			case ( $ftype == 2 ) :	//direct link
-			
-				$thumbheight = "";
-				$thumbwidth = "";
-				if($g['thumb_width']){ $thumbwidth = " width='".$g['thumb_width']."'";}
-				if($g['thumb_height']){ $thumbheight = " width='".$g['thumb_height']."'";}
+							
 				if( $this->psValidateURL($image['file_url']) )
 				{
 					$ret = "<img src='".$image['file_url']."'".$g['imgclass']
-					." alt='".$image['img_alt']."' " . $thumbwidth . $thumbheight . " />";
+					." alt='".$image['img_alt']."' " . $imagesize . " />";
 				} else { $ret = ""; }
 				
 				
@@ -793,11 +836,29 @@ class BWBPS_Layout{
 	 */
 	 
 	function getCFFieldHTML($fld, $image, $g, $atts){
-	
+		
+		//Set up thumb size
+		if((int)$g['thumb_height'] ){
+			$thumbsize = " height=" . (int)$g['thumb_height'];
+		}
+		if( (int)$g['thumb_width'] ){
+			$thumbsize .= " width=" . (int)$g['thumb_width'];
+		}
+		
+		/* Set up image size */
+		if($g['enforce_sizes']){
+			if((int)$g['image_height'] ){
+				$imagesize = " height=" . (int)$g['image_height'];
+			}
+			if( (int)$g['image_width'] ){
+				$imagesize .= " width=" . (int)$g['image_width'];
+			}
+		}
+		
 		//Clean up URLs
 		$image['user_url'] = esc_url($image['user_url']);
 		$image['url'] = esc_url($image['url']);
-		
+			
 		$ftype = (int)$image['file_type'];
 		
 		if($ftype == 3 && ($fld == '[thumb]' || $fld == '[thumbnail]' )) {
@@ -853,6 +914,14 @@ class BWBPS_Layout{
 			case '[image]' :
 				$ret = $this->getFileField($g, $image, false);
 				break;
+			
+			case '[image_url]' :
+				if($image['thumb_url']){
+				  
+					$ret = $image['image_url'];
+						
+				} else { $ret = ""; }
+				break;
 				
 			case '[doc]' :
 				$ret = $this->getFileField($g, $image, false);
@@ -871,7 +940,7 @@ class BWBPS_Layout{
 				  
 					$ret = $image['imgurl']."
 						<img src='".$image['image_url']."'".$g['imgclass']
-						. " alt='".$image['img_alt']."' />"
+						. " alt='".$image['img_alt']."' $imagesize />"
 						. $image['imgurl_close'];
 						
 				} else { $ret = ""; }
@@ -882,7 +951,7 @@ class BWBPS_Layout{
 				
 					$ret = $image['imgurl']."
 						<img src='".$image['thumb_url']."'".$g['imgclass']
-						." alt='".$image['img_alt']."' />"
+						." alt='".$image['img_alt']."' $thumbsize />"
 						.$image['imgurl_close'];
 					
 				} else { $ret = ""; }
@@ -894,8 +963,41 @@ class BWBPS_Layout{
 				
 					$ret = $image['imgurl']."
 						<img src='".$image['thumb_url']."'".$g['imgclass']
-						." alt='".$image['img_alt']."' />"
+						." alt='".$image['img_alt']."' $thumbsize />"
 						.$image['imgurl_close'];
+					
+				} else { $ret = ""; }
+				
+				break;
+				
+			case '[thumb_linktoimage]' :
+				if($image['thumb_url']){
+				
+					$ret = $image['the_image_link']."
+						<img src='".$image['thumb_url']."'".$g['imgclass']
+						." alt='".$image['img_alt']."' $thumbsize />"
+						.$image['imgurl_close'];
+					
+				} else { $ret = ""; }
+				
+				break;
+				
+				
+			case '[thumb_image]' :
+				if($image['thumb_url']){
+				
+					$ret = "
+						<img src='".$image['thumb_url']."'".$g['imgclass']
+						." alt='".$image['img_alt']."' $thumbsize />";
+					
+				} else { $ret = ""; }
+				
+				break;
+			
+			case '[thumb_url]' :
+				if($image['thumb_url']){
+				
+					$ret = $image['thumb_url'];
 					
 				} else { $ret = ""; }
 				
@@ -904,9 +1006,19 @@ class BWBPS_Layout{
 			case '[medium]' :
 				if($image['thumb_url']){
 				
+					//Set up medium size
+					if($g['enforce_sizes']){
+						if((int)$g['medium_height'] ){
+							$mediumsize = " height=" . (int)$g['medium_height'];
+						}
+						if( (int)$g['medium_width'] ){
+							$mediumsize .= " width=" . (int)$g['medium_width'];
+						}
+					}
+				
 					$ret = $image['imgurl']."
 						<img src='".$image['medium_url']."'".$g['imgclass']
-						." alt='".$image['img_alt']."' />"
+						." alt='".$image['img_alt']."' $mediumsize />"
 						.$image['imgurl_close'];
 					
 				} else { $ret = ""; }
@@ -955,9 +1067,26 @@ class BWBPS_Layout{
 						}
 
 					}
-				
+									
 				}
 				
+				break;
+			
+			case '[caption_escaped]' :
+				$ret = $image['image_caption'];
+								
+				if( is_array($atts) && ((int)$atts['length'] || ((int)$atts['nonpost_length'] 
+					&& !is_single()) ) )
+				{
+					$len = (int)$atts['nonpost_length'] ? (int)$atts['nonpost_length'] :
+						(int)$atts['length'];
+					
+					if( strlen($ret) > $len) {
+					
+						$ret = substr($ret, 0, $len);
+					}
+				}
+				$ret = esc_attr__($ret);
 				break;
 			
 			case '[post_url]' :
@@ -967,7 +1096,7 @@ class BWBPS_Layout{
 					if((int)$g['post_id']){
 						$ret = get_permalink((int)$g['post_id']);
 					} else {
-						$ret = $image['image_url'];
+						$ret = $image['imgurl'];
 					}
 				}
 				
@@ -1389,6 +1518,29 @@ class BWBPS_Layout{
 						. $image['image_caption']." by "
 						. $nicename . $closeUserURL . "</span>";
 					
+					break;
+				
+				case 12: //No caption - Thumbnail links to Post
+				
+					$image['capurl'] = "";
+					$image['capurl_close'] = "";
+					$scaption = "";	//Close out the link from above
+										
+					if((int)$image['post_id']){
+						$post_perma = get_permalink((int)$image['post_id']);
+					} else {
+						$post_perma = get_permalink((int)$image['gal_post_id']);
+					}
+					
+					if($post_perma){
+						$perma = "<a href='".$post_perma."' title='View post'>";
+					}
+				
+									
+					if($perma){
+						$image['imgurl'] = $perma;
+					}
+																			
 					break;	
 			}
 			
@@ -1574,37 +1726,84 @@ class BWBPS_Layout{
 				." ON ".PSIMAGESTABLE.".image_id = "
 				.PSCUSTOMDATATABLE.".image_id ";
 			$custdata = ", ".PSCUSTOMDATATABLE.".* ";
+			
+		
+		if($g['show_imgcaption'] == 12){
+		
+			$custDataJoin = " LEFT OUTER JOIN ". PSGALLERIESTABLE 
+				. " ON ". PSIMAGESTABLE . ".gallery_id = "
+				. PSGALLERIESTABLE . ".gallery_id " . $custDataJoin;
+			
+			$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id ";
+		
+		}
 		
 		
 		// Calculate ORDER BY
 		$sorder = (int)$g['sort_order'] ? "DESC" : "ASC";
 		
-		switch ( (int)$g['sort_field'] ){
 		
-			case 0 :	// When Uploaded
-				$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
-				break;
-			case 1 :	// Custom Sort
-				$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date '. $sorder;
-				break;
-			case 2 :	// Custom Fields
-				$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
-				break;
-			default :	// When Uploaded
-				$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
-				break;
+		switch ($g['gallery_type']){
+			
+			case 20:
+				$sortby = 'RAND() ';
+				if(!(int)$g['limit_images']){
+					$g['limit_images'] = 8;
+				}
 				
+				$sortby .= "LIMIT ". (int)$g['limit_images'];
+			
+				break;
+			
+			case 30:
+				$sortby = PSIMAGESTABLE.'.created_date DESC ';
+				if(!(int)$g['limit_images']){
+					$g['limit_images'] = 8;
+				}
+				
+				$sortby .= "LIMIT ". (int)$g['limit_images'];
+			
+				break;
+			
+			default :
+
+				switch ( (int)$g['sort_field'] ){
+				
+					case 0 :	// When Uploaded
+						$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
+						break;
+					case 1 :	// Custom Sort
+						$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date '. $sorder;
+						break;
+					case 2 :	// Custom Fields
+						$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
+						break;
+					default :	// When Uploaded
+						$sortby = PSIMAGESTABLE.'.created_date ' 
+							. $sorder . ', '.PSIMAGESTABLE.'.seq';
+						break;
+					
+				}				
+			
 		}
+		
+		
 				
 		// Add the WHERE clause for the Smart Galleries
-		if ( $g['smart_gallery'] && is_array($g['smart_where'] ) ){
+		if ( $g['smart_gallery'] ){
 			
-			$swhere[] = $this->getSmartWhereField( $g['smart_where'] );
+			if( is_array($g['smart_where'] ) ){
+				$swhere[] = $this->getSmartWhereField( $g['smart_where'] );
 				
-			$sqlWhere = " WHERE " . implode( " AND ", $swhere );			
+				$sqlWhere = " WHERE " . implode( " AND ", $swhere );			
+			} else {
+			
+				$sqlWhere = " WHERE 1=1 ";
+			
+			}
 		
 		} else {
-		
+			
 			$sqlWhere = " WHERE gallery_id = " . (int)$g['gallery_id'];
 		
 		}
@@ -1616,7 +1815,7 @@ class BWBPS_Layout{
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'
 				.$wpdb->users.'.user_login,'
-				.$wpdb->users.'.user_url'
+				.$wpdb->users.'.user_url' . $gallery_selections
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
@@ -1632,7 +1831,7 @@ class BWBPS_Layout{
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'
 				.$wpdb->users.'.user_login,'
-				.$wpdb->users.'.user_url'
+				.$wpdb->users.'.user_url' . $gallery_selections
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
@@ -1641,10 +1840,9 @@ class BWBPS_Layout{
 				);			
 				
 		}
-				
+					
 		$images = $wpdb->get_results($sql, ARRAY_A);
-		
-				
+						
 		return $images;
 	}
 	
@@ -1655,10 +1853,13 @@ class BWBPS_Layout{
 	 * @param (str) $url
 	 */
 	function getSmartWhereField( $swhere ){
+	
 		
 		if( is_array($swhere) ){
-			$key = key($swhere);
-			$val = $swhere[$key];
+			//$key = key($swhere);
+			//$val = $swhere[$key];
+			
+			foreach ($swhere as $key => $val){
 			
 			switch ($key) {
 				case "user_id" :
@@ -1677,6 +1878,14 @@ class BWBPS_Layout{
 						
 					}
 					break;
+				
+				default :
+					
+					$ret = $key . " = '" . $val . "'" ;
+					
+					break;
+			}
+			
 			}
 		
 		}

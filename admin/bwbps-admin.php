@@ -288,17 +288,19 @@ class BWBPS_Admin{
 			$ps['img_perpage'] = (int)$_POST['ps_img_perpage'];
 			$ps['img_perrow'] = (int)$_POST['ps_img_perrow'];
 			
+			$ps['anchor_class'] = esc_attr($_POST['ps_anchor_class']);
+			
 			if(isset($_POST['ps_img_rel'])){
-				$ps['img_rel'] = attribute_escape($_POST['ps_img_rel']);
+				$ps['img_rel'] = esc_attr($_POST['ps_img_rel']);
 			}
 			if(isset($_POST['ps_add_text'])){
-				$ps['add_text'] = attribute_escape($_POST['ps_add_text']);
+				$ps['add_text'] = esc_attr($_POST['ps_add_text']);
 			}
 			if(isset($_POST['ps_upload_form_caption'])){
-				$ps['upload_form_caption'] = attribute_escape($_POST['ps_upload_form_caption']);
+				$ps['upload_form_caption'] = esc_attr($_POST['ps_upload_form_caption']);
 			}
 			if(isset($_POST['ps_img_class'])){
-				$ps['img_class'] = attribute_escape($_POST['ps_img_class']);
+				$ps['img_class'] = esc_attr($_POST['ps_img_class']);
 			}
 			if(isset($_POST['ps_show_imgcaption'])){
 				$ps['show_imgcaption'] = (int)$_POST['ps_show_imgcaption'];
@@ -341,11 +343,11 @@ class BWBPS_Admin{
 			$ps['imglinks_postpages_only'] = isset($_POST['ps_imglinks_postpages_only']) ? 1 : 0;
 						
 			if(isset($_POST['ps_use_alt_ajaxscript']) ){
-				if(!file_exists(WP_PLUGIN_DIR.'/'.attribute_escape($_POST['ps_alt_ajaxscript']))){
+				if(!file_exists(WP_PLUGIN_DIR.'/'.esc_attr($_POST['ps_alt_ajaxscript']))){
 					if($this->message){
 						$this->message .= "<br/>";
 					}
-					$this->message .= "<span style='color:red'>WARNING - Alternate Ajax Upload File does not exist:<br/>".WP_PLUGIN_DIR.'/'.attribute_escape($_POST['ps_alt_ajaxscript'])."
+					$this->message .= "<span style='color:red'>WARNING - Alternate Ajax Upload File does not exist:<br/>".WP_PLUGIN_DIR.'/'.esc_attr($_POST['ps_alt_ajaxscript'])."
 					</span>";
 				}
 			}
@@ -353,7 +355,7 @@ class BWBPS_Admin{
 				isset($_POST['ps_use_alt_ajaxscript']) ? 1 : 0;	
 						
 			$ps['alt_ajaxscript'] = 
-				attribute_escape($_POST['ps_alt_ajaxscript']);
+				esc_attr($_POST['ps_alt_ajaxscript']);
 				
 			$ps['alt_javascript'] = 
 				$this->cleanSlashes($_POST['ps_alt_javascript']);
@@ -372,7 +374,7 @@ class BWBPS_Admin{
 			
 			$ps['css_file'] = trim($_POST['ps_css_file']);
 			$ps['date_format'] = trim($_POST['ps_date_format']);
-			$ps['upload_authmessage'] = attribute_escape(stripslashes(trim($_POST['ps_upload_authmessage'])));
+			$ps['upload_authmessage'] = esc_attr(stripslashes(trim($_POST['ps_upload_authmessage'])));
 			
 			$ps['sort_field'] = (int)$_POST['ps_sort_field'];
 			
@@ -386,6 +388,10 @@ class BWBPS_Admin{
 			$ps['contrib_gal_on'] = isset($_POST['ps_contrib_gal_on']) ? 1 : 0;
 			$ps['suppress_contrib_posts'] = isset($_POST['ps_suppress_contrib_posts']) ? 1 : 0;
 			
+			/* Moderation */
+			$ps['mod_approve_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_approve_msg'])));
+			$ps['mod_reject_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_reject_msg'])));
+			$ps['mod_send_msg'] = isset($_POST['ps_mod_send_msg']) ? 1 : 0;
 
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
@@ -429,8 +435,9 @@ class BWBPS_Admin{
 			$d['image_width'] = (int)$_POST['gal_image_width'];
 			$d['image_height'] = (int)$_POST['gal_image_height'];
 			
-			$d['img_rel'] = $_POST['gal_img_rel'];
-			$d['add_text'] = attribute_escape($_POST['gal_add_text']);
+			$d['anchor_class'] = esc_attr($_POST['gal_anchor_class']);
+			$d['img_rel'] = esc_attr($_POST['gal_img_rel']);
+			$d['add_text'] = esc_attr($_POST['gal_add_text']);
 			$d['upload_form_caption'] = $_POST['gal_upload_form_caption'];
 			$d['img_class'] = $_POST['gal_img_class'];
 			$d['show_imgcaption'] = (int)$_POST['gal_show_imgcaption'];
@@ -596,7 +603,7 @@ if($psOptions['use_advanced'] ==1){
 	<tr>
 		<th><b>Display code:</b></th>
 		<td>[photosmash id=<?php echo $galleryID;?>]
-		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php if($galOptions['post_id']){ echo "<br/>Assiciated with post: ".$galOptions['post_id'];} ?>
+		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php if($galOptions['post_id']){ echo "<br/>Associated with post: ".$galOptions['post_id'];} ?>
 		</td>
 	</tr>
 	
@@ -631,10 +638,18 @@ if($psOptions['use_advanced'] ==1){
 						?>
 						<option value="6" <?php if($galOptions['gallery_type'] == 6) echo 'selected=selected'; ?>>Mixed - Images + YouTube</option>
 						<option value="10" <?php if($galOptions['gallery_type'] == 10) echo 'selected=selected'; ?>>Contributor Gallery</option>
-						
+						<option value="20" <?php if($galOptions['gallery_type'] == 20) echo 'selected=selected'; ?>>Random Images</option>
+						<option value="30" <?php if($galOptions['gallery_type'] == 30) echo 'selected=selected'; ?>>Recent Images</option>
 					</select>
 				</td>
 	</tr>
+	
+	<tr>
+				<th>Display using Layout:</th>
+				<td>
+					<?php echo $layoutsDDL;?>
+				</td>
+	</tr>	
 	
 	<tr>
 				<th>Sort Images by:</th>
@@ -669,6 +684,15 @@ if($psOptions['use_advanced'] ==1){
 					 <em>0 places as many images per row as theme's width allows</em>
 				</td>
 			</tr>
+			
+			
+			<tr>
+				<th>Image link (href) css class:</th>
+				<td>
+					<input type='text' name="gal_anchor_class" value='<?php echo $galOptions['anchor_class']; ?>'/> Set to 'thickbox' to use Thickbox to display images
+				</td>
+			</tr>
+			
 			<tr>
 				<th>"Rel" parameter for image links:</th>
 				<td>
@@ -676,7 +700,7 @@ if($psOptions['use_advanced'] ==1){
 				</td>
 			</tr>
 			<tr>
-				<th>Default image css class:</th>
+				<th>Image css class:</th>
 				<td>
 					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>'/>
 				</td>
@@ -697,7 +721,8 @@ if($psOptions['use_advanced'] ==1){
 
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?>>No caption (thumb links to post)<br/>					
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
@@ -868,12 +893,7 @@ if($psOptions['use_advanced'] ==1){
 ?>
 <div id="bwbps_advanced">
 		<table class="form-table">
-			<tr>
-				<th>Display using Layout:</th>
-				<td>
-					<?php echo $layoutsDDL;?>
-				</td>
-			</tr>
+			
 			<tr>
 				<th>Custom form name:</th>
 				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
@@ -1046,6 +1066,14 @@ if($psOptions['use_customform']){ ?>
 					 <em>0 - as many images/row as theme's width allows</em>
 				</td>
 			</tr>
+			
+			<tr>
+				<th>Image link (href) css class:</th>
+				<td>
+					<input type='text' name="gal_anchor_class" value='<?php echo $galOptions['anchor_class']; ?>'/> Set to 'thickbox' to use Thickbox to display images
+				</td>
+			</tr>
+			
 			<tr>
 				<th>"Rel" parameter for image links:</th>
 				<td>
@@ -1071,7 +1099,8 @@ if($psOptions['use_customform']){ ?>
 						<input type="radio" name="gal_show_imgcaption"  value="6" <?php if($galOptions['show_imgcaption'] == 6) echo 'checked'; ?> />Caption [by] Contributor (link to user submitted url)
 						<br/><hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?> />No caption (thumbs link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?> />Caption (thumbs & captions link to user submitted url)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?> />Caption (thumbs & captions link to user submitted url)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?> />No caption (thumbs link to post)<br/>					
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
@@ -1236,9 +1265,10 @@ if($psOptions['use_customform']){ ?>
 	<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px; position: fixed; top: 0; right: 0;">saving...</span>
 	<ul id="tabs">
 
-		<li><a href="#bwbps_galleryoptions">Gallery Defaults</a></li>
+		<li><a href="#bwbps_galleryoptions">Defaults</a></li>
 		<li><a href="#bwbps_uploading">Uploading</a></li>
-		<li><a href="#bwbps_thumbnails">Thumbs/Images</a></li>
+		<li><a href="#bwbps_moderation">Moderation</a></li>
+		<li><a href="#bwbps_thumbnails">Images</a></li>
 		<li><a href="#bwbps_advanced">Advanced</a></li>
 		<li><a href="#bwbps_specgals">Special Galleries</a></li>
 
@@ -1253,6 +1283,19 @@ if($psOptions['use_customform']){ ?>
 						<option value="1" <?php if($psOptions['auto_add'] == 1) echo 'selected=selected'; ?>>Add to top</option>
 						<option value="2" <?php if($psOptions['auto_add'] == 2) echo 'selected=selected'; ?>>Add to bottom</option>
 					</select>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default Layout:</th>
+				<td>
+					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true);
+					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default layout for displaying images
+					
+					<?php if($psOptions['use_advanced']){
+						echo " - <a href='admin.php?page=editPSHTMLLayouts' title='Layout Editor'>Layout Editor</a>";
+						}
+					?>
 				</td>
 			</tr>
 			
@@ -1291,6 +1334,14 @@ if($psOptions['use_customform']){ ?>
 					 <em>0 places as many images per row as theme's width allows</em>
 				</td>
 			</tr>
+			
+			<tr>
+				<th>Image link (href) css class:</th>
+				<td>
+					<input type='text' name="ps_anchor_class" value='<?php echo $psOptions['anchor_class']; ?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_anchor_class' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Set to 'thickbox' to use Thickbox to display images
+				</td>
+			</tr>
+			
 			<tr>
 				<th>"Rel" parameter for image links:</th>
 				<td>
@@ -1471,6 +1522,33 @@ if($psOptions['use_customform']){ ?>
 			</tr>
 		</table>
 	</div>
+	<div id='bwbps_moderation'>
+		<table class="form-table">
+				
+			<tr>
+				<th>Email contributor on moderation:</th>
+				<td>
+					<input type="checkbox" name='ps_mod_send_msg' <?php if($psOptions['mod_send_msg'] == 1) echo 'checked'; ?>>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Approve Message:</th>
+				<td>
+				
+					<textarea name="ps_mod_approve_msg" cols="60" rows="5"><?php esc_html_e($psOptions['mod_approve_msg']);?></textarea>
+					
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Reject Message:</th>
+				<td>
+					<textarea name="ps_mod_reject_msg" cols="60" rows="5"><?php esc_html_e($psOptions['mod_reject_msg']);?></textarea>
+				</td>
+			</tr>
+		</table>
+	</div>
 	<div id="bwbps_thumbnails">
 		<table class="form-table">
 			
@@ -1564,18 +1642,7 @@ if($psOptions['use_customform']){ ?>
 					<input type="checkbox" name="ps_use_customfields" <?php if($psOptions['use_customfields'] == 1) echo 'checked'; ?>> Use custom fields you define. See custom fields below
 				</td>
 			</tr>
-			<tr>
-				<th>Default Layout:</th>
-				<td>
-					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true);
-					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default layout for displaying images
-					
-					<?php if($psOptions['use_advanced']){
-						echo " - <a href='admin.php?page=editPSHTMLLayouts' title='Layout Editor'>Layout Editor</a>";
-						}
-					?>
-				</td>
-			</tr>
+			
 			<tr>
 				<th>Alternate Ajax Upload Script:</th>
 				<td>
@@ -1856,7 +1923,10 @@ if($psOptions['use_customform']){ ?>
 			if($image->post_id){
 				$galupdate .= "<br/>
 				<span>Edit related post: <a href='post.php?action=edit&post="
-				.$image->post_id."' title='Edit related post.'>". $image->post_id . "</a>";
+				.$image->post_id."' title='Edit related post.'>". $image->post_id . "</a> &nbsp; 
+				<a href='/?p="
+				.$image->post_id."' title='View related post.' target='_blank'>view</a>
+				";
 			}
 			
 			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a> ";

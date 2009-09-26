@@ -85,7 +85,7 @@ class BWBPS_UploadForm{
 				#ui-datepicker-div{z-index: 199;}
 				-->
 		</style>
-        <form id="' . $g["pfx"] . 'bwbps_uploadform" name="bwbps_uploadform" method="post" action="" style="margin:0px;" class="bwbps_uploadform">
+        <form id="' . $g["pfx"] . 'bwbps_uploadform" name="bwbps_uploadform" method="post" enctype="multipart/form-data" action="" style="margin:0px;" class="bwbps_uploadform">
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_ajax_nonce" name="_ajax_nonce" value="'.$nonce.'" />
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formname" name="bwbps_formname" value="'.$formName.'" />
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formtype" name="bwbps_formtype" value="'.(int)$g['gallery_type'].'" />

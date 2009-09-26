@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.4.01
+Version: 0.4.02
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -29,12 +29,12 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.4.01');
+define('PHOTOSMASHVERSION', '0.4.02');
 
 
 //Database Verifications
-define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_images');
-define('PHOTOSMASHVERIFYFIELD', 'wp_attach_id');
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_galleries');
+define('PHOTOSMASHVERIFYFIELD', 'anchor_class');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -143,8 +143,46 @@ if( ! function_exists('esc_attr_e') ){
 	function esc_attr_e($string){
 		
 		if( function_exists('attribute_escape') ){
-			echo ($string);
+			echo attribute_escape($string);
 		} 
+	
+	}
+}
+
+if( ! function_exists('esc_html__') ){
+
+	function esc_html__($string){
+		
+		if( function_exists('wp_specialchars') ){
+			return wp_specialchars($string);
+		} else {
+			return esc_attr__($string);;
+		}
+	
+	}
+}
+
+if( ! function_exists('esc_html') ){
+
+	function esc_html($string){
+		
+		if( function_exists('wp_specialchars') ){
+			return wp_specialchars($string);
+		} else {
+			return esc_attr($string);;
+		}
+	
+	}
+}
+
+if( ! function_exists('esc_html_e') ){
+	function esc_html_e($string){
+		
+		if( function_exists('wp_specialchars') ){
+			echo wp_specialchars($string);
+		} else {
+			esc_attr_e($string);
+		}
 	
 	}
 }
@@ -208,7 +246,9 @@ class BWB_PhotoSmash{
 		if( $this->psOptions['contrib_gal_on'] ){
 			add_filter('the_posts',  array(&$this,'displayContributorGallery') );
 		
-			add_filter('the_excerpt',array(&$this,'fixExcerptGallery') ); 
+			add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
+			
+			add_filter('the_permalink',array(&$this,'fixAuthorLink') ); 
 		}
 
 	}
@@ -280,6 +320,7 @@ class BWB_PhotoSmash{
 				'image_aspect' => 0,
 				'image_width' => 0,
 				'image_height' => 0,
+				'anchor_class' => '',
 				'img_rel' => 'lightbox[album]',
 				'add_text' => 'Add Photo',
 				'gallery_caption' => 'PhotoSmash Gallery',
@@ -320,6 +361,9 @@ class BWB_PhotoSmash{
 				'poll_id' => 0,
 				'rating_position' => 0,
 				'rating_allow_anon' => 0,
+				'mod_send_msg' => 0,
+				'mod_approve_msg' => "Thanks for submitting your image to [blogname]! It has been accepted and is now visible in the appropriate galleries.",
+				'mod_reject_message' => "Sorry, the image you submitted to [blogname] has been reviewed, but did not meet our submission guidelines.  Please review our guidelines to see what types of images we accept.  We look forward to your future submissions.",
 				'version' => PHOTOSMASHVERSION
 		);
 	
@@ -538,10 +582,23 @@ class BWB_PhotoSmash{
 		
 		$ret .= "<table><tr>";
 		$i = 0;
+		
+		$uploads = wp_upload_dir();
+		
 		foreach($results as $row)
 		{
+		
+			if( !$row->thumb_url ){
+				
+					$row->thumb_url = PSTHUMBSURL.$row->file_name;
+			
+			} else {
+				$row->thumb_url = $uploads['baseurl'] . '/' . $row->thumb_url;
+			
+			}
+		
 			$ret .= "<td><a href='".get_bloginfo('url')
-		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".PSTHUMBSURL.$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
+		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".$row->thumb_url."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
 			$i++;
 			if($i==4){
 				$ret .="</tr><tr>";
@@ -664,7 +721,12 @@ function shortCodeGallery($atts, $content=null){
 			'thickbox' => false,
 			'form_visible' => false,
 			'single_layout' => false,
-			'author' => false
+			'author' => false,
+			'images' => 0,
+			'thumb_height' => 0,
+			'thumb_width' => 0,
+			'no_signin_msg' => false,
+			'where_gallery' => false // This is used with Random/Recent Galleries to limit selection to a single gallery
 		),$atts));
 		
 		
@@ -681,37 +743,84 @@ function shortCodeGallery($atts, $content=null){
 				$id=$gal_id;
 			}
 		}
-				
+		
+		
 		
 		$galparms = $atts;
 		
-		// Set up for contributor gallery
-		if( $gallery_type == 'contributor' ){
-			$id = 0;
-			$galparms['gallery_type'] = 10;
-		}
+		switch ( $gallery_type ){
+			
+			case 'contributor' :
+				
+				$id = 0;
+				$galparms['gallery_type'] = 10;	
+				
+				$galparms['gallery_name'] = 'Contributor Gallery';
+			
+				if($author){
+				
+					$galparms['author'] == $author;
+					$galparms['smart_where'] = array ( "user_id" => $author );
+				
+				}
+				
+				$galparms['smart_gallery'] = true;
+						
+				break;
+				
+			case 'random' :
+				$galparms['gallery_type'] = 20;	
+
+				break;
+				
+			case 'recent' :
+				$galparms['gallery_type'] = 30;	
+				
+				break;
+				
+			default :
+			
+				break;	
 		
-		if( $galparms['gallery_type'] == 10 ){
-			
-			$galparms['gallery_name'] = 'Contributor Gallery';
-			
-			if($author){
-			
-				$galparms['author'] == $author;
-				$galparms['smart_where'] = array ( "user_id" => $author );
-			
-			}
-			
-			$galparms['smart_gallery'] = true;
-			
-			
-		}
+		}	
+		
 		
 		$galparms['gallery_id'] = (int)$id;
 		$galparms['photosmash'] = $galparms['gallery_id'];
+		
+		$galparms['no_signin_msg'] = $no_signin_msg;	//used with $psOptions['upload_authmessage'] to not show signin message if this is true in shortcode
 	
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
+		
+		
+		/*
+		 *	Random/Recent Gallery settings
+		*/
+		if($g['gallery_type'] == 20 || $g['gallery_type'] == 30){
+			
+			$g['smart_gallery'] = true;
+									
+			if(!$images){
+				$images = 8;
+			}
+			$g['limit_images'] = (int)$images;
+					
+			if((int)$where_gallery){
+				$g['smart_where'] = array ( PSIMAGESTABLE.".gallery_id" => (int)$where_gallery );
+			}
+			
+			$no_form = true;
+			
+		}
+		
+		if($thumb_height){
+			$g['thumb_height'] = (int)$thumb_height;
+		}
+		
+		if($thumb_width){
+			$g['thumb_width'] = (int)$thumb_width;
+		}
 				
 		$g['use_thickbox'] = $thickbox;
 		$g['form_visible'] = $form_visible;
@@ -766,7 +875,7 @@ function shortCodeGallery($atts, $content=null){
 					
 				} else {
 				
-					if(trim($this->psOptions['upload_authmessage'])){
+					if(trim($this->psOptions['upload_authmessage'] && !$g['no_signin_msg'])){
 						
 						$this->psOptions['upload_authmessage'] = str_replace("&#039;","'",$this->psOptions['upload_authmessage']);
 						$this->psOptions['upload_authmessage'] = str_replace("&quot;",'"',$this->psOptions['upload_authmessage']);
@@ -810,7 +919,7 @@ function shortCodeGallery($atts, $content=null){
 		//Check duplicate gallery on page...only allow once
 		if(is_array($this->loadedGalleries) 
 			&& in_array($post->ID."-".$g['gallery_id'] 
-			, $this->loadedGalleries)){
+			, $this->loadedGalleries) && !$g['gallery_type'] == 20){
 
 			//Bad Gallery ID was provided.	
 			$ret = "Duplicate gallery: " . $g['photosmash']; 
@@ -818,7 +927,13 @@ function shortCodeGallery($atts, $content=null){
 		}else{
 								
 			if($layout){
-				$layoutName = trim($layout);
+				$layoutName = strtolower(trim($layout));
+				
+				if($layoutName == "std" || $layoutName == "standard"){
+					$layoutName = false;
+					$g['layout_id'] = 0;
+				}
+				
 			} else { $layoutName = false; }
 				
 			
@@ -844,7 +959,7 @@ function getGallery($g){
 	//Define Galleries table name for use in queries
 
 	//See if Gallery is Cached
-	if($g['gallery_id'] && is_array($this->galleries) && array_key_exists($g['gallery_id'], $this->galleries) && $g['gallery_type'] <> 10)
+	if($g['gallery_id'] && is_array($this->galleries) && array_key_exists($g['gallery_id'], $this->galleries) && $g['gallery_type'] <> 10 && $g['gallery_type'] <> 20 && $g['gallery_type'] <> 30)
 	{
 		// Set $g = to the cached gallery, but keep any values that $g already has
 		foreach ( $this->galleries[$g['gallery_id']] as $key => $option ){
@@ -860,54 +975,110 @@ function getGallery($g){
 		
 		
 		//Is it a Contributor Gallery???
-		if( $g['gallery_type'] == 10 ){
+		switch ((int)$g['gallery_type']) {
 			
-			$gquery = false;
-			if($g['gallery_id']){
-			
-				$g['gallery_id'] = (int)$this->psOptions['contributor_gallery'];
+			case 10 :
+				$gquery = false;
+				if($g['gallery_id']){
 				
-				$gquery = $wpdb->get_row(
-					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-						." WHERE gallery_id = %d AND gallery_type = 10",$g['gallery_id']),ARRAY_A);
-			
-			}
-			
-			if( !$gquery ){
-			
-				$gquery = $wpdb->get_row(
-					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-						." WHERE gallery_type = 10 AND status = 1 "),ARRAY_A);
-			
-			}
-			
-			if( !$gquery ){
-	
-				$g['gallery_name'] = 'Contributor Gallery';
-			
-			}
-			
-				
-		} else {
-	
-			//Get the specified gallery params if valid gallery_id
-			if($g['gallery_id']){
-				//Get gallery params based on Gallery_ID
-				$gquery = $wpdb->get_row(
-					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-						." WHERE gallery_id = %d",$g['gallery_id']),ARRAY_A);
+					$g['gallery_id'] = (int)$this->psOptions['contributor_gallery'];
 					
-				//If query is false, then Bad Gallery ID provided...alert user
-				if(!$gquery){$g['gallery_id'] = false; return $g;}
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 10",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 10 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
 		
-			} else {
+					$g['gallery_name'] = 'Contributor Gallery';
+				
+				}
+				
+				break;
 			
-				//Get gallery params based on Post_ID
-				$gquery = $wpdb->get_row(
-					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-						." WHERE post_id = %d",$post->ID),ARRAY_A);
-					
-			}
+			case 20 : // Random images
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 20",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 20 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'Random Images';
+				
+				}
+				
+				break;
+			
+			case 30 : // Recent images
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 30",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 30 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'Recent Images';
+				
+				}
+				
+				break;
+
+			
+				
+			default :
+	
+				//Get the specified gallery params if valid gallery_id
+				if($g['gallery_id']){
+					//Get gallery params based on Gallery_ID
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d",$g['gallery_id']),ARRAY_A);
+						
+					//If query is false, then Bad Gallery ID provided...alert user
+					if(!$gquery){$g['gallery_id'] = false; return $g;}
+			
+				} else {
+				
+					//Get gallery params based on Post_ID
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE post_id = %d",$post->ID),ARRAY_A);
+						
+				}
 		
 		}
 		
@@ -968,6 +1139,9 @@ function getGallery($g){
 			$data['contrib_role'] =  isset($g['contrib_role']) ? (int)$g['contrib_role'] : $psoptions['contrib_role'];
 			$data['img_rel'] =  $g['img_rel'] ? $g['img_rel'] : $psoptions['img_rel'];
 			$data['img_class'] =  $g['img_class'] ? $g['img_class'] : $psoptions['img_class'];
+			
+			$data['anchor_class'] =  $g['anchor_class'] ? $g['anchor_class'] : $psoptions['anchor_class'];
+			
 			if($g['img_status'] === 0 || $g['img_status'] == 1){
 				$data['img_status'] = $g['img_status'];
 			} else {
@@ -1013,7 +1187,7 @@ function getGallery($g){
 			$wpdb->insert(PSGALLERIESTABLE, $data); //Insert into Galleries Table
 			$g = $data;
 			$g['gallery_id'] = $wpdb->insert_id;
-			
+						
 			//Cache the new gallery
 			$this->galleries[$g['gallery_id']] = $g;
 			
@@ -1579,15 +1753,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	function displayContributorGallery($theposts){
 			
 		if(is_author()){
-						
-			global $wp_rewrite;
-			
+												
 			$author = (int) get_query_var( 'author' );
 			
 			$author_name = get_the_author_meta(  'user_nicename', $author );
 			
-			$authorpg = $wp_rewrite->author_base ."/" . $author_name;
-			
+			$authorpg = get_author_posts_url($author);				
 			
 			$d = date( 'Y-m-d H:i:s' );
 			
@@ -1605,7 +1776,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 				$newpost->comment_status = 'closed';
 				$newpost->ping_status = 'closed';
 				$newpost->post_password = '';
-				$newpost->post_name = $authorpg;
+				$newpost->post_name = $author;
 				$newpost->to_ping = '';
 				$newpost->pinged = '';
 				$newpost->post_modified = $d;
@@ -1618,6 +1789,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 				$newpost->post_mime_type = '';
 				$newpost->comment_count = 0;
 				$newpost->photosmash = 'author';
+				$newpost->photosmash_link = $auhtorpg;
+				
 				
 			if( $this->psOptions['suppress_contrib_posts'] ){
 				
@@ -1701,6 +1874,17 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		}	
 	}
 	
+	function fixAuthorLink($perma){
+		global $post;
+		
+		if($post->photosmash == 'author') {		
+			
+			return get_author_posts_url($post->post_name);				;
+		} else {
+			return $perma;
+		}	
+	}
+	
 	
 	/**
 	 * Injects JavaScript into the Footer - called by PhotoSmash through wp_footer hook
@@ -1766,7 +1950,17 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			".$js;
 		
 		}
-	}	
+	}
+	
+	/**
+	 * Load the PhotoSmash WIDGET
+	 *
+	 */
+	function loadPSWidgets(){
+		require_once('widgets/bwbps-widget.php');
+		register_widget( 'PhotoSmash_Widget' );
+	
+	}
 	
 	
 } //End of BWB_PhotoSmash Class
@@ -1827,5 +2021,11 @@ add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
 add_shortcode('photosmash', array(&$bwbPS, 'shortCodeGallery'));
 
 add_shortcode('psmash', array(&$bwbPS, 'shortCodes'));
+
+if( version_compare($wp_version,"2.8", ">=" ) ){
+	//Load the PhotoSmash Widget
+	add_action( 'widgets_init', array(&$bwbPS, 'loadPSWidgets') );
+
+}
 
 ?>

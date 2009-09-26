@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.6
 Tested up to: 2.8.4
-Stable tag: 0.4.01
+Stable tag: 0.4.02
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -75,6 +75,19 @@ It should be relatively straight forward to change the look and feel through thi
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.4.02 - 09/26/2009 =
+
+    * Added THE Widget!! Display Random, Recent, or normal galleries.  ONLY WORKS WITH WP 2.8+. PhotoSmash will continue to work with versions back to 2.6, but this widget uses the new Widget API available in WP 2.8.
+    * Added a new default Custom Layout for the Widget.  You can use any layout you want, but I built one that should (HOPEFULLY!!!) work well.  It can be used in regular galleries too.  It's called Std_Widget
+    * Added Recent images gallery type.  Use shortcode:  [photosmash gallery_type=recent images=10 where_gallery=185 ] , use any # of images you want, defaults to 8 if left blank.  "where_gallery" lets you specify a particular gallery to pull images from...optional.
+    * Added Random images gallery type. Use shortcode:  [photosmash gallery_type=random images=10 ] The images and where_gallery attributes above can be used here too.
+    * Added option for setting CSS Class on the 'a href' for images...facilitates using Thickbox to display images instead of Lightbox or Shadowbox.  Make sure you change the Rel if you have both Thickbox and Lightbox/Shadowbox activated at the same time, otherwise Shadowbox overlays the thickbox...not pretty ;-)
+    * Fixed paging for text/ad inserts using the unreleased PhotoSmash Extend product.
+    * Fixed paging for Contributor (author) galleries.
+    * Added ability to send emails upon Approve/Reject of images in moderation.
+
+
 = 0.4.01 – 09/04/2009 =
 
     * Added ability to Import images to PhotoSmash galleries from the WordPress Media Library.  This lets you use the WP Media uploader (multiple simultaneous uploads) in Admin, then import them into galleries.

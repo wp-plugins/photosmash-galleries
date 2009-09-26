@@ -429,3 +429,23 @@ div.bwbps_pag_2{
 *:first-child+html .ui-tabs-nav  { /* @ IE 7 Standards Mode - do not group selectors, otherwise IE 6 will ignore complete rule (because of the unknown + combinator)... */
     display: inline-block;
 }
+
+/* Widget CSS */
+
+div.bwbps_image  {
+float: left;
+display: inline;
+padding: 5px;
+border: 1px #e0e0e0 solid;
+border-color: #ddd #bbb #aaa #ccc;
+background-color: #f5f5f5;
+margin: 3px;
+}
+
+.bwbps_image  img{
+  border: 1px #ddd solid;
+}
+.bwbps_image img:hover{
+border-color: #999;
+opacity: 0.9;
+}

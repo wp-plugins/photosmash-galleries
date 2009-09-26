@@ -260,7 +260,6 @@ class BWBPS_Uploader{
 		$basename = basename($file['file']);
 				
 		$this->json['image_url'] = $relpath . $basename;
-		$this->json['image_fullurl'] = $uploads['baseurl'] . '/' . $this->json['image_url'];
 		$this->json['image_name'.$this->imageNumber] = $basename;
 		
 		// Create Thumbnail & Medium sizes
@@ -271,6 +270,9 @@ class BWBPS_Uploader{
 		$this->json['thumb_fullurl'] = $uploads['baseurl'] . '/'. $this->json['thumb_url'];
 		
 		$this->createResized($g, 'medium', $file, $uploads, $relpath );
+		
+		$this->createResized($g, 'image', $file, $uploads, $relpath );
+		$this->json['image_fullurl'] = $uploads['baseurl'] . '/' . $this->json['image_url'];
 		
 		$this->json['succeed'] = "true";
 		
@@ -1014,10 +1016,23 @@ class BWBPS_Uploader{
 		
 		$ret .= "<table><tr>";
 		$i = 0;
+		
+		$uploads = wp_upload_dir();
+		
 		foreach($results as $row)
 		{
+		
+			if( !$row->thumb_url ){
+				
+					$row->thumb_url = PSTHUMBSURL.$row->file_name;
+			
+			} else {
+				$row->thumb_url = $uploads['baseurl'] . '/' . $row->thumb_url;
+			
+			}
+		
 			$ret .= "<td><a href='".get_bloginfo('url')
-		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".PSTHUMBSURL.$row->file_name."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
+		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".$row->thumb_url."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
 			$i++;
 			if($i==4){
 				$ret .="</tr><tr>";
@@ -1087,6 +1102,8 @@ class BWBPS_Uploader{
 			$d['upload_form_caption'] = $data['upload_form_caption'] ? $data['upload_form_caption'] : $this->psOptions['upload_form_caption'];
 			
 			$d['img_class'] = $data['img_class'] ? $data['img_class'] : $this->psOptions['img_class'];
+			
+			$d['anchor_class'] = $data['anchor_class'] ? $data['anchor_class'] : $this->psOptions['anchor_class'];
 			
 			$d['show_imgcaption'] = $data['show_imgcaption'] ? (int)$data['show_imgcaption'] : (int)$this->psOptions['show_imgcaption'];
 			

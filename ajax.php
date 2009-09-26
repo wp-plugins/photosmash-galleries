@@ -13,23 +13,37 @@ if(!function_exists('json_encode')){
 
 $bwbpsuploaddir = wp_upload_dir();
 
+//Set the Upload Path
+define('PSBLOGURL', get_bloginfo('wpurl')."/");
+define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
+
+define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
+define('PSIMAGESPATH2',PSUPLOADPATH."/bwbps");
+define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
+
+define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
+define('PSTHUMBSPATH2',PSUPLOADPATH."/bwbps/thumbs");
+define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
+
+define('PSDOCSPATH',PSUPLOADPATH."/bwbps/docs/");
+define('PSDOCSPATH2',PSUPLOADPATH."/bwbps/docs");
+define('PSDOCSURL',PSIMAGESURL."docs/");
+
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
 define("PSRATINGSTABLE", $wpdb->prefix."bwbps_imageratings");
 define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
 define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
 define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
 
-define('PSUPLOADPATH', $bwbpsuploaddir['basedir']);
-define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
-define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
 
 class BWBPS_AJAX{
 	
 	var $psUploader;
 	var $allowNoImg = false;
+	var $psOptions;
 	
 	function BWBPS_AJAX(){
-
+		$this->psOptions = $this->getPSOptions();
 		if(isset($_POST['action']) && $_POST['action']){
 			$action = $_POST['action'];
 		} else {
@@ -128,19 +142,37 @@ class BWBPS_AJAX{
 	function approveImage(){
 		global $wpdb;
 		if(current_user_can('level_10')){
+			
+			$json['image_id'] = (int)$_POST['image_id'];
+			
+			//Do this before we update status, so we only do unmoderated images
+			$this->alertContributor( 1, $json['image_id'] );
 		
 			$data['status'] = 1;
 			$data['alerted'] = 1;
-			$json['image_id'] = (int)$_POST['image_id'];
+			
 			$where['image_id'] = $json['image_id'];
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 			$json['action'] = 'approved';
 			$json['deleted'] = '';
-					
+								
 			echo json_encode($json);
 			return;
 		}else {$json['status'] = -1;}
 		echo json_encode($json);
+	}
+	
+	function alertContributor($approved, $img_id){
+			
+		if($this->psOptions['mod_send_msg']){
+			if($approved){
+				$msg = $this->psOptions['mod_approve_msg'];
+			} else {
+				$msg = $this->psOptions['mod_reject_msg'];
+			}
+			
+			$this->sendMsg($msg, $img_id, $approved);
+		}	
 	}
 	
 	function markImageReviewed(){
@@ -222,6 +254,9 @@ class BWBPS_AJAX{
 					}
 					
 				}
+				
+				//Do this before we delete it, or we can't get the user ID
+				$this->alertContributor( 0, $json['image_id'] );
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
 					PSIMAGESTABLE.' WHERE image_id = %d', $imgid ));
@@ -252,6 +287,7 @@ class BWBPS_AJAX{
 				if( !$filename ){ $filename = ""; } else { $filename = " - ".$filename; }
 				$json['action'] = 'deleted'.$filename;
 				$json['deleted'] = 'deleted';
+				
 				
 			} else {$json['status'] = 0;}
 		} else {
@@ -335,9 +371,7 @@ class BWBPS_AJAX{
 			return;
 		}
 		
-		$gflds = $this->getGallerySettingFields();
-		$galflds = $gflds['n'];
-		$galtypes = $gflds['t'];
+		
 			
 		$json['message'] = 'Invalid field name.';
 		if(!isset($_POST['field_name']) || strlen($_POST['field_name']) < 3){
@@ -347,15 +381,21 @@ class BWBPS_AJAX{
 		
 		$field = substr($_POST['field_name'], 3);
 		
-		if(!is_array($galflds) || !in_array($field, $galflds)){
+		$fld = $this->getGallerySettingFields($field);
+				
+		if(!$fld){
 			echo json_encode($json);
 			return;
 		}
 		
-		$type = $galtypes[array_search($_POST['field_name'], $galflds)];
+		$galflds = $fld['type'];
+		$isint = strpos($galflds, 'int');
+		
+		if($isint === false){ } else { $isint = true; }
 		
 		
-		if($type == int){
+		if($isint){
+			
 			if($_POST['field_value'] == 'true'){ 
 				$data[$field] = 1;		
 			} else {
@@ -379,21 +419,85 @@ class BWBPS_AJAX{
 		return;
 	}
 	
-	function getGallerySettingFields(){
+	function getGallerySettingFields($fld){
 		global $wpdb;
-		$sql = "SELECT * FROM ".PSGALLERIESTABLE." LIMIT 1";
 		
-		$ret = $wpdb->get_row($sql);
+		$sql = "SHOW COLUMNS FROM ".PSGALLERIESTABLE . " LIKE '". $fld ."'";
+			
+		$ret = $wpdb->get_results($sql);
+	
+		return $ret;
+	}
+	
+	//Returns the PhotoSmash Defaults
+	function getPSOptions()
+	{
+		$psOptions = get_option("BWBPhotosmashAdminOptions");
 		
-		foreach($wpdb->get_col_info('name') as $name){
-			$colname[] = $name;
+		return $psOptions;
+	}
+	
+	//Send email alerts for new images
+	function sendMsg($msg, $img_id, $approve=false, $unapproved_only=true)
+	{
+		global $wpdb;
+				
+		if( $unapproved_only ){
+			$status_where = " AND " . PSIMAGESTABLE .".status < 0 ";
 		}
-		foreach($wpdb->get_col_info('type') as $type){
-			$coltype[] = $type;
+						
+		$sql = "SELECT ".$wpdb->users.".user_email, ".PSIMAGESTABLE
+			. ".* FROM ".PSIMAGESTABLE." JOIN "
+			. $wpdb->users. " ON " . $wpdb->users . ".ID = "
+			. PSIMAGESTABLE . ".user_id WHERE "
+			. PSIMAGESTABLE . ".image_id = " . (int)$img_id . $status_where;
+												
+		$row = $wpdb->get_row($sql);
+		
+		
+		if(!is_object($row)){ return; }
+				
+		$email = $row->user_email;
+		if(!trim($email)) return;
+		
+		$post_id = $row->post_id;
+		
+		if( $approve && $row->file_type === "0" ){
+		
+			$uploads = wp_upload_dir();	
+			
+			if( !$row->thumb_url ){
+				$row->thumb_url = PSTHUMBSURL.$row->file_name;
+			} else {
+				$row->thumb_url = $uploads['baseurl'] . '/' . $row->thumb_url;
+			}		
+						
+			$imglink = "<img src='" . $row->thumb_url . "' />";
+			if($row->post_id){			
+				$plink = get_permalink($row->post_id);
+				
+				$imglink = "<a href='". $plink . "' title='View post'>"
+					. $imglink . "</a>";
+					
+			}
+			
 		}
-		$c['n'] = $colname;
-		$c['t'] = $coltype;
-		return $c;
+		
+		$imgcaption = $row->image_caption ? $row->image_caption : "<em>missing</em>";
+		
+		$msg = str_replace('[blogname]', get_bloginfo("site_name" ), $msg);
+		
+		$msg .= "<div style='margin-top: 30px;'><p>Image caption: " . $row->image_caption
+			. "</p>" . $imglink . "</div>";
+			
+		
+		$admin_email = get_bloginfo( "admin_email" );
+		
+ 		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
+ 		 		
+ 		$accepted = $approve ? "Accepted" : "Rejected";
+ 		wp_mail($email, "Image has been ". $accepted, $msg, $headers );
+				
 	}
 
 }

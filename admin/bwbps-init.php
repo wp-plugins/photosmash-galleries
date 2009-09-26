@@ -112,6 +112,7 @@ class BWBPS_Init{
 				add_text VARCHAR(250),
 				upload_form_caption VARCHAR(250),
 				contrib_role TINYINT(1) NOT NULL,
+				anchor_class VARCHAR(255),
 				img_rel VARCHAR(255),
 				img_class VARCHAR(255),
 				img_perrow TINYINT(1),
@@ -309,9 +310,45 @@ class BWBPS_Init{
 				PRIMARY KEY  (id)
 				)  $charset_collate;";
 			dbDelta($sql);
+			
+		//Load Preloaded Layouts, Forms, etc
+		$this->insertPreloads();
 						
 		//Neeed to Set PS Default Options
 		$this->getPSDefaultOptions();
+	}
+	
+	
+	function insertPreloads(){
+		
+		global $wpdb;
+		
+		if(!$wpdb->get_var("SELECT layout_id FROM " 
+			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'Std_Widget'")){
+		
+			$d['layout_name'] = 'Std_Widget';
+			
+			$d['cells_perrow'] = 0;
+			$d['layout'] = "
+			<div class='bwbps_image'>[thumb_linktoimage]</div>
+			";
+			$d['alt_layout'] = "";
+			$d['wrapper'] = "";
+			$d['css'] = "";
+			
+			$d['pagination_class'] = "bwbps_pagination";
+			
+			//Strip slashes...I think WP adds slashes regardless, so you need to strip them
+			$d['layout'] = stripslashes($d['layout']);
+			$d['alt_layout'] = stripslashes($d['alt_layout']);
+			$d['css'] = stripslashes($d['css']);
+			$d['wrapper'] = stripslashes($d['wrapper']);
+			
+			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
+					
+		}
+	
+	
 	}
 	
 	//Returns an array of default options
