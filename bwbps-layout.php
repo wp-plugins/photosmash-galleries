@@ -203,7 +203,7 @@ class BWBPS_Layout{
 		}
 		
 		if($useAlt){
-			$imgNum = 1;
+			$imgNum = 1;	//for use with single images and you want to use the alternating layout
 		} else {
 			$imgNum = 0;
 		}
@@ -214,8 +214,6 @@ class BWBPS_Layout{
 			//What image # do we begin page with?
 			$lastImg = $pagenum[$g['gallery_id']] * $g['img_perpage'];
 			$startImg = $lastImg - $g['img_perpage'] + 1;
-				
-			
 		} 
 		
 		
@@ -358,10 +356,11 @@ class BWBPS_Layout{
 					}
 					
 					if($layout->cells_perrow){
-						if($imgNum % $layout->cells_perrow == 0){
+						$cellsInRow++;
+						if($cellsInRow % $layout->cells_perrow == 0){
 							$psTable .="<tr>".$psTableRow."</tr>";
 							$psTableRow = "";
-							$imgNum = 0;
+							$cellsInRow = 0;
 						}
 					
 					} else {

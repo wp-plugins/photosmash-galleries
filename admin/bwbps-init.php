@@ -11,7 +11,9 @@ class BWBPS_Init{
 		
 		global $wpdb;
 		
-						
+			$i = 0;
+			$i++;
+			echo "Here $i";
 			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 			
 			if ( $wpdb->has_cap( 'collation' ) ) {
@@ -23,17 +25,19 @@ class BWBPS_Init{
 			
 			$icnt = 0;
 			
-						
+			$i++;
+			echo "Here $i";
+				
 			$table_name = $wpdb->prefix . "bwbps_images";
 			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
 			
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX image_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 					
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX gallery_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 			}
 							
 			
@@ -71,6 +75,8 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
+			$i++;
+			echo "Here $i";
 			
 			//IMAGE CATEGORIES
 			$table_name = $wpdb->prefix . "bwbps_categories";
@@ -81,11 +87,11 @@ class BWBPS_Init{
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX image_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX category_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 			
 			}
 			
@@ -100,6 +106,8 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
+			$i++;
+			echo "Here $i";
 						
 			//Create the Gallery Table
 			$table_name = $wpdb->prefix . "bwbps_galleries";
@@ -148,9 +156,12 @@ class BWBPS_Init{
 				rating_position INT(4),
 				pext_insert_setid INT(4),
 				PRIMARY KEY  (gallery_id))
-				$charset_collate
 				;";
 			dbDelta($sql);
+			
+					$i++;
+			echo " - Here $i";
+	
 			
 			
 			//Drop Old Index
@@ -160,7 +171,7 @@ class BWBPS_Init{
 				//Image Ratings Table
 				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
 					"DROP INDEX image_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 			}
 			
 			//Create the IMAGE RATINGS table (future use)
@@ -195,11 +206,11 @@ class BWBPS_Init{
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX image_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX gallery_poll";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 			
 			}
 			
@@ -283,7 +294,7 @@ class BWBPS_Init{
 			
 				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_lookup ".
 					"DROP INDEX field_id";
-				$wpdb->query($sql);
+				//$wpdb->query($sql);
 				
 			}
 			

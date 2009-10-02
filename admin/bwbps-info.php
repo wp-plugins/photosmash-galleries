@@ -221,6 +221,11 @@ class BWBPS_Info{
 		if(!$isRecall && $aret[0]){
 			$ret = $aret;
 		}
+		
+		$sql = "SHOW COLUMNS FROM ".PHOTOSMASHVERIFYTABLE ;
+	
+		$ret2 = $wpdb->get_results($sql);
+		print_r($ret2);
 		return $ret;
 	}
 	
