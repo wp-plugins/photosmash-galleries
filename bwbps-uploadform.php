@@ -28,6 +28,7 @@ class BWBPS_UploadForm{
 			, 'video_select'
 			, 'youtube_select'
 			, 'done'
+			, 'post_cat'
 			);
 	}
 	
@@ -95,8 +96,25 @@ class BWBPS_UploadForm{
         	<input type="hidden" name="bwbps_post_id" id="' . $g["pfx"] . 'bwbps_post_id" value="'.(int)$post->ID.'" />
         	'.$noimage.'
         	';
-
+			
+		if($g['create_post']){
+			$nonce_post = wp_create_nonce( 'bwbps_create_post' );
+			$ret .= '<input type="hidden" id="' . $g["pfx"] . 'bwbps_post_nonce" name="_createpost_nonce" value="'.$nonce_post.'" />
+				<input type="hidden" id="' . $g["pfx"] . 'bwbps_create_post" name="bwbps_create_post" value="'.$g['create_post'].'" />
+			';
+		}
 		
+		if($g['preview_post']){
+			$ret .= "<input type='hidden' name='bwbps_preview_post' value='1' />
+				";
+		}
+		
+		if($g['post_thumbnail_meta']){
+			$ret .= "
+				<input type='hidden' name='bwbps_post_thumbnail_meta' value='"
+				. $g['post_thumbnail_meta'] ."' />
+				";
+		}
 		return $ret;
 	}
 	
@@ -147,6 +165,20 @@ class BWBPS_UploadForm{
 				</td>
 				</tr>';
 			
+		}
+		
+		if($g['post_cat_show']){
+		
+			$retForm .= '<tr><th>' . $g['post_cat_show'] . ':</th>
+				<td align="left">
+					';
+			
+			$retForm .= $this->getStandardField("[post_cat]", $g);
+			
+			$retForm .='
+				</td>
+				</tr>';
+		
 		}
 		
 		//Add Custom Fields if use_advanced flag is set	
@@ -455,6 +487,64 @@ class BWBPS_UploadForm{
 			case "[category_id]" :
 				$ret = $this->getCurrentCatID();
 				break;
+				
+			case "[post_cat]" :
+				
+				if((int)$g['post_cat_child_of']){
+					$opts['child_of'] = (int)$g['post_cat_child_of'];
+				} else {
+					if((int)$atts['child_of']){
+						$opts['child_of'] = (int)$atts['child_of'];
+					}
+				}
+				
+				if($g['post_cat_exclude']){
+					$opts['exclude'] = $g['exclude'];
+				} else {
+					if($atts['exclude']){
+						$opts['exclude'] = $atts['exclude'];
+					}
+				}
+				
+				if($g['post_cat_selected']){
+					$opts['selected'] = $g['selected'];
+				} else {
+					if($atts['selected']){
+						$opts['selected'] = $atts['selected'];
+					}
+				}
+				
+				if($g['post_cat_depth']){
+					$opts['depth'] = (int)$g['depth'];
+				} else {
+					if((int)$atts['depth']){
+						$opts['depth'] = (int)$atts['depth'];
+					}
+				}
+				
+				if($g['post_cat_single_select']){
+					$opts['name'] = 'bwbps-post-cats';
+					$pc_class = "bwbps-post-cat-single";
+				} else {
+					if($atts['single_select']){
+						$opts['name'] = 'bwbps-post-cats';
+						$pc_class = "bwbps-post-cat-single";
+					} else {
+						$opts['name'] = 'bwbps-post-cats[]';
+						$pc_class = "bwbps-post-cat-form";
+					}
+				}
+				
+				$opts['class'] = $pc_class;
+				$opts['hide_empty'] = 0;
+				$opts['echo'] = 0;
+				if($val){
+					$opts['selected'] = $val;
+				}
+				$opts['hierarchical'] = 1;
+				
+				
+				$ret = wp_dropdown_categories($opts);
 
 			default:
 			

@@ -311,6 +311,7 @@ class BWBPS_FormEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[category_id] - <span style='font-size: 9px;'>displays category id</span></li>
 						
 						<?php echo $custfieldlist;?>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat] - <span style='font-size: 9px;'>PS Extend users only - renders a multi-select dropdown of categories</span></li>
 					</ul>
 				</td>
 			</tr>

@@ -82,6 +82,9 @@ define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash
 
 define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> 
 		<br/>");
+		
+$bwbps_special_msg = "";
+$bwbps_preview_id = 0;
 
 if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 	// if sever did in in a other way
@@ -195,7 +198,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 14;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 15;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -420,7 +423,8 @@ class BWB_PhotoSmash{
 			'category_link',
 			'category_id',
 			'post_id',
-			'allow_no_image'
+			'allow_no_image',
+			'post_cat'
 		);
 		return $ret;
 	}
@@ -731,7 +735,16 @@ function shortCodeGallery($atts, $content=null){
 			'thumb_height' => 0,
 			'thumb_width' => 0,
 			'no_signin_msg' => false,
-			'where_gallery' => false // This is used with Random/Recent Galleries to limit selection to a single gallery
+			'where_gallery' => false, // This is used with Random/Recent Galleries to limit selection to a single gallery
+			'create_post' => false,
+			'preview_post' => false,
+			'post_cat_child_of' => false,
+			'post_cat_exclude' => false,
+			'post_cat_show' => false,	// Supply this with a value that evaluates to true (e.g. something other than 0 or false or '') and it turns on the post categories selection box and is used as the LABEL for the field
+			'post_cat_depth' => 0,
+			'post_cat_selected' => false,
+			'post_cat_single_select' => false,	// make this 0 to turn off multi-select
+			'post_thumbnail_meta' => false	// use this as the name of the post meta (custom field) for post thumbnail
 		),$atts));
 		
 		
@@ -798,6 +811,15 @@ function shortCodeGallery($atts, $content=null){
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 		
+		//PhotoSmash Extend Variables used in Post on Upload (creating new Posts on Uploads)
+		$g['create_post'] = $create_post;
+		$g['preview_post'] = $preview_post;
+		$g['post_cat_child_of'] = $post_cat_child_of;
+		$g['post_cat_exclude'] = $post_cat_exclude;
+		$g['post_cat_show'] = $post_cat_show;
+		$g['post_cat_depth'] = $post_cat_depth;
+		$g['post_cat_selected'] = $post_cat_selected;
+		$g['post_thumbnail_meta'] = $post_thumbnail_meta;
 		
 		/*
 		 *	Random/Recent Gallery settings

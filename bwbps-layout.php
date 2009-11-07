@@ -228,7 +228,7 @@ class BWBPS_Layout{
 						
 			$totRows = count($images);
 			//get the pagination navigation
-			if($totRows && $g['img_perpage']){
+			if($totRows && $g['img_perpage'] && !$g['no_pagination']){
 				$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g, $layout);
 			} else {
 				$nav = "";
@@ -446,8 +446,10 @@ class BWBPS_Layout{
 				</style>".$ret;
 			}
 			
-			//Need the insertion point to create a holder for adding new images.			
-			$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
+			//Need the insertion point to create a holder for adding new images.
+			if( !$g['no_insertbox'] ){
+				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
+			}
 		}
 	
 		
@@ -733,12 +735,14 @@ class BWBPS_Layout{
 			$psg_imagesurl = $image['thumb_url'];
 			
 			//Set up thumb size
-			if((int)$g['thumb_height'] ){
-				$imagesize = " height=" . (int)$g['thumb_height'];
+			if(!$g['thumb_aspect'] ){
+				if((int)$g['thumb_height'] ){
+					$imagesize = " height=" . (int)$g['thumb_height'];
+				}
+				if( (int)$g['thumb_width'] ){
+					$imagesize .= " width=" . (int)$g['thumb_width'];
+				}		
 			}
-			if( (int)$g['thumb_width'] ){
-				$imagesize .= " width=" . (int)$g['thumb_width'];
-			}		
 		} else {
 			$psg_imagesurl = $image['image_url'];
 		}

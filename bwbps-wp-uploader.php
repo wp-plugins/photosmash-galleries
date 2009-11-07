@@ -1180,6 +1180,15 @@ class BWBPS_Uploader{
 	}
 	
 	function echoJSON(){
+		global $bwbps_special_msg;
+		global $bwbps_preview_id;
+				
+		
+		
+		if($bwbps_special_msg){
+			$this->json['special_msg'] = ($bwbps_special_msg);
+			$this->json['preview_id'] = $bwbps_preview_id;
+		}
 		
 		$this->json = $this->cleanJS($this->json);
 		

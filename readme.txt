@@ -2,9 +2,9 @@
 Contributors: bennebw
 Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
-Requires at least: 2.6
-Tested up to: 2.8.4
-Stable tag: 0.4.02
+Requires at least: 2.8
+Tested up to: 2.8.5
+Stable tag: 0.4.03
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -76,6 +76,12 @@ It should be relatively straight forward to change the look and feel through thi
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
+= 0.4.03 - 11/7/2009 =
+
+    * Fixed gallery setting "maintain ratio" so that it does not force thumbnail sizes when gallery is displayed
+    * Several code tweaks to enable PhotoSmash Extend functionality - particularly around creating new posts on upload
+    * Now only supporting WordPress 2.8 and higher.  Does not specifically break compatibility with versions later than 2.6, but going forward, only 2.8+ will be supported.  There is a big security hole in WordPress versions prior to 2.8, so this is my part in encouraging users folks to upgrade.  It's for your own good...I know from experience ;-)
+    
 = 0.4.02 - 09/26/2009 =
 
     * Added THE Widget!! Display Random, Recent, or normal galleries.  ONLY WORKS WITH WP 2.8+. PhotoSmash will continue to work with versions back to 2.6, but this widget uses the new Widget API available in WP 2.8.

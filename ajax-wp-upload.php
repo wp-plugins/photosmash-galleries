@@ -108,7 +108,12 @@ class BWBPS_AJAXUpload{
 	*/
 	function saveUploadToDBStep($saveCustomFields = true){
 			
-		return $this->psUploader->saveImageToDB($this->psUploader->g, $saveCustomFields);
+		$ret = $this->psUploader->saveImageToDB($this->psUploader->g, $saveCustomFields);
+		
+		if($ret){ do_action('bwbps_uploaded'); }
+		
+		return $ret;
+		
 	}
 	
 	

@@ -48,6 +48,7 @@ $j(document).ready(function() {
 		bwbpsAddPSSettingsMassUpdateActions();
 	}
 	
+	$j('.bwbps-post-cat-form').attr('multiple','multiple');
 	
 });
 
@@ -250,12 +251,20 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 				alert('nonce');
 			//The nonce	 check failed
 			$j('#' + form_pfx + 'bwbps_message').html("<span class='error'>Upload failed due to invalid authorization.  Please reload this page and try again.</span>");
+			
+			if(data.special_msg){
+				$j('#' + form_pfx + 'bwbps_message').append("<p>" + unescape(data.special_msg) + "</p>");
+			}
+			
 			return false;
 	 	}
 	 	
 		if( data.succeed == 'false'){
 			//Failed for some reason
-			$j('#' + form_pfx + 'bwbps_message').html(data.message); 
+			$j('#' + form_pfx + 'bwbps_message').html(data.message);
+			if(data.special_msg){
+				$j('#' + form_pfx + 'bwbps_message').append("<p>" + unescape(data.special_msg) + "</p>");
+			}
 			return false;
 		}
 		
@@ -367,9 +376,18 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			
 			li.append('&nbsp;');
 			
+			if(data.special_msg){
+				var pv = "";
+				if(data.preview_id){ pv = "<a href='/?p=" + data.preview_id + "&preview=true' target='_blank'>Preview</a>";}
+				$j('#' + form_pfx + 'bwbps_message').append("<p>" + pv + unescape(data.special_msg) + "</p>");
+			}
+			
 			
 		} else {
 			$j('#' + form_pfx + 'bwbps_message').html( "Image not saved: " + data.error); 
+			if(data.special_msg){
+				$j('#' + form_pfx + 'bwbps_message').append("<p>" + unescape(data.special_msg) + "</p>");
+			}
 		}
 	} else {
 		$j('#' + form_pfx + 'bwbps_message').html('Unknown error!'); 
