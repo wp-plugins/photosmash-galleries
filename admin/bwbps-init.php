@@ -9,11 +9,13 @@ class BWBPS_Init{
 	function BWBPS_Init(){
 		//Create the PhotoSmash Tables if not exists
 		
-		global $wpdb;
+		register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __('Photo tags', 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => 'photo-tag' ) ) );	
+	 	
+	 	global $wp_rewrite;
+		$wp_rewrite->flush_rules();
 		
-			$i = 0;
-			$i++;
-			echo "Here $i";
+		global $wpdb;
+					
 			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 			
 			if ( $wpdb->has_cap( 'collation' ) ) {
@@ -25,19 +27,17 @@ class BWBPS_Init{
 			
 			$icnt = 0;
 			
-			$i++;
-			echo "Here $i";
-				
+										
 			$table_name = $wpdb->prefix . "bwbps_images";
-			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
 			
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX image_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 					
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX gallery_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 			}
 							
 			
@@ -75,23 +75,25 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
-			$i++;
-			echo "Here $i";
-			
+						
 			//IMAGE CATEGORIES
 			$table_name = $wpdb->prefix . "bwbps_categories";
 			
-			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
 			
 				//Delete the old indices
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX image_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX category_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX tag_name";
+				$wpdb->query($sql);
 			
 			}
 			
@@ -99,16 +101,15 @@ class BWBPS_Init{
 				id BIGINT(11) NOT NULL AUTO_INCREMENT,
 				image_id BIGINT(20) NOT NULL,
 				category_id BIGINT(20),
+				tag_name VARCHAR(250),
 				updated_date TIMESTAMP NOT NULL,
 				PRIMARY KEY  (id),
 				INDEX (image_id),
-				INDEX (category_id)
+				INDEX (category_id),
+				INDEX  (tag_name)
 				)  $charset_collate;";
 			dbDelta($sql);
-			
-			$i++;
-			echo "Here $i";
-						
+									
 			//Create the Gallery Table
 			$table_name = $wpdb->prefix . "bwbps_galleries";
 			$sql = "CREATE TABLE " . $table_name . " (
@@ -124,7 +125,7 @@ class BWBPS_Init{
 				img_rel VARCHAR(255),
 				img_class VARCHAR(255),
 				img_perrow TINYINT(1),
-				img_perpage TINYINT(1),
+				img_perpage INT(4),
 				thumb_aspect TINYINT(1),
 				thumb_width INT(4),
 				thumb_height INT(4),
@@ -158,20 +159,16 @@ class BWBPS_Init{
 				PRIMARY KEY  (gallery_id))
 				;";
 			dbDelta($sql);
-			
-					$i++;
-			echo " - Here $i";
-	
-			
+					
 			
 			//Drop Old Index
 			$table_name = $wpdb->prefix . "bwbps_imageratings";
-			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
 
 				//Image Ratings Table
 				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_imageratings ".
 					"DROP INDEX image_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 			}
 			
 			//Create the IMAGE RATINGS table (future use)
@@ -191,8 +188,7 @@ class BWBPS_Init{
 				INDEX (image_id)
 				)  $charset_collate;";
 			dbDelta($sql);
-			
-			
+					
 			
 			/* 
 			* RATINGS SUMMARY
@@ -200,17 +196,17 @@ class BWBPS_Init{
 			*/
 			
 			$table_name = $wpdb->prefix . "bwbps_ratingssummary";			
-			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
 			
 				//Delete the old indices
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX image_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 				
 				$sql = "ALTER TABLE " . $table_name .
 					" DROP INDEX gallery_poll";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 			
 			}
 			
@@ -290,11 +286,11 @@ class BWBPS_Init{
 			
 			//Drop Old Index
 			$table_name = $wpdb->prefix . "bwbps_lookup";
-			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
 			
 				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_lookup ".
 					"DROP INDEX field_id";
-				//$wpdb->query($sql);
+				$wpdb->query($sql);
 				
 			}
 			
@@ -311,6 +307,16 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
+			//Drop Old Index
+			$table_name = $wpdb->prefix . "bwbps_customdata";
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
+			
+				$sql = "ALTER TABLE " . $wpdb->prefix."bwbps_customdata ".
+					"DROP INDEX image_id";
+				$wpdb->query($sql);
+				
+			}
+			
 			//CUSTOMDATA
 			//SQL for table creation & updating
 			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_customdata (
@@ -318,7 +324,8 @@ class BWBPS_Init{
 				image_id INT(11) NOT NULL,
 				updated_date TIMESTAMP NOT NULL, 
 				bwbps_status TINYINT(1) NOT NULL default '0',
-				PRIMARY KEY  (id)
+				PRIMARY KEY  (id),
+				INDEX (image_id)
 				)  $charset_collate;";
 			dbDelta($sql);
 			

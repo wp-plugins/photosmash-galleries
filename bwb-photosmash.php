@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.4.03
+Version: 0.4.04
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -38,8 +38,8 @@ define('PHOTOSMASHVERSION', '0.4.02');
 
 
 //Database Verifications
-define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_galleries');
-define('PHOTOSMASHVERIFYFIELD', 'anchor_class');
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_categories');
+define('PHOTOSMASHVERIFYFIELD', 'tag_name');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -198,7 +198,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 15;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 16;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -246,18 +246,16 @@ class BWB_PhotoSmash{
 			include_once("ajax_upload.php");
 		}
 		*
-		
-		
-		add_action( 'bwbps_contributor_gallery', array(&$this,'displayContributorGallery') );
 		*/
 		
+		//Add actions for Contributor Gallery
 		if( $this->psOptions['contrib_gal_on'] ){
 			add_filter('the_posts',  array(&$this,'displayContributorGallery') );
-		
-			add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
-			
 			add_filter('the_permalink',array(&$this,'fixAuthorLink') ); 
 		}
+		
+		//Add action for Tags Gallery
+		add_filter('the_posts', array(&$this, 'displayTagGallery') );
 
 	}
 	
@@ -424,7 +422,8 @@ class BWB_PhotoSmash{
 			'category_id',
 			'post_id',
 			'allow_no_image',
-			'post_cat'
+			'post_cat',
+			'post_tags'
 		);
 		return $ret;
 	}
@@ -731,6 +730,8 @@ function shortCodeGallery($atts, $content=null){
 			'form_visible' => false,
 			'single_layout' => false,
 			'author' => false,
+			'tags' => false,
+			'tags_for_uploads' => false,
 			'images' => 0,
 			'thumb_height' => 0,
 			'thumb_width' => 0,
@@ -744,7 +745,10 @@ function shortCodeGallery($atts, $content=null){
 			'post_cat_depth' => 0,
 			'post_cat_selected' => false,
 			'post_cat_single_select' => false,	// make this 0 to turn off multi-select
-			'post_thumbnail_meta' => false	// use this as the name of the post meta (custom field) for post thumbnail
+			'post_thumbnail_meta' => false,	// use this as the name of the post meta (custom field) for post thumbnail
+			'post_tags' => false,	// whether or not to show an input box for tags (comma separated)
+			'post_tags_label' => false
+			
 		),$atts));
 		
 		
@@ -766,6 +770,8 @@ function shortCodeGallery($atts, $content=null){
 		
 		$galparms = $atts;
 		
+		if($tags){$gallery_type = 'tags';}
+		
 		switch ( $gallery_type ){
 			
 			case 'contributor' :
@@ -778,7 +784,7 @@ function shortCodeGallery($atts, $content=null){
 				if($author){
 				
 					$galparms['author'] == $author;
-					$galparms['smart_where'] = array ( "user_id" => $author );
+					$galparms['smart_where'] = array ( PSIMAGESTABLE . ".user_id" => array($author) );
 				
 				}
 				
@@ -793,6 +799,18 @@ function shortCodeGallery($atts, $content=null){
 				
 			case 'recent' :
 				$galparms['gallery_type'] = 30;	
+				
+				break;
+				
+			case 'ranked' :
+				$galparms['gallery_type'] = 99;	
+				$galparms['sort_field'] = 4;
+				$galparms['sort_order'] = 1;
+													
+				break;
+				
+			case 'tags' :
+				$galparms['gallery_type'] = 40;	
 				
 				break;
 				
@@ -811,6 +829,12 @@ function shortCodeGallery($atts, $content=null){
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 		
+		//Set up for a Tag driven gallery
+			$g['tags'] = $tags ? $tags : false;
+		
+		//Set
+		if($tags_for_uploads){ $g['tags_for_uploads'] = $tags_for_uploads; }
+		
 		//PhotoSmash Extend Variables used in Post on Upload (creating new Posts on Uploads)
 		$g['create_post'] = $create_post;
 		$g['preview_post'] = $preview_post;
@@ -820,11 +844,13 @@ function shortCodeGallery($atts, $content=null){
 		$g['post_cat_depth'] = $post_cat_depth;
 		$g['post_cat_selected'] = $post_cat_selected;
 		$g['post_thumbnail_meta'] = $post_thumbnail_meta;
+		$g['post_tags'] = $post_tags;
+		$g['post_tags_label'] = $post_tags_label;
 		
 		/*
-		 *	Random/Recent Gallery settings
+		 *	Random/Recent/Highest Ranked Gallery settings
 		*/
-		if($g['gallery_type'] == 20 || $g['gallery_type'] == 30){
+		if($g['gallery_type'] == 20 || $g['gallery_type'] == 30 || $g['gallery_type'] == 99){
 			
 			$g['smart_gallery'] = true;
 									
@@ -833,7 +859,7 @@ function shortCodeGallery($atts, $content=null){
 			}
 			$g['limit_images'] = (int)$images;
 					
-			if((int)$where_gallery){
+			if((int)$where_gallery && !$g['gallery_type'] == 99){
 				$g['smart_where'] = array ( PSIMAGESTABLE.".gallery_id" => (int)$where_gallery );
 			}
 			
@@ -1083,6 +1109,66 @@ function getGallery($g){
 				}
 				
 				break;
+			
+			case 40 :
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d ",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 40 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'Tag Gallery';
+					$g['show_imgcaption'] = 12;
+					$g['gallery_type'] = 40;
+				
+				} else {
+					$gquery['gallery_type'] = 40;
+				}
+				
+				break;
+				
+			case 99 : // Recent images
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 99",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 99 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'Highest Ranked';
+					$g['sort_field'] = 4;
+					$g['sort_order'] = 1;
+					$g['rating_position'] = 0;
+					$g['poll_id'] = -1;
+				
+				}
+				
+				break;
 
 			
 				
@@ -1154,11 +1240,16 @@ function getGallery($g){
 	if( !$galleryfound ){
 	
 		//No Gallery found...Need to create a Record for this Gallery
-			$data['post_id'] = $post->ID;
+			if((int)$g['gallery_type'] < 10 ){
+				$data['post_id'] = $post->ID;
+			}
 			$data['gallery_name'] = $g['gallery_name'] ? $g['gallery_name']  : $post->post_title;
 			$data['gallery_type'] = isset($g['gallery_type']) ? (int)$g['gallery_type'] : 0;
 			$data['caption'] =  $g['caption'] ? $g['caption'] : $psoptions['gallery_caption'];
 			
+			$data['rating_position'] =  isset($g['rating_position']) ? (int)$g['rating_position'] : (int)$psoptions['rating_position'];
+			$data['poll_id'] =  isset($g['poll_id']) ? (int)$g['poll_id'] : (int)$psoptions['poll_id'];
+						
 			$data['add_text'] = $g['add_text'] ? $g['add_text'] : 
 				( $psoptions['add_text'] ? $psoptions['add_text'] : "Add Photos" );
 			
@@ -1517,7 +1608,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	function injectAdminStyles()
 	{
-		wp_enqueue_style( 'bwbpstabs', WP_PLUGIN_URL.'/photosmash-galleries/css/bwbps.css', false, '1.0', 'screen' );		
+		wp_enqueue_style( 'bwbpstabs', WP_PLUGIN_URL.'/photosmash-galleries/css/bwbps.css', false, '1.0', 'screen' );
+		wp_enqueue_style( 'bwbpsuicore', WP_PLUGIN_URL.'/photosmash-galleries/css/ui.core..css', false, '1.0', 'screen' );		
+		wp_enqueue_style( 'bwbpsdatepicker', WP_PLUGIN_URL.'/photosmash-galleries/css/ui.datepicker.css', false, '1.0', 'screen' );
 	}
 	
 	
@@ -1777,10 +1870,76 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		return;
 	}
 	
+	function displayTagGallery($theposts){
+			
+		$tag = get_query_var( 'bwbps_wp_tag' );
+		
+		if(!$tag){ return $theposts; } //leave if this isn't the tag page
+		
+		global $wpdb;
+		$tag = $wpdb->get_var($wpdb->prepare("SELECT name FROM " . $wpdb->terms . " WHERE slug = %s", $tag));
+		
+		add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
+		
+		$d = date( 'Y-m-d H:i:s' );
+		
+		//Create an objec for a new post to un_shift onto the posts array
+			$newpost->ID = -1;
+			$newpost->post_author = $author;
+			$newpost->post_date = $d;
+			$newpost->post_date_gmt = $d;
+			$newpost->post_content = "[photosmash gallery_type=tags tags='".$tag
+				."' no_form=true]";
+			$newpost->post_title = 'Images tagged ' . $tag; 
+			$newpost->post_category = 0;
+			$newpost->post_excerpt = '';
+			$newpost->post_status = 'publish';
+			$newpost->comment_status = 'closed';
+			$newpost->ping_status = 'closed';
+			$newpost->post_password = '';
+			$newpost->post_name = 'photo-tag/' . $tag;
+			$newpost->to_ping = '';
+			$newpost->pinged = '';
+			$newpost->post_modified = $d;
+			$newpost->post_modified_gmt = $d;
+			$newpost->post_content_filtered = '';
+			$newpost->post_parent = 0;
+			$newpost->guid = '';
+			$newpost->menu_order = 0;
+			$newpost->post_type = 'post';
+			$newpost->post_mime_type = '';
+			$newpost->comment_count = 0;
+			$newpost->photosmash = 'tag';
+			$newpost->photosmash_link = $this->getTagContextUrl();			
+			
+		unset($theposts);
+		$theposts = array($newpost);
+				
+		return $theposts;
+	}
+
+	function getTagContextUrl(){
+		global $wp_query;
+		global $wpdb;
+		
+		
+		$url = '';
+		
+		$tag_name = $wp_query->query_vars['bwbps_wp_tag'];
+				
+		$url = get_term_link($tag_name, 'photosmash');
+				
+		if( !$url ){
+			$url = get_bloginfo('url');
+		}
+
+		return $url;
+	}
+	
 	function displayContributorGallery($theposts){
 			
 		if(is_author()){
-												
+			add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );												
 			$author = (int) get_query_var( 'author' );
 			
 			$author_name = get_the_author_meta(  'user_nicename', $author );
@@ -1893,7 +2052,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	function fixExcerptGallery($excerpt){
 		global $post;
 		
-		if($post->photosmash == 'author') {		
+		if($post->photosmash == 'author' || $post->photosmash == 'tag' ) {		
 			the_content();
 			return "";
 		} else {
@@ -1905,8 +2064,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		global $post;
 		
 		if($post->photosmash == 'author') {		
+		
+			return get_author_posts_url($post->post_name);
 			
-			return get_author_posts_url($post->post_name);				;
 		} else {
 			return $perma;
 		}	
@@ -1986,8 +2146,19 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	function loadPSWidgets(){
 		require_once('widgets/bwbps-widget.php');
 		register_widget( 'PhotoSmash_Widget' );
+		
+		require_once('widgets/bwbps-tagcloud.php');
+		register_widget( 'PhotoSmash_TagCloud' );
 	
 	}
+	
+	/**
+	 *	Create the Photo Tags taxonomy
+	 *
+	 */
+	 function createTaxonomy(){
+	 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __('Photo tags', 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => 'photo-tag' ) ) );	
+	 }
 	
 	
 } //End of BWB_PhotoSmash Class
@@ -1999,11 +2170,6 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 /* ***************************************************************************************** */
 
 $bwbPS = new BWB_PhotoSmash();
-
-//
-function bwbps_contributor_gallery(){
-	//do_action('bwbps_contributor_gallery');
-}
 
 function show_photosmash_gallery($gallery_params = false){
 	echo get_photosmash_gallery($gallery_params);
@@ -2039,6 +2205,10 @@ array(&$bwbPS, 'init'));
 
 add_action('init', array(&$bwbPS, 'enqueueBWBPS'), 1);
 
+if(!is_admin()){
+	add_action( 'init', array(&$bwbPS, 'createTaxonomy'), 0 );
+}
+
 add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
 
 add_action('wp_footer', array(&$bwbPS, 'injectFooterJavascript'), 100);
@@ -2052,7 +2222,6 @@ add_shortcode('psmash', array(&$bwbPS, 'shortCodes'));
 if( version_compare($wp_version,"2.8", ">=" ) ){
 	//Load the PhotoSmash Widget
 	add_action( 'widgets_init', array(&$bwbPS, 'loadPSWidgets') );
-
 }
 
 ?>

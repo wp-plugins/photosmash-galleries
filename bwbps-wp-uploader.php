@@ -105,6 +105,8 @@ class BWBPS_Uploader{
 	
 	function getImageSettings($g)
 	{
+		$tags = $this->getFilterArrays();
+		
 		$this->json['succeed'] = 'false'; 
 		$this->json['size'] = $_POST['MAX_FILE_SIZE'];
 		
@@ -115,6 +117,10 @@ class BWBPS_Uploader{
 		$this->json['file_type'] = (int)$_POST['bwbps_file_type'];
 		
 		$this->json['image_caption'] = $this->getImageCaption();
+		
+		if(isset($_POST['bwbps_post_tags'])){
+			$this->json['post_tags'] = wp_kses($_POST['bwbps_post_tags'], $tags[3]);
+		}
 		
 		//$this->json['image_caption'] = htmlentities($this->json['image_caption'], ENT_QUOTES);
 		
@@ -531,8 +537,15 @@ class BWBPS_Uploader{
 		
 		$image_id = $wpdb->insert_id;
 		
-		$data['image_id'] = $image_id;
+		$data['image_id'] = $image_id;		
 		$this->json['image_id'] = $image_id;
+		
+		//Save image tags
+		if($this->json['post_tags']){
+			$this->json['post_tags'] = $this->cleanImageTags($this->json['post_tags']);
+			$data['post_tags'] = $this->json['post_tags'];
+			$this->saveImageTags($image_id, $data['post_tags']);
+		}
 		
 		//Expose the Image Data to external classes
 		$this->imageData = $data;
@@ -551,6 +564,54 @@ class BWBPS_Uploader{
 		}
 		
 		return $image_id;
+	}
+	
+	
+	function cleanImageTags($tags){
+	
+		$ret = stripslashes($tags);
+		$ret = str_replace("\\n", ",", $ret);
+		$ret = str_replace("\\t", ",", $ret);
+		$ret = str_replace(";", ",", $ret);
+		$ret = str_replace("'", "", $ret);
+		$ret = str_replace('"', "", $ret);
+		$ret = str_replace(">", "", $ret);
+		$ret = str_replace("<", "", $ret);
+		$ret = esc_attr($ret);
+		return $ret;
+	}
+	
+		
+	/*
+	 *	Save image tags
+	*/
+	function saveImageTags($image_id, $tags){
+	
+		global $wpdb;
+		
+		if(!(int)$image_id || !$tags){ return; }
+		
+		$t = is_array($tags) ? $tags : explode( ',', trim($tags, " \n\t\r\0\x0B,") );
+		wp_set_object_terms($image_id, $t, 'photosmash', false);
+		
+		return;
+		
+		$data['image_id'] = (int)$image_id;
+		$data['category_id'] = 0;
+		
+		$sql = $wpdb->prepare("DELETE FROM " . PSCATEGORIESTABLE
+			. " WHERE image_id = %d AND category_id = 0", $image_id);
+			
+		$wpdb->query($sql);		 
+		 
+		
+		foreach($t as $tag){
+			
+			$data['tag_name'] = $tag;
+			$wpdb->insert(PSCATEGORIESTABLE, $data);
+		
+		}
+		
 	}
 	
 	
@@ -1280,6 +1341,8 @@ class BWBPS_Uploader{
 			'hr' => array()
 			
 		);
+		
+		$tags[3] = array();
 		return $tags;
 	}
 } 

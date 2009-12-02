@@ -3,7 +3,7 @@ Contributors: bennebw
 Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 2.8.5
+Tested up to: 2.8.6
 Stable tag: 0.4.03
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
@@ -27,6 +27,7 @@ For support and more documentation, visit the plugin's new homepage: [PhotoSmash
 *   Multiple galleries per post, added using a simple tag system
 *   Integrates with popular image viewing systems like Lightbox and Shadowbox
 *   Tweak appearance through the included css file
+*	Add Custom Fields to tile
 *	Add Custom Fields to the upload form
 *	Create Custom Upload forms using simple tags and HTML
 *	Create Custom Layouts using simple tags and HTML
@@ -55,26 +56,43 @@ You control this on a gallery-by-gallery basis (you can also set a default for P
 
 = Can unregistered users upload images? =
 
-No...not at this time.
+Yes...if you assign the minimum role for uploading to 'Anyone'
 
 = How can I upload images to a gallery before adding to a Post? =
 
-You can't.
+You can't.  You can, however, add to an unpublished post and upload images in the Post Preview without having the post published.
 
 = How do I change the appearance of my galleries? =
 
 In the bwb-photosmash plugin folder, there is a css file:  bwbps.css
 It should be relatively straight forward to change the look and feel through this file.
+You can also exclude the standard css file and include your own through options in the Advanced tab of PhotoSmash Settings.
 
 == Screenshots ==
 
-1.  Sample PhotoSmash Gallery with default css
-2.  Top portion of the PhotoSmash options page
-3.  Sample of the upload page
+1.  Top portion of the PhotoSmash options page
+2.  Sample photo gallery...visit Smashly.net for a working demo
 
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.4.04 – 12/01/2009 =
+
+	* Added ability to change the text of Approve and Reject messages on the fly.  Beneath the gallery selector at top of Photo Manager, click Edit/Display Moderation Msgs link to show the messages...use the checkbox to turn on/off of sending messages on Review, Approve, Delete.  Use the following variable tags: [author_link] - displays a link to the image contributor's Author page on your blog; [post_link] - displays a link to the post related to the image; [user_name] - displays the user's login name; [blogname] - displays the name of your blog.
+    * Added Editing of Custom Field data in Photo Manager – click the toggle link beneath the gallery selection at top to display the custom field data forms for all displayed images.
+    * Added ‘Publish’ button in Photo Manager to allow for publishing unpublished Posts – this will be useful to persons using the PhotoSmash Extend add-on plugin which allows for creating new posts on image uploads
+    * Added tagging of Photos – uses WordPress Custom Taxonomy call ‘photosmash’
+    * Added tag cloud for Photo tags…clicking Photo Tags will display galleries of all images with a tag
+    * Added shortcode parameter for displaying tagged image galleries.  Add this type of parameter to your shortcode:  tags=’my tag, my other tag, tag1, etc’
+    * To add tag field to your Upload form, add these parameters to your shortcode:  post_tags=true post_tags_label=’Add tags: ‘
+    * Added Sorting by Rank (uses Bayesian ranking to weight rankings)
+    * Added Sorting by User ID in galleries
+    * Added simple paging in Photo Manager…tell it how many to images to show (defaults to 50) and what image # to start with (not zero based like MySQL…it adjusts for that.
+    * Changed the sort order in Photo Manager to Descending
+    * Fixed Photo Manager bug – wasn’t showing up new images for moderation until after the email alert had been sent…now shows up immediately.  If admin views it in moderation area, email will not be sent notifying admin of need for moderation.
+    * Fixed – Recent, Random, and now…Highest Rated widget displays to allow for showing ratings.  You’ll need to find the appropriate gallery in Gallery Settings and set it to show either the 5 Star or the Vote up rating types…choose whether to display beneath or as an overlay…if displaying as an overlay, make sure that in the Custom Layout that you use that you have ‘position: relevant’ set for the CSS for the element that wraps the image and the rating…oh and you need to have [ps_rating] in the custom layout too.  Something like:    <div style=’position: relative;  float:left;’>[thumbnail] [ps_rating]</div>  should probably work
+
 
 = 0.4.03 - 11/7/2009 =
 
@@ -94,16 +112,16 @@ Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "C
     * Added ability to send emails upon Approve/Reject of images in moderation.
 
 
-= 0.4.01 – 09/04/2009 =
+= 0.4.01 ñ 09/04/2009 =
 
     * Added ability to Import images to PhotoSmash galleries from the WordPress Media Library.  This lets you use the WP Media uploader (multiple simultaneous uploads) in Admin, then import them into galleries.
     * Changed the default delete from deleting the Media Library images to be on-demand in Photo Manager.  Deleting a gallery does not delete Media Library images now.  Too much risk.
     * Fixed a javascript bug - when uploading images with the new (0.4.00) WP upload functionality, the link to the image was broken until you reloaded the page.
 
-= 0.4.00 – 09/01/2009 =
+= 0.4.00 ñ 09/01/2009 =
 
-    * This gets a version bump! Added option [is default for new installs] to use WordPress upload functionality. Can optionally add uploaded images to the WP Media Library. Set these options in PhotoSmash Settings…top of the Uploading tab. This is in preparation for the upcoming new WordPress 2.9 media features. By adding these images to the Media Library, you should be able to utilize new features that WordPress builds in. The new WP 2.9 feature set hasn’t been officially announced yet, but stay tuned!!! This should also solve upload issues where people have trouble with folder permissions. I could be wrong, but I think this is pretty big :P
-    * Fixed a couple of annoying ThickBox images that weren’t loading. You have to set the variables in the page footer…FYI.
+    * This gets a version bump! Added option [is default for new installs] to use WordPress upload functionality. Can optionally add uploaded images to the WP Media Library. Set these options in PhotoSmash SettingsÖtop of the Uploading tab. This is in preparation for the upcoming new WordPress 2.9 media features. By adding these images to the Media Library, you should be able to utilize new features that WordPress builds in. The new WP 2.9 feature set hasnít been officially announced yet, but stay tuned!!! This should also solve upload issues where people have trouble with folder permissions. I could be wrong, but I think this is pretty big :P
+    * Fixed a couple of annoying ThickBox images that werenít loading. You have to set the variables in the page footerÖFYI.
 
 
 = 0.3.07 - 08/27/2009 =

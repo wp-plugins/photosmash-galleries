@@ -20,8 +20,6 @@ options
 ************************************************/
 
 jQuery.fn.psvoting = function(url, options) {
-
-
 	if(url == null) {
 		return;
 	}

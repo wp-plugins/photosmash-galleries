@@ -115,6 +115,16 @@ class BWBPS_UploadForm{
 				. $g['post_thumbnail_meta'] ."' />
 				";
 		}
+		
+		if($g['tags_for_uploads']){
+		
+			if($g['tags_for_uploads'] == 'tags'){ $g['tags_for_uploads'] = $g['tags']; }
+			$ret .= "
+				<input type='hidden' name='bwbps_post_tags' value='"
+				. $g['tags'] ."' />
+				";
+		}
+		
 		return $ret;
 	}
 	
@@ -174,6 +184,24 @@ class BWBPS_UploadForm{
 					';
 			
 			$retForm .= $this->getStandardField("[post_cat]", $g);
+			
+			$retForm .='
+				</td>
+				</tr>';
+		
+		}
+		
+		if($g['post_tags'] && !$g['tags_for_uploads']){
+			
+			if(!$g['post_tags_label']){
+				$g['post_tags_label'] = 'Tags (separate w/ commas):';
+			}
+					
+			$retForm .= '<tr><th>' . $g['post_tags_label'] . ':</th>
+				<td align="left">
+					';
+			
+			$retForm .= $this->getStandardField("[post_tags]", $g);
 			
 			$retForm .='
 				</td>
@@ -359,7 +387,11 @@ class BWBPS_UploadForm{
 	 * Returns the Custom upload form 
 	 * @param $fld - the field name that is being replaced; $g: Gallery settings;  $atts - an array of attributes that were captured from Custom Form field codes
 	*/
-	function getStandardField($fld, $g, $atts=false){
+	function getStandardField($fld, $g, $atts=false, $val=false){
+
+		if($val !== false ){
+			$value = ' value="' . esc_attr($val) . '" ';
+		}
 	
 		switch ($fld) {
 		
@@ -433,11 +465,11 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[caption]":
-				$ret = '<input type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" />';
+				$ret = '<input type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
 				break;
 			
 			case "[caption2]":
-				$ret = '<input type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" />';
+				$ret = '<input type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
 				break;
 			
 			case "[user_url]":
@@ -467,7 +499,7 @@ class BWBPS_UploadForm{
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2"></span>';
 				break;
 			case "[url]":
-				$ret = '<input tabindex="3" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" />';
+				$ret = '<input tabindex="3" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" ' . $value . ' />';
 				break;
 			case "[loading]":
 				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />';
@@ -486,6 +518,12 @@ class BWBPS_UploadForm{
 			
 			case "[category_id]" :
 				$ret = $this->getCurrentCatID();
+				break;
+				
+			case "[post_tags]" :
+				$ret = "<input type='text' name='bwbps_post_tags' tabindex='50' "
+					. " id='" . $g["pfx"] . "bwbps_post_tags' class='bwbps_reset' ' . $value . ' />";
+					
 				break;
 				
 			case "[post_cat]" :
@@ -879,9 +917,13 @@ class BWBPS_UploadForm{
 	
 	
 	//BUILD THE FORM FIELD
-	function getField($g, $f, $tabindex=false){
+	function getField($g, $f, $tabindex=false, $the_value=false, $txtarea_width=false){
 		
-		$val = $f->default_val;
+		if( $the_value !== false ){
+			$val = $the_value;
+		} else {
+			$val = esc_attr($f->default_val);
+		}
 		
 		//Name is field name + bwbps (prepended)
 		$name = "bwbps_".$blank.$f->field_name;
@@ -917,8 +959,12 @@ class BWBPS_UploadForm{
 				break;
 			case 1 :	//textarea
 				$ret = "<textarea tabindex='".$tabindex."' ".$id
-					." ".$ele_name
-					." rows=4 cols=40 class='bwbps_reset' />"
+					." ".$ele_name . " rows=4 ";
+					
+				if(!$txtarea_width){
+					$ret .= " cols=40 ";
+				}
+				$ret .= " class='bwbps_reset' />"
 					.htmlentities($val, ENT_QUOTES)."</textarea>
 					";
 				break;
@@ -1000,16 +1046,24 @@ class BWBPS_UploadForm{
 					." value='".$post->ID
 					."' type='hidden' size='20' />";
 				break;
+				
 			case 35 :
-				$cur_cat_id = $this->getCurrentCatID();
+				if ( $val === false ){
+					$cur_cat_id = $this->getCurrentCatID();
+				} else {
+					$cur_cat_id = $val;
+				}
 				$ret = "<input  ".$id
 					." ".$ele_name
 					." value='".$cur_cat_id
 					."' type='hidden' size='20' />";
 				break;
+				
 			case 40 :
 				//Category ddl
-				$val = (int)$this->getCurrentCatID();
+				if ( $val === false ){
+					$val = (int)$this->getCurrentCatID();
+				}
 				
 				$opts['hide_empty'] = 0;
 				$opts['echo'] = 0;
@@ -1017,13 +1071,15 @@ class BWBPS_UploadForm{
 					$opts['selected'] = $val;
 				}
 				$opts['hierarchical'] = 1;
-				$opts['name'] = $name;
 				
+				if($the_value !== false){
+					$name = $g['pfx']. $name;
+				}
+				$opts['name'] = $name;
 				
 				$ret = wp_dropdown_categories($opts);
 				break;
 			
-				
 			default :
 					
 				break;

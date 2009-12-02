@@ -9,6 +9,7 @@ class BWBPS_Admin{
 	
 	var $gallery_id;
 	var $galleryQuery;
+	var $psForm;
 	
 	//Constructor
 	function BWBPS_Admin(){
@@ -572,8 +573,8 @@ class BWBPS_Admin{
 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
 	<input type="hidden" id="bwbps_gallery_id" name="gal_gallery_id" value="<?php echo $galleryID;?>" />
 
-<div id="slider" class="wrap">
-<ul id="tabs">
+<div id="bwbpsslider" class="wrap">
+<ul id="bwbpstabs">
 
 			<li><a href="#bwbps_galleryoptions">Gallery Options</a></li>
 			<li><a href="#bwbps_uploading">Uploading</a></li>
@@ -640,6 +641,9 @@ if($psOptions['use_advanced'] ==1){
 						<option value="10" <?php if($galOptions['gallery_type'] == 10) echo 'selected=selected'; ?>>Contributor Gallery</option>
 						<option value="20" <?php if($galOptions['gallery_type'] == 20) echo 'selected=selected'; ?>>Random Images</option>
 						<option value="30" <?php if($galOptions['gallery_type'] == 30) echo 'selected=selected'; ?>>Recent Images</option>
+						<option value="40" <?php if($galOptions['gallery_type'] == 40) echo 'selected=selected'; ?>>Tags Gallery</option>
+						
+						<option value="99" <?php if($galOptions['gallery_type'] == 99) echo 'selected=selected'; ?>>Highest Ranked</option>
 					</select>
 				</td>
 	</tr>
@@ -661,6 +665,8 @@ if($psOptions['use_advanced'] ==1){
 						<option value="2" <?php if($galOptions['sort_field'] == 2) echo 'selected=selected'; ?>>Custom field</option>
 						*/
 						?>
+						<option value="3" <?php if($galOptions['sort_field'] == 3) echo 'selected=selected'; ?>>User ID</option>
+						<option value="4" <?php if($galOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating (Descending = high->low)</option>
 					</select>
 					
 					<input type="radio" name="gal_sort_order" value="0" <?php if(!$galOptions['sort_order']) echo 'checked'; ?>>Ascending &nbsp;
@@ -722,7 +728,8 @@ if($psOptions['use_advanced'] ==1){
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?>>No caption (thumb links to post)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?>>No caption (thumbs links to post)<br/>	
+						<input type="radio" name="gal_show_imgcaption"  value="13" <?php if($galOptions['show_imgcaption'] == 13) echo 'checked'; ?>>Caption (thumbs & links to post)<br/>					
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
@@ -936,7 +943,7 @@ if($psOptions['use_customform']){ ?>
 </div>
 <script type="text/javascript">
 	jQuery(document).ready(function(){
-			jQuery('#slider').tabs({ fxFade: true, fxSpeed: 'fast' });	
+			jQuery('#bwbpsslider').tabs({ fxFade: true, fxSpeed: 'fast' });	
 		});
 
 </script>
@@ -1220,7 +1227,7 @@ if($psOptions['use_customform']){ ?>
 </div>
 <script type="text/javascript">
 	jQuery(document).ready(function(){
-			jQuery('#slider').tabs({ fxFade: true, fxSpeed: 'fast' });	
+			jQuery('#bwbpsslider').tabs({ fxFade: true, fxSpeed: 'fast' });	
 		});
 
 </script>
@@ -1263,7 +1270,7 @@ if($psOptions['use_customform']){ ?>
 	
 	<div id="slider" class="wrap">
 	<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px; position: fixed; top: 0; right: 0;">saving...</span>
-	<ul id="tabs">
+	<ul id="bwbpstabs">
 
 		<li><a href="#bwbps_galleryoptions">Defaults</a></li>
 		<li><a href="#bwbps_uploading">Uploading</a></li>
@@ -1309,6 +1316,8 @@ if($psOptions['use_customform']){ ?>
 						<option value="2" <?php if($psOptions['sort_field'] == 2) echo 'selected=selected'; ?>>Custom field</option>
 						*/
 						?>
+						<option value="3" <?php if($psOptions['sort_field'] == 3) echo 'selected=selected'; ?>>User ID</option>
+						<option value="4" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating (Descending = high->low)</option>
 					</select>
 					 <a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_field' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 					
@@ -1808,8 +1817,18 @@ if($psOptions['use_customform']){ ?>
 			$galleryID ='moderation';
 		}
 		
-		$result = $this->getGalleryImages($galleryID);
+		$start = 0;
+		$limit = 0;
+		if(isset($_POST['bwbpsStartImg'] )){$start = (int)$_POST['bwbpsStartImg'];}
+		if(isset($_POST['bwbpsLimitImg'] )){$limit = (int)$_POST['bwbpsLimitImg'];}
+		
+		if($start > 0){ $start--; }
+		if($limit < 1){ $limit = 50; }
+		
+		$result = $this->getGalleryImages($galleryID, true, $limit, $start);
 		$galleryDDL = $this->getGalleryDDL($ddlID, "Select");
+		
+		$start++; //set it up for the form below
 		
 		if($ddlID){
 			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$ddlID), ARRAY_A);
@@ -1835,7 +1854,28 @@ if($psOptions['use_customform']){ ?>
 			echo $galleryDDL;
 		?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
 			&nbsp;<input type="submit" name="showModerationImages" value="<?php _e('Moderation/New', 'bwbPS') ?>" />
-			&nbsp;<input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') ?>" />		
+			&nbsp;<input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') 
+				?>" />	
+		
+		<div style='margin: 0; padding: 0;'>
+			Show <input type='text' name='bwbpsLimitImg' size=5 value='<?php echo $limit;
+				?>' /> images.  Starting at image:
+				<input type='text' name='bwbpsStartImg' size=5 value='<?php  echo $start;
+				?>' />
+			&nbsp; | &nbsp; Custom Fields: <a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>toggle</a>
+			&nbsp; | &nbsp; <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Edit/hide</a> moderation msgs
+		</div>
+		</form>	
+		
+		<div id='moderationmessages' style='display: none;'>
+		<b>Send message?</b> <input id="ps_mod_send_msg" type="checkbox" name='ps_mod_send_msg' <?php if($psOptions['mod_send_msg'] == 1) echo 'checked'; ?>>
+		<br/>
+		<b>Approve message:</b><br/>
+		<textarea id="ps_mod_approve_msg" name="ps_mod_approve_msg" cols="60" rows="4"><?php esc_html_e($psOptions['mod_approve_msg']);?></textarea>
+		<br/>
+		<b>Reject message:</b><br/>
+		<textarea  id="ps_mod_reject_msg" name="ps_mod_reject_msg" cols="60" rows="4"><?php esc_html_e($psOptions['mod_reject_msg']);?></textarea>
+		</div>
 		<?php
 			
 			if($result){
@@ -1846,7 +1886,7 @@ if($psOptions['use_customform']){ ?>
 			}
 			echo $result;
 	?>
-	</form>
+	
 
  	</div>
 <?php
@@ -1860,10 +1900,23 @@ if($psOptions['use_customform']){ ?>
 	 * @param integer $gallery_id
 	 * @return a table of the images
 	 */
-	function getGalleryImages($gallery_id)
+	function getGalleryImages($gallery_id, $sort_desc=false, $limit=0, $start=0)
 	{
 		global $wpdb;
-		$images = $this->getImagesQuery($gallery_id);
+		global $bwbPS;
+		
+		if(!isset($this->psForm)){
+			require_once( WP_PLUGIN_DIR .'/photosmash-galleries/bwbps-uploadform.php');
+			
+			if(!$bwbPS->stdFieldList || !$bwbPS->cfList){
+				$bwbPS->loadCustomFormOptions();	
+			}
+			
+			$this->psForm = new BWBPS_UploadForm($bwbPS->psOptions, $bwbPS->cfList);
+		}
+		
+		
+		$images = $this->getImagesQuery($gallery_id, $sort_desc, $limit, $start);
 		$admin = current_user_can('level_10');
 		
 		$uploads = wp_upload_dir();
@@ -1875,11 +1928,25 @@ if($psOptions['use_customform']){ ?>
 			$imgcnt=count($images);
 		} 
 		
+		foreach( $this->psForm->cfList as $f ){
+			$cfNamesArrayForJS[] .= '"' . $f->field_name . '"';
+			$cfArrayForJS[] .= ' "' . $f->field_name . '" : "" ';
+		
+		}
+			$psTable .= "
+			<script type='text/javascript'>var bwbpsCustomFields = {" . implode(',', $cfArrayForJS) . "};
+			var bwbpsCustomFieldNames = [" . implode(',', $cfNamesArrayForJS) . "];
+			</script>
+			";
+		
+		
 		foreach($images as $image){
 			$modMenu = "";
+			$modClass = "";
 			switch ($image->status) {
 				case -1 :
-					$modClass = "style='border: 2px red solid;'";
+					$modClass = "ps-moderate";
+					
 					if($admin){
 						$modMenu = "<a href='javascript: void(0);' onclick='bwbpsModerateImage(\"approve\", ".$image->image_id.");' class='ps-modbutton'>approve</a>";
 					}
@@ -1887,7 +1954,7 @@ if($psOptions['use_customform']){ ?>
 				case -2 :
 					break;
 				default :
-					if( $image->alerted == -1 ){
+					if( $image->alerted == -1 || $image->alerted == 0 ){
 						$modClass= 'ps-newimage';
 						if($admin){
 							$modMenu = "<a href='javascript: void(0);' onclick='bwbpsModerateImage(\"review\", ".$image->image_id.");' class='ps-modbutton'>mark reviewed</a>";
@@ -1915,28 +1982,55 @@ if($psOptions['use_customform']){ ?>
 			
 			}
 			
-			$galupdate = $this->getGalleryDDL($image->gallery_id, "skipnew"
+			$galDDL = $this->getGalleryDDL($image->gallery_id, "skipnew"
 				, "g".$image->image_id, "bwbps_set_imggal", 15, false);
 			
-			$galupdate .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Set new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk_multiple.png' alt='Set gallery' /></a>";
+			$galDDL .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Save to new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk_multiple.png' alt='Set gallery' /></a>";
 			
-			if($image->post_id){
-				$galupdate .= "<br/>
-				<span>Edit related post: <a href='post.php?action=edit&post="
-				.$image->post_id."' title='Edit related post.'>". $image->post_id . "</a> &nbsp; 
+			if((int)$image->post_id){
+				$galupdate = "Post: " . $image->post_id . "
+				<a href='post.php?action=edit&post="
+				. $image->post_id 
+				. "' title='Edit related post.' class='ps-modbutton'>edit</a> &nbsp; 
 				<a href='/?p="
-				.$image->post_id."' title='View related post.' target='_blank'>view</a>
-				";
+				. $image->post_id
+				. "' title='View related post.' class='ps-modbutton' target='_blank'>view</a>";
+				
+				if( $image->post_status == 'publish' ){
+					$galupdate .= " <span style='color: green; font-size: 9px;'>published</span>";
+				} else {
+				
+					$galupdate .= " <span id='psimg_pubpost" . $image->image_id . "'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"publishpost\", ".$image->image_id.", ". $image->post_id . ");' class='ps-modbutton'>publish</a> </span>";
+					
+				}
 			}
 			
-			$modMenu = "<br/><span class='ps-modmenu' id='psmod_".$image->image_id."'>".$modMenu."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", ".$image->image_id.");'>save</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", ".$image->image_id.");' class='ps-modbutton'>delete</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a> ";
+			$modMenu = "
+			<p style='margin-top: 7px;'>
+				<span class='ps-modmenu' id='psmod_".$image->image_id."'>"
+				.$modMenu."</span></p><p style='margin-top: 7px; '><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", "
+				.$image->image_id.");' class='ps-modbutton'>delete</a></p><p style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a></p><p style='text-align: center;'>Status: " 
+				. $image->status . "<br/>Alerted: " . $image->alerted . "</p>
+				";
 			
 			//Image HTML
 			
-			$psTable .= "<td class='psgal_".$image->gallery_id." $modClass' id='psimg_".$image->image_id."'><a target='_blank' href='". $image->image_url."' rel='"
+			$psTable .= "
+				<td class='psgal_".$image->gallery_id."' id='psimg_"
+				. $image->image_id."' style='width: 80px;'>
+				<a target='_blank' href='"
+				. $image->image_url."' rel='"
 				. $g['img_rel']."' title='".str_replace("'","",$image->image_caption)
-				. "'><span id='psimage_".$image->image_id."'><img src='"
-				. $image->thumb_url ."' ".$modClass." /></span></a></td>";
+				. "'>
+				<span id='psimage_".$image->image_id."' class='"
+				. $modClass . "'>
+					<img src='"
+				. $image->thumb_url ."' style='width: 70px; height: 70px;"
+				. $modStyle . "' />
+				</span>
+				</a>" 
+				. $modMenu . "
+				</td>";
 			
 			
 			// IMAGE DETAILS
@@ -1945,20 +2039,83 @@ if($psOptions['use_customform']){ ?>
 			
 			if($i==0){$border = " style='border-right: 1px solid #999;'";} else {$border = '';}
 			
-			$psTable .= "<td $border><span>Select Gallery:</span><br/>" .$galupdate. "<br/>				
-				<span>Caption:<br/><input type='text' id='imgcaption_" . $image->image_id."' name='imgcaption"
-					. $image->image_id."' value='$psCaption' style='width: 165px !important;' /><br/>URL:<br/><input type='text' id='imgurl_" . $image->image_id."' name='imgurl"
-					. $image->image_id."' value='".$image->url."' style='width: 165px !important;' /></span>";
-
-			$psTable .= $modMenu;
+			$psTable .= "<td $border>
+									
+			<table class='widefat fixed' cellspacing=0>
+				<thead><tr>
+					<th class='manage-column' style='width: 30%;'>Label</th>
+					<th class='manage-column' style='width: 70%;'>Field</th>
+				</tr></thead>
+				<tr valign='top'>
+					<td>
+						<span>Gallery:</span>
+					</td>
+					<td>" .$galDDL. "</td>
+				</tr>
+				
+				<tr valign='top'>
+					<td>
+						<span>Related post:</span>
+					</td>
+					<td>" .$galupdate. "</td>
+				</tr>
+				<tr valign='top'>
+					<td>
+						<span>Caption:</span>
+					</td>
+					<td><input type='text' id='imgcaption_" 
+						. $image->image_id."' name='imgcaption"
+						. $image->image_id."' value='$psCaption' style='width: 165px !important;' />
+					</td>
+				</tr>
+				<tr>
+					<td>URL:</td>
+					<td><input type='text' id='imgurl_" 
+						. $image->image_id."' name='imgurl"
+						. $image->image_id."' value='"
+						. $image->url. "' style='width: 165px !important;' />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", "
+				.$image->image_id.");' class='ps-modbutton'>save</a></span>
+					</td><td>&nbsp;</td>
+				</tr>
+				
+			</table>";
+			$cfTable = "";
 			
+			foreach( $this->psForm->cfList as $f ){
+				$gtemp['pfx'] = "img". $image->image_id . "_"; 
+				
+				$cfTable .= "<tr>
+					<td>" . $f->field_name . "
+					</td><td>"
+					.	$this->psForm->getField($gtemp, $f, false, $image->{$f->field_name}, true )
+					. "</td></tr>"
+					;
+			}
 			
+			$psTable .= "<table class='widefat fixed ps-customflds' cellspacing=0 id='ps-customflds-" . $image->image_id . "' style='display: none;'>
+				<thead><tr>
+					<th class='manage-column' style='width: 30%;'>LABEL</th>
+					<th class='manage-column' style='width: 70%;'>CUSTOM FIELDS</th>
+				</tr></thead>"
+				. $cfTable 
+				. "<tr>
+					<td>
+						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.");' class='ps-modbutton'>save</a>
+						</span>	
+					</td><td> &nbsp; </td>
+					</tr>"
+				. "</table>";
 			
 			if($image->file_url){
 				$fileURLData = "<br/>File data: " . $image->file_url;
 			} else { $fileURLData = ""; }
 			
-			$psTable .= "<br/><b>Details: </b>(image id: "
+			$psTable .= "<div class='ps-customflds' style='display: none;'><b>Details: </b>(image id: "
 				. $image->image_id.")<br/>WP media id: " . $image->wp_attach_id."<br/>Gallery: <a href='admin.php?"
 				. "page=managePhotoSmashImages&amp;psget_gallery_id="
 				. $image->gallery_id."'>id(".$image->gallery_id.") "
@@ -1966,7 +2123,8 @@ if($psOptions['use_customform']){ ?>
 				. $image->image_name . "<br/>Uploaded by: "
 				. $this->calcUserName($image->user_login, $image->user_nicename
 				, $image->display_name)."<br/>Date: ".$image->created_date
-				. $fileURLData . "</td>";
+				. $fileURLData . "</div>
+				</td>";
 			if($i == 1){
 				$psTable .= "</tr><tr>";
 				$i = 0;
@@ -1980,7 +2138,7 @@ if($psOptions['use_customform']){ ?>
 		}
 		$wpdb->update(PSIMAGESTABLE, $data, $where);
 		
-		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span> <span>('.$imgcnt.') Images</span><br/><table class="widefat fixed" cellspacing="0">'.$psTable.'</table></div>';
+		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span><table class="widefat fixed" cellspacing="0">'.$psTable.'</table></div>';
 	} else {
 		return "<h3>No images in gallery yet...go to post page to load images.</h3>";
 	}
@@ -1989,39 +2147,82 @@ if($psOptions['use_customform']){ ?>
 	
 	
 	//Get the Gallery Images
-	function getImagesQuery($gallery_id){
+	function getImagesQuery($gallery_id, $sort_desc=false, $limit=0, $start=0){
 		global $wpdb;
 		global $user_ID;
+		
+		if($sort_desc){ $desc = ' DESC'; }
+		
+		if($limit || $start){
+			$start = (int)$start;
+			if((int)$limit == 0){$limit = 50;}
+			
+			$limitsql = ' LIMIT ' . $start . ', ' . $limit;
+		}
+		
+		foreach ($this->psForm->cfList as $f){
+		
+			switch ($f->field_name){
+				case 'id' :
+					break;
+				case 'image_id' :
+					break;
+				case 'updated_date' :
+					break;
+				case 'bwbps_status' :
+					break;
+				default :
+					$cflds[] = PSCUSTOMDATATABLE . "." . $f->field_name;
+					break;
+			}
+		}
+		
+		if(is_array($cflds)){ $cfsql = ", " . implode(", ", $cflds); }
+		
 		if(current_user_can('level_10')){
 			switch ($gallery_id){
 				case "all" :
 					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
 						.$wpdb->users.'.user_nicename,'
 						. $wpdb->users.'.display_name, '.$wpdb->users
-						. '.user_login, '.PSGALLERIESTABLE.'.gallery_name '
-						. 'FROM '.PSIMAGESTABLE 
+						. '.user_login, '.PSGALLERIESTABLE.'.gallery_name, '
+						. $wpdb->posts . '.post_status '
+						. $cfsql . " "
+						. ' FROM ' . PSIMAGESTABLE 
+						. ' LEFT OUTER JOIN '.PSCUSTOMDATATABLE.' ON '.PSCUSTOMDATATABLE
+						. '.image_id = '. PSIMAGESTABLE. '.image_id '
 						. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
 						. '.ID = '. PSIMAGESTABLE. '.user_id '
 						. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
 						. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
-						. PSIMAGESTABLE.'.gallery_id ORDER BY '
-						. PSIMAGESTABLE. '.image_id');
+						. PSIMAGESTABLE.'.gallery_id '
+						. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
+						. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
+						. ' ORDER BY '
+						. PSIMAGESTABLE. '.image_id' . $desc . $limitsql);
 					break;
 					
 				case "moderation" :
 					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE
 					. '.*, '.$wpdb->users.'.user_nicename,'
 					. $wpdb->users.'.display_name, '.$wpdb->users
-					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name '
-					. ' FROM '.PSIMAGESTABLE 
+					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name, '
+					. $wpdb->posts . '.post_status '
+					. $cfsql . " "
+					. ' FROM ' . PSIMAGESTABLE 
+					. ' LEFT OUTER JOIN '.PSCUSTOMDATATABLE.' ON '.PSCUSTOMDATATABLE
+					. '.image_id = '. PSIMAGESTABLE. '.image_id '
 					. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
 					. '.ID = '. PSIMAGESTABLE. '.user_id '
 					. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
 					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
-					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
+					. PSIMAGESTABLE.'.gallery_id '
+					. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
+					. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
+					. ' WHERE '. PSIMAGESTABLE
 					. '.status = -1 OR '. PSIMAGESTABLE
-					. '.alerted = -1 ORDER BY '. PSIMAGESTABLE. '.seq, '
-					. PSIMAGESTABLE. '.image_id');
+					. '.alerted IN (-1, 0) ORDER BY '. PSIMAGESTABLE. '.seq ' . $desc . ', '
+					. PSIMAGESTABLE. '.image_id' . $desc . $limitsql);
 					break;
 					
 				default:
@@ -2029,15 +2230,22 @@ if($psOptions['use_customform']){ ?>
 					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
 					. $wpdb->users.'.user_nicename,'
 					. $wpdb->users.'.display_name, '.$wpdb->users
-					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name '
+					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name, '
+					. $wpdb->posts . '.post_status '
+					. $cfsql . " "
 					. ' FROM '.PSIMAGESTABLE 
+					. ' LEFT OUTER JOIN '.PSCUSTOMDATATABLE.' ON '.PSCUSTOMDATATABLE
+					. '.image_id = '. PSIMAGESTABLE. '.image_id '
 					. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
 					. '.ID = '. PSIMAGESTABLE. '.user_id '
 					. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
 					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
-					. PSIMAGESTABLE.'.gallery_id WHERE '. PSIMAGESTABLE
-					. '.gallery_id = %d ORDER BY '. PSIMAGESTABLE. '.seq, '
-					. PSIMAGESTABLE. '.image_id', $gallery_id);			
+					. PSIMAGESTABLE.'.gallery_id '
+					. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
+					. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
+					. ' WHERE '. PSIMAGESTABLE
+					. '.gallery_id = %d ORDER BY '. PSIMAGESTABLE. '.seq ' . $desc . ', '
+					. PSIMAGESTABLE. '.image_id ' . $desc . $limitsql, $gallery_id);			
 			}
 			
 			$images = $wpdb->get_results($sql);
@@ -2051,7 +2259,7 @@ if($psOptions['use_customform']){ ?>
 					. '.ID = '. PSIMAGESTABLE. '.user_id WHERE '. PSIMAGESTABLE
 					. '.gallery_id = %d AND ('. PSIMAGESTABLE. '.status > 0 OR '
 					. PSIMAGESTABLE. '.user_id = '.$uid.')ORDER BY '. PSIMAGESTABLE
-					. '.seq, '. PSIMAGESTABLE. '.image_id', $gallery_id));
+					. '.seq ' . $desc . ', '. PSIMAGESTABLE. '.image_id ' . $desc . $limitsql, $gallery_id));
 		}
 		return $images;
 	}

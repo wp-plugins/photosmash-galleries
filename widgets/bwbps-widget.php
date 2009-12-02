@@ -101,6 +101,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			<select id="<?php echo $this->get_field_id( 'gallery_type' ); ?>" name="<?php echo $this->get_field_name( 'gallery_type' ); ?>"  >
 				<option <?php if ( 'random' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='random'>Random</option>
 				<option <?php if ( 'recent' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='recent'>Recent</option>
+				<option <?php if ( 'ranked' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='ranked'>Highest Ranked</option>
 				<option <?php if ( "0" === $instance['gallery_type'] ) echo 'selected="selected"'; ?> value=0>normal</option>
 				
 			</select>

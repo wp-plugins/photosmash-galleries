@@ -273,13 +273,13 @@ class BWBPS_Rating{
 		$cur = round($o_rating["avg_rating"],0);
 		$avg = round($o_rating["avg_rating"],1);
 		$ret = '
-		<div id="psstar-'.$o_rating["image_id"].'" class="'
+		<div id="psstar-' . $o_rating['gallery_id'] . '-'.$o_rating["image_id"].'" class="'
 		. $position . ' bwbps-rating-gal-' . $o_rating['gallery_id'] . '">&nbsp;</div>
 		';
 		
 		//Add JavaScript to the PhotoSmash JS Footer 
 		$bwbPS->addFooterReady('		
-	jQuery("#psstar-'.$o_rating["image_id"].'").psrating("' .$vars. '", {maxvalue: 5, curvalue: '
+	jQuery("#psstar-' . $o_rating['gallery_id'] . '-'.$o_rating["image_id"].'").psrating("' .$vars. '", {maxvalue: 5, curvalue: '
 		.$cur.', rating_cnt: ' .(int)$o_rating["rating_cnt"]. ', avg_rating: ' . $avg 
 		. ', rating_position: ' . (int)$o_rating["rating_position"] . ', allow_rating: '
 		. (int)$o_rating["allow_rating"] . '});');
@@ -309,12 +309,12 @@ class BWBPS_Rating{
 		$curvalue = (int)$o_rating["votes_sum"];
 		$cnt = (int)$o_rating["votes_cnt"];
 		$ret = '
-		<div id="psvote-'.$o_rating["image_id"].'" class="'
+		<div id="psvote-' . $o_rating['gallery_id'] . '-'.$o_rating["image_id"].'" class="'
 		. $position . ' bwbps-rating-gal-' . $o_rating['gallery_id'] . '">&nbsp;</div>
 		';
 		
 		//Add JavaScript to the PhotoSmash JS Footer 
-		$bwbPS->addFooterReady('jQuery("#psvote-'.$o_rating["image_id"].'").psvoting("' 
+		$bwbPS->addFooterReady('jQuery("#psvote-' . $o_rating['gallery_id'] . '-'.$o_rating["image_id"].'").psvoting("' 
 		.$vars. '", {maxvalue: 1, curvalue: '
 		.$curvalue.', rating_cnt: ' .$cnt. ', avg_rating: ' . $curvalue 
 		. ', rating_position: ' . (int)$o_rating["rating_position"] . ', allow_rating: '

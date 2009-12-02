@@ -283,14 +283,14 @@ div.bwbps_pag_2{
 /* *****  Styling for Tabls borrowed from NextGeneration Gallery http://wordpress.org/extend/plugins/nextgen-gallery/ */
 
 /* Skin */
-#slider {
+#bwbpsslider {
 	border-color:#EBEBEB rgb(204, 204, 204) rgb(204, 204, 204) rgb(235, 235, 235);
 	border-style:solid;
 	border-width:1px;
 	margin:15px 15% 0pt 15px;
 	padding:2px;
 }
-#tabs{
+#bwbpstabs{
 	display: block;
 	background:#F1F1F1 none repeat scroll 0%;
 	font-size:14px;
@@ -331,10 +331,10 @@ div.bwbps_pag_2{
     outline: 0; /* prevent dotted border in Firefox */
 }
 .ui-tabs-nav .ui-tabs-selected{
-	background: #6D6D6D url(../images/menu-bits.gif) repeat-x scroll left top;
-	border-color: #6D6D6D;
-	color: #21759B;
-	text-shadow:0 -1px 0 #666666;
+	background: #6D6D6D url(../images/menu-bits.gif) repeat-x scroll left top !important;
+	border-color: #6D6D6D !important;
+	color: #21759B !important;
+	text-shadow:0 -1px 0 #666666 !important;
 
 	-moz-border-radius-topright: 6px;
 	-khtml-border-top-right-radius: 6px;

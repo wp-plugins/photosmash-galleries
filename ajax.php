@@ -52,6 +52,10 @@ class BWBPS_AJAX{
 
 
 		switch ($action){
+			case 'savecustfields' :
+				$this->saveCustomFields();
+				break;
+				
 			case 'approve':
 				$this->approveImage();
 				break;
@@ -87,10 +91,55 @@ class BWBPS_AJAX{
 			case 'setgalleryid' :
 				$this->setGalleryID();
 				break;
+				
+			case 'publishpost' :
+				$this->publishPost();
+				break;
 		
 			default :
 				break;
 		}
+	}
+	
+	function saveCustomFields(){
+	
+		$json['image_id'] = (int)$_POST['image_id'];
+		
+		if(current_user_can('level_10') && $json['image_id']){
+			
+			require_once('bwbps-savecustomfields.php');
+			
+			$bwbpsCF = new BWBPS_SaveCustomFields();
+			$customData = $bwbpsCF->saveCustomFields($json['image_id']);
+			if(is_array($customData)){
+				$json['status'] = 'saved';	
+			} else {
+				$json['status'] = 'false';
+			}
+			
+		} else {
+			$json['status'] = 'false';
+		}
+		echo json_encode($json);
+		return;
+	
+	}
+	
+	function publishPost(){
+		
+		$json['image_id'] = (int)$_POST['image_id'];
+		
+		if(current_user_can('level_10')){
+			$post_id = (int)$_POST['post_id'];
+			wp_publish_post($post_id);
+			
+			$json['action'] = 'published';
+		} else {
+			$json['action'] = 'failed';
+		}
+		echo json_encode($json);
+		return;
+	
 	}
 	
 	function setGalleryID(){
@@ -146,7 +195,9 @@ class BWBPS_AJAX{
 			$json['image_id'] = (int)$_POST['image_id'];
 			
 			//Do this before we update status, so we only do unmoderated images
-			$this->alertContributor( 1, $json['image_id'] );
+			//$this->alertContributor( $json['image_id'] );
+			
+			$this->sendMsg($json['image_id'], 1);
 		
 			$data['status'] = 1;
 			$data['alerted'] = 1;
@@ -179,6 +230,7 @@ class BWBPS_AJAX{
 		global $wpdb;
 		if(current_user_can('level_10')){
 		
+			$this->sendMsg( $json['image_id'], 1 );
 			
 			$data['alerted'] = 1;
 			$json['image_id'] = (int)$_POST['image_id'];
@@ -256,7 +308,7 @@ class BWBPS_AJAX{
 				}
 				
 				//Do this before we delete it, or we can't get the user ID
-				$this->alertContributor( 0, $json['image_id'] );
+				$this->sendMsg( $json['image_id'], 0 );
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
 					PSIMAGESTABLE.' WHERE image_id = %d', $imgid ));
@@ -438,30 +490,44 @@ class BWBPS_AJAX{
 	}
 	
 	//Send email alerts for new images
-	function sendMsg($msg, $img_id, $approve=false, $unapproved_only=true)
+	function sendMsg($img_id, $approve=false, $unapproved_only=true)
 	{
 		global $wpdb;
+			
+		if( !(int)$_POST['send_msg'] ){ return; }
 				
 		if( $unapproved_only ){
 			$status_where = " AND " . PSIMAGESTABLE .".status < 0 ";
 		}
 						
-		$sql = "SELECT ".$wpdb->users.".user_email, ".PSIMAGESTABLE
+		$sql = "SELECT ".$wpdb->users.".user_email, ".$wpdb->users.".user_login, "
+			. $wpdb->posts . ".post_name as wp_postname, "
+			. $wpdb->posts . ".post_title as wp_postitle, "
+			. PSIMAGESTABLE
 			. ".* FROM ".PSIMAGESTABLE." JOIN "
 			. $wpdb->users. " ON " . $wpdb->users . ".ID = "
-			. PSIMAGESTABLE . ".user_id WHERE "
+			. PSIMAGESTABLE . ".user_id LEFT OUTER JOIN " . $wpdb->posts . " ON "
+			. $wpdb->posts . ".ID = " . PSIMAGESTABLE . ".post_id WHERE "
 			. PSIMAGESTABLE . ".image_id = " . (int)$img_id . $status_where;
-												
+															
 		$row = $wpdb->get_row($sql);
 		
-		
 		if(!is_object($row)){ return; }
-				
+		
+		//Get Post perma-link for [post_link]
+		$post_perma = get_permalink((int)$row->post_id);
+		
+		if($post_perma){
+			$perma = "<a href='".$post_perma."' title='View post'>" . $row->wp_postitle . "</a>";
+		} else { $perma = " [post not available] "; }
+						
+		//Get the user's email address
 		$email = $row->user_email;
 		if(!trim($email)) return;
 		
 		$post_id = $row->post_id;
 		
+		//Get a link to the image
 		if( $approve && $row->file_type === "0" ){
 		
 			$uploads = wp_upload_dir();	
@@ -478,15 +544,29 @@ class BWBPS_AJAX{
 				
 				$imglink = "<a href='". $plink . "' title='View post'>"
 					. $imglink . "</a>";
-					
 			}
 			
 		}
 		
+		//Get the Image Caption
 		$imgcaption = $row->image_caption ? $row->image_caption : "<em>missing</em>";
 		
-		$msg = str_replace('[blogname]', get_bloginfo("site_name" ), $msg);
+		//Get Author Link
+		$authorlink = get_author_posts_url($row->user_id);					
+		if($authorlink){
+			$name = 'View your images/posts.';
+			$authorlink = "<a href='".$authorlink."' title='View all images by contributor'>".$name."</a";
+		}
 		
+		//Get the message from $_POST
+		$msg = $_POST['mod_msg'];
+		
+		$msg = str_replace('[blogname]', get_bloginfo("site_name" ), $msg);
+		$msg = str_replace('[post_link]', $perma, $msg);
+		$msg = str_replace('[user_name]', $row->user_login, $msg);
+		$msg = str_replace('[author_link]', $authorlink, $msg);
+		
+				
 		$msg .= "<div style='margin-top: 30px;'><p>Image caption: " . $row->image_caption
 			. "</p>" . $imglink . "</div>";
 			
@@ -496,7 +576,7 @@ class BWBPS_AJAX{
  		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
  		 		
  		$accepted = $approve ? "Accepted" : "Rejected";
- 		wp_mail($email, "Image has been ". $accepted, $msg, $headers );
+ 		wp_mail($email, "Image moderation notice: ". $accepted, $msg, $headers );
 				
 	}
 

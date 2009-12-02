@@ -8,13 +8,13 @@ class BWBPS_SaveCustomFields{
 	function BWBPS_SaveCustomFields(){
 	}
 	
-	function saveCustomFields($image_id){
+	function saveCustomFields($image_id, $id_prefix = ''){
 		global $wpdb;
 		
 		$fields = $this->getCustomFields();
 		if(!$fields ||$wpdb->num_rows == 0){return "";}
 
-		return $this->saveFieldData($fields, $image_id);
+		return $this->saveFieldData($fields, $image_id, $id_prefix);
 		
 	}
 
@@ -32,7 +32,7 @@ class BWBPS_SaveCustomFields{
 	// ********************************************
 	// *	Save Custom Field Data
 	// ********************************************
-	function saveFieldData($fields, $image_id)
+	function saveFieldData($fields, $image_id, $id_prefix = '')
 	{
 		global $wpdb;
 		
@@ -44,8 +44,8 @@ class BWBPS_SaveCustomFields{
 			
 			$val = null;
 				
-			if(isset($_POST["bwbps_".$blank.$f->field_name])){
-				$val = $_POST["bwbps_".$blank.$f->field_name]; 
+			if(isset($_POST[ $id_prefix . "bwbps_".$blank.$f->field_name])){
+				$val = $_POST[ $id_prefix . "bwbps_".$blank.$f->field_name]; 
 			}
 				
 			$val = $this->formatSaveVal($f, $val, $tags);

@@ -49,6 +49,7 @@ class BWBPS_Layout{
 			, 'thumb_image'
 			, 'thumb_url'
 			, 'thumb_linktoimage'
+			, 'ps_rating'
 		);
 	}
 	
@@ -75,7 +76,7 @@ class BWBPS_Layout{
 		$admin = current_user_can('level_10');
 		
 		$uploads = wp_upload_dir();
-		
+			
 		//Instantiate the Ratings class if needed
 		if($g['poll_id']){
 			
@@ -130,7 +131,7 @@ class BWBPS_Layout{
 	
 		//Calculate Pagination variables
 		$totRows = $wpdb->num_rows;	// Total # of images (total rows returned in query)
-		if($post->photosmash == 'author'){
+		if($post->photosmash == 'author' || $post->photosmash == 'tag'){
 			$perma = $post->photosmash_link;
 		} else {
 			$perma = get_permalink($post->ID);	//The permalink for this post
@@ -270,8 +271,10 @@ class BWBPS_Layout{
 					$rating['rating_cnt'] = $image['rating_cnt'];
 					$rating['votes_sum'] = $image['votes_sum'];
 					$rating['votes_cnt'] = $image['votes_cnt'];
+					$rating['poll_id'] = $image['poll_id'];
 										
 					$image['ps_rating'] = $this->ratings->get_rating($rating);
+					
 			
 				} else {
 					$image['ps_rating'] = "";
@@ -337,7 +340,7 @@ class BWBPS_Layout{
 				$image['imgtitle'] = str_replace("'","",$image['image_caption']);
 				
 				
-				/*	***********		Set up the <a href....>		*************  */
+				/*	CALCULATE the Image and Caption URL  */				
 				$this->calculateURLs($g, $image, $perma);
 				
 								
@@ -507,15 +510,26 @@ class BWBPS_Layout{
 			// URL when setting for Front/Cat/Archive pages to link thumbnails to the Post
 			if( !is_single() && $this->psOptions['imglinks_postpages_only'])
 			{
-				$image['imgurl'] = "<a href='".$perma."'>";
-				$image['imgurl_close'] = "</a>";
+				
+				if((int)$image['post_id']){
+					$post_perma = get_permalink((int)$image['post_id']);
+				} else {
+					if((int)$image['gal_post_id']){
+						$post_perma = get_permalink((int)$image['gal_post_id']);
+					}
+				}			
+			
+				if($post_perma){
+					$image['imgurl'] = "<a href='".$post_perma."' title='View post'>";
+					$image['imgurl_close'] = "</a>";
+				}
 			} else {
 			// Normal URLs
 											
 				
 				//Deal with special cases where the caption style changes 
 				//the thumbnail link.
-				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9 || $g['show_imgcaption'] == 12)
+				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9 || $g['show_imgcaption'] == 12 || $g['show_imgcaption'] == 13)
 				{
 
 					
@@ -1198,6 +1212,7 @@ class BWBPS_Layout{
 				break;
 
 			case '[ps_rating]' :
+				
 				$ret = $image['ps_rating'];
 				break;
 			
@@ -1252,8 +1267,6 @@ class BWBPS_Layout{
 				, $image['user_nicename'], $image['display_name']);
 
 			$nicename = $nicename ? $nicename : "anonymous";
-			
-			
 
 							
 			switch ($g['show_imgcaption']){
@@ -1545,6 +1558,36 @@ class BWBPS_Layout{
 					}
 																			
 					break;	
+				
+				case 13: //Caption & Thumbnail link to Post
+					if((int)$image['post_id']){
+						$post_perma = get_permalink((int)$image['post_id']);
+					} else {
+						$post_perma = get_permalink((int)$image['gal_post_id']);
+					}
+					
+					if($post_perma){
+						$perma = "<a href='".$post_perma."' title='View post'>";
+					}
+				
+									
+					if($perma){
+						$image['imgurl'] = $perma;
+					}
+				
+					if($image['image_caption']){
+					
+						$image['capurl'] = $perma;
+						
+						$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+							. $image['image_caption']."</span>";
+					
+						$image['capurl_close'] = $image['imgurl_close'];
+						
+					} else {
+						$image['capurl'] = "";
+					}																			
+					break;	
 			}
 			
 			return $scaption;
@@ -1731,20 +1774,52 @@ class BWBPS_Layout{
 			$custdata = ", ".PSCUSTOMDATATABLE.".* ";
 			
 		
-		if($g['show_imgcaption'] == 12){
-		
-			$custDataJoin = " LEFT OUTER JOIN ". PSGALLERIESTABLE 
-				. " ON ". PSIMAGESTABLE . ".gallery_id = "
-				. PSGALLERIESTABLE . ".gallery_id " . $custDataJoin;
+		$custDataJoin = " LEFT OUTER JOIN ". PSGALLERIESTABLE 
+			. " ON ". PSIMAGESTABLE . ".gallery_id = "
+			. PSGALLERIESTABLE . ".gallery_id " . $custDataJoin;
 			
-			$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id ";
+		$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id, ". PSGALLERIESTABLE . ".poll_id ";
 		
-		}
+		
 		
 		
 		// Calculate ORDER BY
-		$sorder = (int)$g['sort_order'] ? "DESC" : "ASC";
+		$sortorder = (int)$g['sort_order'] ? "DESC" : "ASC";
 		
+		// Bayesian Sorting from:
+		// http://www.thebroth.com/blog/118/bayesian-rating
+		/*
+		br = ( (avg_num_votes * avg_rating) + (this_num_votes * this_rating) ) 
+			/ (avg_num_votes + this_num_votes)
+		*/
+		
+		if( (int)$g['sort_field'] == 4 ){
+		
+			if(!$g['gallery_type'] == 99){
+				$galid_sql = ' AND gallery_id = ' . (int)$g['gallery_id'];
+			}
+		
+			$br_row = $wpdb->get_row('SELECT AVG(avg_rating) as avgrating, AVG(rating_cnt) 
+				as numvotes
+				FROM ' . PSIMAGESTABLE . ' WHERE 
+				status = 1 ' . $galid_sql);
+				
+			if($br_row){
+				$nvotes = $br_row->numvotes;
+				$arate = $br_row->avgrating;
+				
+				$brmagic = $arate * $nvotes;
+				
+				$custdata  .= ", ( ( " . $brmagic . " + ( " . PSIMAGESTABLE
+					. ".rating_cnt * " . PSIMAGESTABLE . ".avg_rating ) ) / "
+					. " ( " . $nvotes . " + "  . PSIMAGESTABLE
+					. ".rating_cnt ) ) AS bwbps_br_rating ";
+				
+			} else {
+				$custdata .= ", " . PSIMAGESTABLE . ".avg_rating AS bwbps_br_rating ";
+			}
+			
+		}
 		
 		switch ($g['gallery_type']){
 			
@@ -1767,47 +1842,80 @@ class BWBPS_Layout{
 				$sortby .= "LIMIT ". (int)$g['limit_images'];
 			
 				break;
+			case 40 :	//tag gallery
+				$g['smart_gallery'] = true;
+				
+				if($g['tags']){
+
+					$tagtemp = explode(",", $g['tags']);
+		
+					if( !is_array($tagtemp) ){
+						$tagtemp = array($tagtemp);
+					}
+					
+					$tagtemp = array_map("trim", $tagtemp);
+															
+					$g['smart_where'] = array( $wpdb->terms . '.name' => $tagtemp);
+					
+					$custDataJoin .= " "
+						. "LEFT OUTER JOIN ". $wpdb->term_relationships 
+						. " ON ". $wpdb->term_relationships . ".object_id = "
+						. PSIMAGESTABLE . ".image_id "
+						. "LEFT OUTER JOIN " . $wpdb->term_taxonomy
+						. " ON " . $wpdb->term_taxonomy . ".term_taxonomy_id = "
+						. $wpdb->term_relationships . ".term_taxonomy_id AND " 
+						. " wp_term_taxonomy.taxonomy = 'photosmash' "
+						. "LEFT OUTER JOIN ". $wpdb->terms 
+						. " ON ". $wpdb->terms . ".term_id = "
+						. $wpdb->term_taxonomy . ".term_id "
+						;					
+						
+				} else {
+					
+					$g['smart_where'] = array( PSIMAGESTABLE . '.gallery_id' => (int)$g['gallery_id']) ;
+					
+				}
+								
+				$sortby = $this->getSortbyField($g, $sortorder);
+				break;
+			
+			case 99 : //Highest Ranked
+				
+				$g['smart_gallery'] = true;
+				
+				if(!(int)$g['limit_images']){
+					$g['limit_images'] = 8;
+				}
+				
+				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				$sortby .= " LIMIT ". (int)$g['limit_images'];
+				
+				break;
 			
 			default :
-
-				switch ( (int)$g['sort_field'] ){
+			
+				$sortby = $this->getSortbyField($g, $sortorder);	
 				
-					case 0 :	// When Uploaded
-						$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
-						break;
-					case 1 :	// Custom Sort
-						$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date '. $sorder;
-						break;
-					case 2 :	// Custom Fields
-						$sortby = PSIMAGESTABLE.'.created_date ' . $sorder . ', '.PSIMAGESTABLE.'.seq';
-						break;
-					default :	// When Uploaded
-						$sortby = PSIMAGESTABLE.'.created_date ' 
-							. $sorder . ', '.PSIMAGESTABLE.'.seq';
-						break;
-					
-				}				
+				break;					
 			
 		}
-		
-		
-				
+						
 		// Add the WHERE clause for the Smart Galleries
 		if ( $g['smart_gallery'] ){
 			
 			if( is_array($g['smart_where'] ) ){
 				$swhere[] = $this->getSmartWhereField( $g['smart_where'] );
-				
 				$sqlWhere = " WHERE " . implode( " AND ", $swhere );			
 			} else {
 			
 				$sqlWhere = " WHERE 1=1 ";
 			
-			}
+			}		
 		
 		} else {
 			
-			$sqlWhere = " WHERE gallery_id = " . (int)$g['gallery_id'];
+			$sqlWhere = " WHERE " . PSIMAGESTABLE . ".gallery_id = " . (int)$g['gallery_id'];
 		
 		}
 				
@@ -1822,8 +1930,8 @@ class BWBPS_Layout{
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
-				. $sqlWhere . ' ORDER BY '.$sortby);			
-					
+				. $sqlWhere . ' ORDER BY '.$sortby);	
+									
 			
 		} else {
 			//Non-Admins can see their own images and Approved images
@@ -1837,16 +1945,46 @@ class BWBPS_Layout{
 				.$wpdb->users.'.user_url' . $gallery_selections
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
-				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
-				. $sqlWhere . ' AND (status > 0 OR user_id = '
+				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin
+				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
 				.$uid.')  ORDER BY '.$sortby
 				);			
 				
 		}
-					
+		
 		$images = $wpdb->get_results($sql, ARRAY_A);
 						
 		return $images;
+	}
+	
+	function getSortbyField($g, $sortorder){
+		
+		switch ( (int)$g['sort_field'] ){
+				
+			case 0 :	// When Uploaded
+				$sortby = PSIMAGESTABLE.'.created_date ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			case 1 :	// Custom Sort
+				$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date '. $sortorder;
+				break;
+			case 2 :	// Custom Fields
+				$sortby = PSIMAGESTABLE.'.created_date ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			case 3 :	// User IDs
+				$sortby = PSIMAGESTABLE.'.user_id ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			case 4 :	// Rating  -  Bayesian Ranking
+				$sortby = 'bwbps_br_rating ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			
+			default :	// When Uploaded
+				$sortby = PSIMAGESTABLE.'.created_date ' 
+					. $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;		
+		}
+		
+		return $sortby;
+	
 	}
 	
 	/**
@@ -1863,32 +2001,22 @@ class BWBPS_Layout{
 			//$val = $swhere[$key];
 			
 			foreach ($swhere as $key => $val){
-			
-			switch ($key) {
-				case "user_id" :
-					if( is_array($val) ){
+														
+				if( is_array($val) ){
+				
+					foreach ($val as $v){
 					
-						foreach ($val as $uid){
-						
-							$valid[] = (int)$uid;
-							
-						}
-						$ret = PSIMAGESTABLE . ".user_id IN ( " . implode( "," , $valid) . " ) ";
-						
-					} else {
-					
-						$ret = PSIMAGESTABLE . ".user_id = " . (int)$val;
+						$valarray[] = $v;
 						
 					}
-					break;
-				
-				default :
+					$ret = $key . " IN ( '" . implode( "','" , $valarray) . "' ) ";
 					
+				} else {
+				
 					$ret = $key . " = '" . $val . "'" ;
 					
-					break;
-			}
-			
+				}
+							
 			}
 		
 		}
