@@ -194,9 +194,7 @@ class BWBPS_AJAX{
 			
 			$json['image_id'] = (int)$_POST['image_id'];
 			
-			//Do this before we update status, so we only do unmoderated images
-			//$this->alertContributor( $json['image_id'] );
-			
+			//Do this before we update status, so we only do unmoderated images		
 			$this->sendMsg($json['image_id'], 1);
 		
 			$data['status'] = 1;
@@ -213,18 +211,6 @@ class BWBPS_AJAX{
 		echo json_encode($json);
 	}
 	
-	function alertContributor($approved, $img_id){
-			
-		if($this->psOptions['mod_send_msg']){
-			if($approved){
-				$msg = $this->psOptions['mod_approve_msg'];
-			} else {
-				$msg = $this->psOptions['mod_reject_msg'];
-			}
-			
-			$this->sendMsg($msg, $img_id, $approved);
-		}	
-	}
 	
 	function markImageReviewed(){
 		global $wpdb;
@@ -560,6 +546,8 @@ class BWBPS_AJAX{
 		
 		//Get the message from $_POST
 		$msg = $_POST['mod_msg'];
+		
+		$msg = stripslashes($msg);
 		
 		$msg = str_replace('[blogname]', get_bloginfo("site_name" ), $msg);
 		$msg = str_replace('[post_link]', $perma, $msg);

@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.8.6
-Stable tag: 0.4.03
+Stable tag: 0.4.05
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 

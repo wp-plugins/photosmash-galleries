@@ -1928,14 +1928,25 @@ if($psOptions['use_customform']){ ?>
 			$imgcnt=count($images);
 		} 
 		
+		if(is_array($this->psForm->cfList)){
 		foreach( $this->psForm->cfList as $f ){
 			$cfNamesArrayForJS[] .= '"' . $f->field_name . '"';
 			$cfArrayForJS[] .= ' "' . $f->field_name . '" : "" ';
 		
 		}
+		}
+			
+			if(is_array($cfArrayForJS)){
+				$jsfieldarray = implode(',', $cfArrayForJS);
+			}
+			
+			if(is_array($cfNamesArrayForJS)){
+				$jsfieldnamearray = implode(',', $cfNamesArrayForJS);
+			}
+		
 			$psTable .= "
-			<script type='text/javascript'>var bwbpsCustomFields = {" . implode(',', $cfArrayForJS) . "};
-			var bwbpsCustomFieldNames = [" . implode(',', $cfNamesArrayForJS) . "];
+			<script type='text/javascript'>var bwbpsCustomFields = {" . $jsfieldarray . "};
+			var bwbpsCustomFieldNames = [" . $jsfieldnamearray . "];
 			</script>
 			";
 		
