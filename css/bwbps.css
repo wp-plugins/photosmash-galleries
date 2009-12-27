@@ -435,11 +435,12 @@ div.bwbps_pag_2{
 div.bwbps_image  {
 float: left;
 display: inline;
-padding: 5px;
+padding: 3px;
 border: 1px #e0e0e0 solid;
 border-color: #ddd #bbb #aaa #ccc;
 background-color: #f5f5f5;
 margin: 3px;
+line-height: 1em;
 }
 
 .bwbps_image  img{

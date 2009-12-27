@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.4.05
+Version: 0.5.00
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -198,7 +198,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 16;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 17;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -250,9 +250,10 @@ class BWB_PhotoSmash{
 		
 		//Add actions for Contributor Gallery
 		if( $this->psOptions['contrib_gal_on'] ){
-			add_filter('the_posts',  array(&$this,'displayContributorGallery') );
-			add_filter('the_permalink',array(&$this,'fixAuthorLink') ); 
+			add_filter('the_posts',  array(&$this,'displayContributorGallery') ); 
 		}
+		
+		add_filter('the_permalink',array(&$this,'fixSpecialGalleryLinks') );
 		
 		//Add action for Tags Gallery
 		add_filter('the_posts', array(&$this, 'displayTagGallery') );
@@ -342,6 +343,7 @@ class BWB_PhotoSmash{
 				'last_alert' => 0,
 				'use_advanced' => 0,
 				'use_urlfield' => 0,
+				'use_attribution' => 0,
 				'use_customform' => 0,
 				'use_customfields' => 0,
 				'use_thickbox' => 1,
@@ -417,6 +419,8 @@ class BWB_PhotoSmash{
 			'done',
 			'loading',
 			'message',
+			'img_attribution',
+			'img_license',
 			'category_name',
 			'category_link',
 			'category_id',
@@ -737,8 +741,9 @@ function shortCodeGallery($atts, $content=null){
 			'thumb_width' => 0,
 			'no_signin_msg' => false,
 			'where_gallery' => false, // This is used with Random/Recent Galleries to limit selection to a single gallery
-			'create_post' => false,
+			'create_post' => false,	// Give a Custom Layout name to turn on creating new posts with PExt
 			'preview_post' => false,
+			'cat_layout' => false,	// Give a prefix to be used with the first Category ID to determine what layout should be used...it will default back to the layout specified in create_post if Cat Layout is not found...e.g.  cat_layout='postcat' ...it will look for a custom layout called postcat_##  where ## is the id of the first category in the upload
 			'post_cat_child_of' => false,
 			'post_cat_exclude' => false,
 			'post_cat_show' => false,	// Supply this with a value that evaluates to true (e.g. something other than 0 or false or '') and it turns on the post categories selection box and is used as the LABEL for the field
@@ -838,6 +843,7 @@ function shortCodeGallery($atts, $content=null){
 		//PhotoSmash Extend Variables used in Post on Upload (creating new Posts on Uploads)
 		$g['create_post'] = $create_post;
 		$g['preview_post'] = $preview_post;
+		$g['cat_layout'] = $cat_layout;
 		$g['post_cat_child_of'] = $post_cat_child_of;
 		$g['post_cat_exclude'] = $post_cat_exclude;
 		$g['post_cat_show'] = $post_cat_show;
@@ -1498,13 +1504,6 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 				
 		wp_register_script('bwbps_js', WP_PLUGIN_URL . '/photosmash-galleries/js/bwbps.js', array('jquery'), '1.0');
 		wp_enqueue_script('bwbps_js');
-		/*
-		//enqueue jQuery Star Rating Plugin
-		wp_register_script('jquery_metadata'
-			, WP_PLUGIN_URL . '/photosmash-galleries/js/jquery.MetaData.js'
-			, array('jquery'), '1.0');
-		wp_enqueue_script('jquery_metadata');
-		*/
 		
 		//enqueue jQuery Star Rating Plugin
 		wp_register_script('jquery_starrating'
@@ -1609,7 +1608,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	function injectAdminStyles()
 	{
 		wp_enqueue_style( 'bwbpstabs', WP_PLUGIN_URL.'/photosmash-galleries/css/bwbps.css', false, '1.0', 'screen' );
-		wp_enqueue_style( 'bwbpsuicore', WP_PLUGIN_URL.'/photosmash-galleries/css/ui.core..css', false, '1.0', 'screen' );		
+		wp_enqueue_style( 'bwbpsuicore', WP_PLUGIN_URL.'/photosmash-galleries/css/ui.core.css', false, '1.0', 'screen' );		
 		wp_enqueue_style( 'bwbpsdatepicker', WP_PLUGIN_URL.'/photosmash-galleries/css/ui.datepicker.css', false, '1.0', 'screen' );
 	}
 	
@@ -2060,16 +2059,24 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		}	
 	}
 	
-	function fixAuthorLink($perma){
+	function fixSpecialGalleryLinks($perma){
 		global $post;
+				
+		switch ($post->photosmash) {
 		
-		if($post->photosmash == 'author') {		
-		
-			return get_author_posts_url($post->post_name);
+			case "author" :
+				
+				return get_author_posts_url($post->post_name);
+				break;
 			
-		} else {
-			return $perma;
-		}	
+			case "tag" :
+				return $post->photosmash_link;
+				break;
+			
+			default :
+				return $perma;
+		}
+
 	}
 	
 	
@@ -2205,9 +2212,7 @@ array(&$bwbPS, 'init'));
 
 add_action('init', array(&$bwbPS, 'enqueueBWBPS'), 1);
 
-if(!is_admin()){
-	add_action( 'init', array(&$bwbPS, 'createTaxonomy'), 0 );
-}
+add_action( 'init', array(&$bwbPS, 'createTaxonomy'), 0 );
 
 add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
 

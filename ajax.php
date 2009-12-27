@@ -177,9 +177,15 @@ class BWBPS_AJAX{
 			$data['url'] = stripslashes($_POST['image_url']);
 			$json['image_id'] = (int)$_POST['image_id'];
 			$where['image_id'] = $json['image_id'];
-			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
+			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where) + 1;
 			$json['action'] = 'saved';
 			$json['deleted'] = '';
+			
+			$tags = $_POST['image_tags'];
+			$tags = wp_kses( $tags, array() );
+			
+			$t = is_array($tags) ? $tags : explode( ',', trim($tags, " \n\t\r\0\x0B,") );
+			wp_set_object_terms($json['image_id'], $t, 'photosmash', false);
 		
 			echo json_encode($json);
 			return;
@@ -312,13 +318,23 @@ class BWBPS_AJAX{
 					.' WHERE image_id = %d', $imgid));
 					
 				if((int)$row['wp_attach_id'] && $delete_med_lib ){
+				
+					wp_delete_post((int)$row['wp_attach_id']);
 					
-					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->posts
-						.' WHERE ID = %d', (int)$row['wp_attach_id']));
 				
 					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->postmeta
+						.' WHERE post_id = %d', (int)$row['wp_attach_id']));
+						
+					// Delete tagged photos
+					
+					wp_set_object_terms($imgid, '', 'photosmash', false);
+					
+					wp_delete_object_term_relationships( $imgid, 'photosmash' );
+
+					//Dete Post Meta for Attachment
+					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->postmeta
 						.' WHERE post_id = %d', (int)$row['wp_attach_id']));	
-				
+						
 				}
 					
 					

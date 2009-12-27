@@ -253,10 +253,19 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[author_link] - <span style='font-size: 9px;'>displays link to Author page for user</span></li>
 
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[url] - <span style='font-size: 9px;'>alternate user supplied URL</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[img_attribution] - <span style='font-size: 9px;'>attributed to?</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[img_license] - <span style='font-size: 9px;'>image license</span></li>
 												
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb] - <span style='font-size: 9px;'>displays the returned thumbnail</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail] - <span style='font-size: 9px;'>same as thumb</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_image] - <span style='font-size: 9px;'>just the thumb image</span></li>
+											
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium] - <span style='font-size: 9px;'>displays the medium sized thumbnail</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[file_name] - <span style='font-size: 9px;'>image's file name</span></li>
 						

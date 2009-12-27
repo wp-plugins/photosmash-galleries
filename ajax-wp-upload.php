@@ -110,8 +110,6 @@ class BWBPS_AJAXUpload{
 			
 		$ret = $this->psUploader->saveImageToDB($this->psUploader->g, $saveCustomFields);
 		
-		if($ret){ do_action('bwbps_uploaded'); }
-		
 		return $ret;
 		
 	}
@@ -152,10 +150,15 @@ class BWBPS_AJAXUpload{
 						
 		}
 		
-		//Step 6
+		
 		if( $image_id ){
 		
+			//Step 6 - Add image to Media Library if turned on
 			$this->addToWPMediaLibrary();
+			
+			//Step 7 - Do Action 'bwbps_uploaded' - this triggers the create new post in PhotoSmash Extend
+			//		 - it can also be called by other plugins or themes
+			do_action('bwbps_uploaded');
 		
 		}
 		

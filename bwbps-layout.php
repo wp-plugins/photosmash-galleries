@@ -25,11 +25,14 @@ class BWBPS_Layout{
 	function getStandardFields(){
 		return array('caption'
 			, 'url'
+			, 'img_attribution'
+			, 'img_license'
 			, 'image'
 			, 'linked_image'
 			, 'image_id'
 			, 'gallery_id'
 			, 'thumbnail'
+			, 'medium'
 			, 'thumb'
 			, 'user_name'
 			, 'user_url'
@@ -64,6 +67,9 @@ class BWBPS_Layout{
 			, 'video'
 			, 'youtube'
 			, 'caption_escaped'
+			, 'img_attribution'
+			, 'img_license'
+			, 'url'
 		);
 	}
 	
@@ -306,6 +312,8 @@ class BWBPS_Layout{
 					$image['image_url'] = $uploads['baseurl'] . '/' . $image['image_url'];
 				
 				}
+				
+				if(!$image['medium_url']){ $image['medium_url'] = $image['thumb_url']; }
 			
 				$g['modMenu'] = "";
 				switch ($image['status']) {
@@ -681,7 +689,7 @@ class BWBPS_Layout{
 					$fld = "[".$fld."]";
 					
 				}
-				
+								
 				$ret = str_replace($fld, $replace, $ret);	
 
 			}
@@ -853,7 +861,7 @@ class BWBPS_Layout{
 	 */
 	 
 	function getCFFieldHTML($fld, $image, $g, $atts){
-		
+			
 		//Set up thumb size
 		if((int)$g['thumb_height'] ){
 			$thumbsize = " height=" . (int)$g['thumb_height'];
@@ -925,6 +933,7 @@ class BWBPS_Layout{
 			
 		} else {
 			$image['img_alt'] = $image['imgtitle'];
+			$atts = array();
 		}
 		
 		switch ($fld){
@@ -933,6 +942,7 @@ class BWBPS_Layout{
 				break;
 			
 			case '[image_url]' :
+				
 				if($image['thumb_url']){
 				  
 					$ret = $image['image_url'];
@@ -954,7 +964,7 @@ class BWBPS_Layout{
 				
 			case '[linked_image]' :
 				if($image['thumb_url']){
-				  
+					
 					$ret = $image['imgurl']."
 						<img src='".$image['image_url']."'".$g['imgclass']
 						. " alt='".$image['img_alt']."' $imagesize />"
@@ -1056,6 +1066,12 @@ class BWBPS_Layout{
 			
 			case '[caption]' :
 				
+				
+				if( ( $atts['if_before'] || $atts['if_after'] ) && !$image['image_caption'] ) 
+				{  
+					break;
+				}
+				
 				$ret = $image['image_caption'];
 								
 				if( is_array($atts) && ((int)$atts['length'] || ((int)$atts['nonpost_length'] && !is_single()) ) ){
@@ -1090,6 +1106,13 @@ class BWBPS_Layout{
 				break;
 			
 			case '[caption_escaped]' :
+				
+				
+				if( ( $atts['if_before'] || $atts['if_after'] ) && !$image['image_caption'] ) 
+				{  
+					break;
+				}
+				
 				$ret = $image['image_caption'];
 								
 				if( is_array($atts) && ((int)$atts['length'] || ((int)$atts['nonpost_length'] 
@@ -1113,7 +1136,11 @@ class BWBPS_Layout{
 					if((int)$g['post_id']){
 						$ret = get_permalink((int)$g['post_id']);
 					} else {
-						$ret = $image['imgurl'];
+					
+						//Prevents defaulting the Image URL when no post URL is available.
+						if( !$atts['no_default'] ){
+							$ret = $image['imgurl'];
+						}
 					}
 				}
 				
@@ -1174,6 +1201,75 @@ class BWBPS_Layout{
 				}
 				
 				break;
+				
+			case '[img_attribution]' :
+				$ret = "";
+				
+				if( $image['img_attribution'] ){
+					$ret =  $image['img_attribution'];
+				}
+				
+				break;
+			
+			case '[img_license]' :
+				$ret = "";
+				
+				
+				switch ((int)$image['img_license']) {
+					case 0 :
+						$ret = 'license unknown';
+						break;
+					
+					case 1 :
+						$ret = 'All rights reserved.';
+						break;
+					case 2 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution">BY</a>';
+						break;
+					
+					case 3 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution Share Alike">BY-SA</a>';
+						break;
+					
+					case 4 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution No Derivatives">BY-ND</a>';
+						break;
+					
+					case 5 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution Non-Commercial">BY-NC</a>';
+						break;
+					
+					case 6 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution Non-Commercial Share Alike">BY-NC-SA</a>';
+						break;
+					
+					case 7 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution Non-Commercial No Derivatives">BY-NC-ND</a>';
+						break;
+					
+					case 8 :
+						$ret = '<a href="http://creativecommons.org/about/licenses/" title="Creative Commons: Attribution">BY</a>';
+						break;
+					
+					case 9 :
+						$ret = '<a href="http://creativecommons.org/choose/cc-gpl" title="Creative Commons: GNU-GPL">CC-GNU-GPL</a>';
+						break;
+					
+					case 10 :
+						$ret = '<a href="http://creativecommons.org/choose/cc-lgpl" title="Creative Commons: GNU - Lesser GPL">CC-GNU-LGPL</a>';
+						break;
+					
+					case 11 :
+						$ret = '<a href="http://creativecommons.org/licenses/BSD/" title="Creative Commons: BSD">BSD</a>';
+						break;
+						
+					default :
+						$ret = "";
+						break;				
+				}
+									
+				break;
+				
 			
 			case '[author_link]' :
 
@@ -1219,6 +1315,16 @@ class BWBPS_Layout{
 			default :
 				break;
 		}
+		
+		if( ( $atts['if_before'] || $atts['if_after'] ) && !$ret ) 
+		{
+			$ret = "";
+		} else {
+			$ret = $atts['if_before'] . $ret . $atts['if_after'];
+		}
+		
+		if( !$ret ) { $ret = $atts['if_blank']; }
+		
 		return $ret;
 	}
 	
@@ -1846,6 +1952,32 @@ class BWBPS_Layout{
 				$g['smart_gallery'] = true;
 				
 				if($g['tags']){
+				
+					if($g['tags'] == 'post_tags'){
+						
+						if(!isset($wp_query)){
+							global $wp_query;
+						}
+						$terms = wp_get_object_terms( $wp_query->post->ID, 'post_tag', $args ) ;
+						
+						if(is_array($terms)){
+						
+							foreach( $terms as $term ){
+								
+								$_terms[] = $term->name;
+							
+							}
+						
+							unset($terms);
+							if( is_array($_terms)){
+								$g['tags'] = implode("," , $_terms);
+							} else {
+								$g['tags'] = "";
+							}
+						}
+					
+						
+					}
 
 					$tagtemp = explode(",", $g['tags']);
 		
@@ -1921,7 +2053,7 @@ class BWBPS_Layout{
 				
 		//Admins can see all images
 		if(current_user_can('level_10')){
-			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
+			$sql = $wpdb->prepare('SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'
@@ -1937,7 +2069,7 @@ class BWBPS_Layout{
 			//Non-Admins can see their own images and Approved images
 			$uid = $user_ID ? $user_ID : -1;
 					
-			$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
+			$sql = $wpdb->prepare('SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'

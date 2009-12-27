@@ -110,7 +110,7 @@ class BWBPS_Uploader{
 		$this->json['succeed'] = 'false'; 
 		$this->json['size'] = $_POST['MAX_FILE_SIZE'];
 		
-		$this->json['form_name'] = $_POST['bwbps_formname'];
+		$this->json['form_name'] = esc_attr($_POST['bwbps_formname']);
 		
 		$this->json['post_id'] = (int)$_POST['bwbps_post_id'];
 		
@@ -121,6 +121,12 @@ class BWBPS_Uploader{
 		if(isset($_POST['bwbps_post_tags'])){
 			$this->json['post_tags'] = wp_kses($_POST['bwbps_post_tags'], $tags[3]);
 		}
+		
+		if(isset($_POST['bwbps_img_attribution'])){
+			$this->json['img_attribution'] = wp_kses($_POST['bwbps_img_attribution'], $tags[3]);
+		}
+		
+		$this->json['img_license'] = (int)$_POST['bwbps_img_license'];
 		
 		//$this->json['image_caption'] = htmlentities($this->json['image_caption'], ENT_QUOTES);
 		
@@ -492,6 +498,9 @@ class BWBPS_Uploader{
 		
 		$data['image_name'] = $this->json['image_name'.$this->imageNumber];
 		$data['image_caption'] = $this->json['image_caption'];
+		$data['img_attribution'] = $this->json['img_attribution'];
+		$data['img_license'] = (int)$this->json['img_license'];
+		
 		$data['url'] = $this->json['url'];
 		$data['file_name'] = $this->json['file_name'.$this->imageNumber];
 		
@@ -650,6 +659,8 @@ class BWBPS_Uploader{
 			$where = array( 'image_id' => $this->json['image_id'] );
 						
 			$wpdb->update( PSIMAGESTABLE, $data, $where );
+			
+			$this->imageData['wp_attach_id'] = $attach_id;
 					
 		} else {
 			return false;
@@ -1297,7 +1308,8 @@ class BWBPS_Uploader{
 			'code' => array(),
 			'em' => array(),
 			'strong' => array(),
-			'b' => array()
+			'b' => array(),
+			'p' => array()
 		);
 		
 		//Allow links and lists + formatting
@@ -1313,13 +1325,11 @@ class BWBPS_Uploader{
 				), 
 			'ol' => array(
 				'id' => array(),
-				'class' => array(),
-				'style' => array()
+				'class' => array()
 				),
 			'li' => array(
 				'id' => array(),
-				'class' => array(),
-				'style' => array()
+				'class' => array()
 				), 
 			'abbr' => array(
 				'title' => array()
@@ -1333,13 +1343,11 @@ class BWBPS_Uploader{
 			'b' => array(),
 			'div' => array(
 				'id' => array(),
-				'class' => array(),
-				'style' => array()
+				'class' => array()
 			),
 			'p' => array(),
 			'br' => array(),
-			'hr' => array()
-			
+			'hr' => array()			
 		);
 		
 		$tags[3] = array();

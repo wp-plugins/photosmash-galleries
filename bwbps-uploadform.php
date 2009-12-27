@@ -29,6 +29,10 @@ class BWBPS_UploadForm{
 			, 'youtube_select'
 			, 'done'
 			, 'post_cat'
+			, 'img_attribution'
+			, 'img_license'
+			, 'caption'
+			, 'post_tags'
 			);
 	}
 	
@@ -109,6 +113,11 @@ class BWBPS_UploadForm{
 				";
 		}
 		
+		if($g['cat_layout']){
+			$ret .= "<input type='hidden' name='bwbps_cat_layout' value='" . $g['cat_layout'] . "' />
+				";
+		}
+		
 		if($g['post_thumbnail_meta']){
 			$ret .= "
 				<input type='hidden' name='bwbps_post_thumbnail_meta' value='"
@@ -119,10 +128,19 @@ class BWBPS_UploadForm{
 		if($g['tags_for_uploads']){
 		
 			if($g['tags_for_uploads'] == 'tags'){ $g['tags_for_uploads'] = $g['tags']; }
+			
+			if($g['tags_for_uploads'] == 'post_tags'){ 
+				
+				$g['tags_for_uploads'] = $this->getPostTags();
+			
+			}
+			
+			if($g['tags_for_uploads']){
 			$ret .= "
 				<input type='hidden' name='bwbps_post_tags' value='"
-				. $g['tags'] ."' />
+				. esc_attr($g['tags_for_uploads']) ."' />
 				";
+			}
 		}
 		
 		return $ret;
@@ -135,6 +153,9 @@ class BWBPS_UploadForm{
 	 * @param $g: Gallery settings
 	 */
 	function getStandardForm($g, $formname){
+		
+		global $current_user;
+	
 		if(!trim($formname)){ $formname = "ps-standard"; }
 		$retForm = $this->getFormHeader($g, $formname, false);
 		$retForm .= '
@@ -170,6 +191,31 @@ class BWBPS_UploadForm{
 			$retForm .= '<tr><th>Caption URL:</th>
 				<td align="left">
 					<input tabindex="50" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" /> Ex: http://www.mysite.com';
+			
+			$retForm .='
+				</td>
+				</tr>';
+			
+		}
+				
+		//Alternate Caption URL
+		if($this->options['use_attribution']){
+		
+		
+			$retForm .= '<tr><th>Image Attribution:</th>
+				<td align="left">
+					<input tabindex="50" type="text" name="bwbps_img_attribution" id="' . $g["pfx"] . 'bwbps_img_attribution" class="bwbps_reset" value="'.esc_attr($current_user->display_name).'"  /> Who took this image?';
+			
+			$retForm .='
+				</td>
+				</tr>';
+				
+			$retForm .= '<tr><th>Image License:</th>
+				<td align="left">
+				';
+			
+			$licopts['value'] = 0;
+			$retForm .= $ret = $this->getImgLicenseDDL($g, $licopts, 50);
 			
 			$retForm .='
 				</td>
@@ -322,6 +368,7 @@ class BWBPS_UploadForm{
 						$replace = $this->getStandardField($fname, $g, $atts);
 						//We need to replace the whole thing found by the regex
 						$fname = $atts['bwbps_match'];
+						
 					} else {
 						
 						$fname = "[".$fname."]";
@@ -344,8 +391,14 @@ class BWBPS_UploadForm{
 			$cfs = $this->cfList;
 			if($cfs){
 				foreach($cfs as $fld){
-					$fldname = "[".$fld->field_name."]";
-					if(!strpos($cf, $fldname) === false){
+					
+					if(!strpos($cf, $fld->field_name) === false){
+					
+						$atts = $this->getFieldAtts($cf, $fld->field_name);		
+						$fname = "[".$fname."]";
+						
+						$fldname = $atts['bwbps_match'];
+							
 						$ret = $this->getField($g, $fld, 50);
 						$cf = str_replace($fldname, $ret, $cf);
 					}
@@ -388,7 +441,9 @@ class BWBPS_UploadForm{
 	 * @param $fld - the field name that is being replaced; $g: Gallery settings;  $atts - an array of attributes that were captured from Custom Form field codes
 	*/
 	function getStandardField($fld, $g, $atts=false, $val=false){
-
+		
+		if($atts['tabindex']){ $tab_index = (int)$atts['tabindex'];} else { $tab_index = 50;}
+		
 		if($val !== false ){
 			$value = ' value="' . esc_attr($val) . '" ';
 		}
@@ -465,11 +520,11 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[caption]":
-				$ret = '<input type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
+				$ret = '<input tabindex="' . $tab_index . '" type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
 				break;
 			
 			case "[caption2]":
-				$ret = '<input type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
+				$ret = '<input tabindex="' . $tab_index . '" type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
 				break;
 			
 			case "[user_url]":
@@ -499,13 +554,28 @@ class BWBPS_UploadForm{
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2"></span>';
 				break;
 			case "[url]":
-				$ret = '<input tabindex="3" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" ' . $value . ' />';
+				$ret = '<input tabindex="'. $tab_index . '" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" ' . $value . ' />';
 				break;
 			case "[loading]":
 				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />';
 				break;
 			case "[message]" :
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_message"></span>';
+				break;
+				
+			case "[img_attribution]" :
+				if(!$value){
+					global $current_user;
+					$value = ' value="'. esc_attr($current_user->display_name) . '"';
+				}
+				$ret = "<input type='text' name='bwbps_img_attribution' tabindex='". $tab_index . "'" 
+					. " id='" . $g["pfx"] . "bwbps_img_attribution' class='bwbps_reset' ' . $value . ' />";
+					
+				break;
+			
+			case "[img_license]" :
+				$opts['value'] = (int)$val;
+				$ret = $this->getImgLicenseDDL($g, $opts, $tab_index);					
 				break;
 				
 			case "[category_name]" :
@@ -521,8 +591,15 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[post_tags]" :
-				$ret = "<input type='text' name='bwbps_post_tags' tabindex='50' "
-					. " id='" . $g["pfx"] . "bwbps_post_tags' class='bwbps_reset' ' . $value . ' />";
+			
+				if($atts['value'] == 'post_tags'){
+					$val = $this->getPostTags();
+				}
+				
+				$val = esc_attr($val);
+				
+				$ret = "<input type='text' name='bwbps_post_tags' tabindex='". $tab_index . "'"
+					. " id='" . $g["pfx"] . "bwbps_post_tags' class='bwbps_reset' value='" . $val . "' />";
 					
 				break;
 				
@@ -543,6 +620,15 @@ class BWBPS_UploadForm{
 						$opts['exclude'] = $atts['exclude'];
 					}
 				}
+				
+				if($g['show_option_none']){
+					$opts['show_option_none'] = $g['show_option_none'];
+				} else {
+					if($atts['show_option_none']){
+						$opts['show_option_none'] = $atts['show_option_none'];
+					}
+				}				
+				
 				
 				if($g['post_cat_selected']){
 					$opts['selected'] = $g['selected'];
@@ -569,6 +655,7 @@ class BWBPS_UploadForm{
 						$pc_class = "bwbps-post-cat-single";
 					} else {
 						$opts['name'] = 'bwbps-post-cats[]';
+						$opts['id'] = 'bwbps-post-cats';
 						$pc_class = "bwbps-post-cat-form";
 					}
 				}
@@ -583,6 +670,10 @@ class BWBPS_UploadForm{
 				
 				
 				$ret = wp_dropdown_categories($opts);
+				
+				if($atts['id']){ $atts['id'] = "-" . $atts['id']; }
+				
+				$ret = str_replace("id='bwbps-post-cats[]'", "id='bwbps-post-cats" . $atts['id'] . "'", $ret);
 
 			default:
 			
@@ -725,7 +816,7 @@ class BWBPS_UploadForm{
 				
 			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_file" class="' . $g["pfx"] . 'bwbps_uploadspans" '
 				.$hide.'><input type="file" name="bwbps_uploadfile"'
-				. 'id="' . $g["pfx"] . 'bwbps_uploadfile" class="bwbps_reset" /></span>';
+				. 'id="' . $g["pfx"] . 'bwbps_uploadfile" class="bwbps_reset bwbps_file" /></span>';
 				
 				//For Image URL
 			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioURL" '
@@ -791,7 +882,7 @@ class BWBPS_UploadForm{
 				
 			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_file2" class="' . $g["pfx"] . 'bwbps_uploadspans2" '
 				.$hide.'><input type="file" name="bwbps_uploadfile2"'
-				. 'id="' . $g["pfx"] . 'bwbps_uploadfile2" class="bwbps_reset" /></span>';
+				. 'id="' . $g["pfx"] . 'bwbps_uploadfile2" class="bwbps_reset bwbps_file" /></span>';
 				
 			//For Image URL
 			$radios[] = '<input type="radio" id="' . $g["pfx"] . 'bwbpsUpRadioURL2" '
@@ -855,7 +946,7 @@ class BWBPS_UploadForm{
 					.$radio_msg ;
 					
 			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_vid" class="' . $g["pfx"] . 'bwbps_uploadspans" '
-				. $hide.'><input type="file" name="bwbps_uploadvid" id="' . $g["pfx"] . 'bwbps_uploadvid" class="bwbps_reset" /> '
+				. $hide.'><input type="file" name="bwbps_uploadvid" id="' . $g["pfx"] . 'bwbps_uploadvid" class="bwbps_reset bwbps_file" /> '
 				. '</span>';
 
 		}
@@ -882,7 +973,7 @@ class BWBPS_UploadForm{
 				
 			$inputs[] =  '<span id="' . $g["pfx"] . 'bwbps_up_doc" class="' . $g["pfx"] . 'bwbps_uploadspans" '
 				.$hide.'><input type="file" name="bwbps_uploaddoc"'
-				. 'id="' . $g["pfx"] . 'bwbps_uploaddoc" class="bwbps_reset" /></span>';
+				. 'id="' . $g["pfx"] . 'bwbps_uploaddoc" class="bwbps_reset bwbps_file" /></span>';
 		}
 				
 		$ret = implode("&nbsp;", $radios) . '<br/>' . implode("",$inputs);
@@ -915,15 +1006,45 @@ class BWBPS_UploadForm{
 	}
 	
 	
+	// GET a Comma separated string of the TAGS for the current POST
+	function getPostTags(){
+		
+		global $wp_query;
+		if(! is_object( $wp_query ) || !$wp_query->post->ID ){
+			return '';
+		}
+		
+		$terms = wp_get_object_terms( $wp_query->post->ID, 'post_tag') ;
+		
+		$t = '';
+		if(is_array($terms)){
+		
+			foreach( $terms as $term ){
+				
+				$_terms[] = $term->name;
+			
+			}
+			
+			if(is_array($_terms)){
+				$t = implode(", " , $_terms);
+			}
+		} 
+		
+		return $t;
+	
+	}
+	
 	
 	//BUILD THE FORM FIELD
-	function getField($g, $f, $tabindex=false, $the_value=false, $txtarea_width=false){
+	function getField($g, $f, $tabindex=false, $the_value=false, $txtarea_width=false, $atts=false){
 		
 		if( $the_value !== false ){
 			$val = $the_value;
 		} else {
 			$val = esc_attr($f->default_val);
 		}
+		
+		if($atts['tab_index']){$tabindex = $atts['tab_index']; }
 		
 		//Name is field name + bwbps (prepended)
 		$name = "bwbps_".$blank.$f->field_name;
@@ -964,7 +1085,7 @@ class BWBPS_UploadForm{
 				if(!$txtarea_width){
 					$ret .= " cols=40 ";
 				}
-				$ret .= " class='bwbps_reset' />"
+				$ret .= " class='bwbps_reset bwbps_textarea' />"
 					.htmlentities($val, ENT_QUOTES)."</textarea>
 					";
 				break;
@@ -1144,6 +1265,35 @@ class BWBPS_UploadForm{
 				return "Hidden";
 				break;
 		}
+	}
+	
+	function getImgLicenseDDL($g, $opts, $tab_index){
+			
+		$sel[1] = ' selected=selected';
+		if($opts['value']){
+			$sel[1] = '';
+			$sel[$opts['value']] == ' selected=selected';
+		}
+					
+		$ret .= "<option value='1' ".$sel[1].">None - All rights reserved</option>";
+		$ret .= "<option value='0' ".$sel[0].">License unknown</option>";
+		$ret .= "<option value='2' ".$sel[2].">Attribution (by)</option>";
+		$ret .= "<option value='3' ".$sel[3].">Attribution Share Alike (by-sa)</option>";
+		$ret .= "<option value='4' ".$sel[4].">Attribution No Derivatives (by-nd)</option>";
+		$ret .= "<option value='5' ".$sel[5].">Attribution Non-commercial (by-nc)</option>";
+		$ret .= "<option value='6' ".$sel[6].">Attribution Non-commercial Share Alike (by-nc-sa)</option>";
+		$ret .= "<option value='7' ".$sel[7].">Attribution Non-commercial No Derivatives (by-nc-nd)</option>";
+		$ret .= "<option value='8' ".$sel[8].">Public Domain</option>";
+		$ret .= "<option value='9' ".$sel[9].">GNU GPL (not usually for images)</option>";
+		$ret .= "<option value='10' ".$sel[10].">GNU LGPL (not usually for images)</option>";
+		$ret .= "<option value='11' ".$sel[11].">BSD (not usually for images)</option>";
+		
+		
+		$ret ="<select tabindex='" . $tab_index . "' id='" . $g["pfx"] . "bwbps_img_license' class='bwbps_reset bwbps_ddl' name='bwbps_img_license'>".$ret."</select>";	
+					
+					
+		return $ret;	
+	
 	}
 	
 	//Build the HTML INPUT elements for the Form

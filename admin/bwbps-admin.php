@@ -335,6 +335,7 @@ class BWBPS_Admin{
 			
 			$ps['use_advanced'] = isset($_POST['ps_use_advanced']) ? 1 : 0;
 			$ps['use_urlfield'] = isset($_POST['ps_use_urlfield']) ? 1 : 0;
+			$ps['use_attribution'] = isset($_POST['ps_use_attribution']) ? 1 : 0;
 			$ps['custom_formid'] = (int)$_POST['ps_custom_formid'];
 			$ps['use_customfields'] = isset($_POST['ps_use_customfields']) ? 1 : 0;
 			$ps['use_thickbox'] = isset($_POST['ps_use_thickbox']) ? 1 : 0;
@@ -1515,6 +1516,13 @@ if($psOptions['use_customform']){ ?>
 					<input type="checkbox" name="ps_use_urlfield" <?php if( $psOptions['use_urlfield'] == 1) echo 'checked'; ?>/> Includes a field for user to supply an alternate URL for caption links.
 				</td>
 			</tr>
+			
+			<tr>
+				<th>Include Attribution and License fields:</th>
+				<td>
+					<input type="checkbox" name="ps_use_attribution" <?php if( $psOptions['use_attribution'] == 1) echo 'checked'; ?>/> Includes a field for attribution and a dropdown of common image licenses.
+				</td>
+			</tr>
 			<tr>
 				<th>Use floating Upload Form:</th>
 				<td>
@@ -2050,6 +2058,23 @@ if($psOptions['use_customform']){ ?>
 			
 			if($i==0){$border = " style='border-right: 1px solid #999;'";} else {$border = '';}
 			
+			$argsarray = array('name');
+			
+			$terms = wp_get_object_terms( $image->image_id, 'photosmash', $argsarray);
+			
+			if(isset($_terms)){ unset($_terms); }
+					
+			if( is_array($terms) && count($terms) ){
+				
+				foreach ( $terms as $term ) {
+					$_terms[] = esc_attr($term->name);
+				}
+				
+				unset($terms);
+				$terms = implode(", ", $_terms);
+			
+			} else { $terms = ''; }
+			
 			$psTable .= "<td $border>
 									
 			<table class='widefat fixed' cellspacing=0>
@@ -2087,6 +2112,16 @@ if($psOptions['use_customform']){ ?>
 						. $image->url. "' style='width: 165px !important;' />
 					</td>
 				</tr>
+				
+				<tr>
+					<td>Tags:</td>
+					<td><input type='text' id='imgtags_" 
+						. $image->image_id."' name='imgtags"
+						. $image->image_id."' value='"
+						. $terms . "' style='width: 165px !important;' />
+					</td>
+				</tr>
+				
 				<tr>
 					<td>
 						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", "

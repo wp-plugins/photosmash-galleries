@@ -60,6 +60,8 @@ class BWBPS_Init{
 				wp_attach_id BIGINT(11),
 				url VARCHAR(250) NOT NULL,
 				custom_fields TEXT,
+				img_attribution TEXT,
+				img_license TINYINT(1),
 				updated_by BIGINT(20) NOT NULL,
 				created_date DATETIME NOT NULL,
 				updated_date TIMESTAMP NOT NULL,

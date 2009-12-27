@@ -298,7 +298,11 @@ class BWBPS_FormEditor{
 					<?php
 					}
 				?>
-												
+				
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[img_attribution] - <span style='font-size: 9px;'>attribution field</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[img_license] - <span style='font-size: 9px;'>drop-down selection of image licenses</span></li>
+																
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail] - <span style='font-size: 9px;'>displays the returned thumbnail</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail_2] - <span style='font-size: 9px;'>displays thumbnail for 2nd image</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[submit] - <span style='font-size: 9px;'>'submit' button</span></li>
