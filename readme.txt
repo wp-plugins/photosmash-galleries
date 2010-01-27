@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.1
-Stable tag: 0.5.02
+Stable tag: 0.5.03
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -17,7 +17,7 @@ PhotoSmash Galleries makes it easy to create photo galleries in posts or pages t
 * <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Forum</a>
 * <a href="http://smashly.net/photosmash-galleries/photosmash-demo/" title="Demo Gallery">Demo Gallery</a>
 
-Following are the features:
+= Features =
 
 For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
@@ -104,7 +104,7 @@ Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "C
     * Tweaked PhotoSmash so that PhotoSmash Extend can now add Post Thumbnails available in WP 2.9. This might make PhotoSmash Extend a 2.9+ plugin, though PhotoSmash is still compatible with 2.8+.
     * Fixed the Permalink for the title of the tag gallery on the Photo Tags page.
     * Added ‘tab_index’ attribute to Custom Fields and Standard fields (except file upload and buttons) in custom forms.  Use like: …photosmash id=5 tab_index=4]
-    * Added attributes to the Posts Category dropdown [post_cat] custom form option: show_option_none=’– none –’ will show an option in the category dropdown called — none — (replace with whatever text you like). id=’my_id’ was added so you can now have multiple category dropdowns (or multi-select listboxes) with different ID’s so you can do javascript manipulations in the form…the id gets appended to: bwbps-post-cats like ‘bwbps-post-cats-my-id’. Now you can do something like onclick=’jQuery(“#bwbps-post-cats-my-id”).val(“-1″); return false;’ to se that particular category dropdown value to none (if you’ve got none turned on).
+    * Added attributes to the Posts Category dropdown [post_cat] custom form option: show_option_none=’– none –’ will show an option in the category dropdown called — none — (replace with whatever text you like). id=’my_id’ was added so you can now have multiple category dropdowns (or multi-select listboxes) with different ID’s so you can do javascript manipulations in the form…the id gets appended to: bwbps-post-cats like ‘bwbps-post-cats-my-id’. Now you can do something like onclick=’jQuery(“#bwbps-post-cats-my-id�?).val(“-1″); return false;’ to se that particular category dropdown value to none (if you’ve got none turned on).
     * Added attributes to Custom Layout fields:
           o if_before – allows you to specify html to place before the field if the field has a value
           o if_after – allows you to specify html to place after the field if the field has a value
