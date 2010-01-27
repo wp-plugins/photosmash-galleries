@@ -23,6 +23,12 @@ class BWBPS_LayoutsEditor{
 				$this->layout_id = $ret;
 			}
 		}
+				
+		//Save layout
+		if(isset($_POST['deleteLayout'])){
+			$ret = $this->deleteLayout($this->layout_id);
+			$this->layout_id = 0;
+		}
 		
 		//Load up layout defaults
 		
@@ -82,6 +88,22 @@ class BWBPS_LayoutsEditor{
 				
 	}
 	
+	function deleteLayout($layout_id){
+		global $wpdb;
+		check_admin_referer( 'update-bwbpslayouts');
+		
+		$ret = $wpdb->query($wpdb->prepare("DELETE FROM " . PSLAYOUTSTABLE . " WHERE layout_id = %d", $layout_id));
+		
+		if($ret){
+			$this->message = 'Layout '. $layout_id .' deleted...';
+			return true;
+		} else {
+			$this->message = 'Layout '. $layout_id .' NOT deleted...';
+			$this->msgclass= 'error';
+			return false;
+		}			
+	}
+	
 	function checkName($text)
 	{
 		$regex = "/^([A-Za-z0-9_]+)$/";
@@ -139,11 +161,11 @@ class BWBPS_LayoutsEditor{
 <div  style='width: 550px; float: left;'>
 <table class="form-bwbps">
 <tr>
-<th><input type="submit" name="saveLayout" class="button-primary" tabindex="20" value="<?php _e('Save Layout', 'bwbpsLang') ?>" /></th>
+<th><input type="submit" name="saveLayout" class="button-primary" tabindex="20" value="<?php _e('Save Layout', 'bwbpsLang') ?>" /></th> 
 <td>&nbsp;</td>
 </tr>
 
-<th>Select Layout to edit:</th><td><?php echo $layoutsDDL;?>&nbsp;<input type="submit" name="showLayoutSettings" tabindex="100" value="<?php _e('Edit', 'bwbpsLang') ?>" /></td></tr>
+<th>Select Layout to edit:</th><td><?php echo $layoutsDDL;?>&nbsp;<input type="submit" name="showLayoutSettings" tabindex="100" value="<?php _e('Edit', 'bwbpsLang') ?>" /> &nbsp; <input type="submit" name="deleteLayout" class="" tabindex="900" value="<?php _e('Delete Layout', 'bwbpsLang') ?>" onclick='return confirm("Do you want to delete this layout?");' /></td></tr>
 <tr>
 	<th>Layout name:</th>
 	<td>
@@ -263,9 +285,12 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail] - <span style='font-size: 9px;'>same as thumb</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_image] - <span style='font-size: 9px;'>just the thumb image</span></li>
-											
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_url] - <span style='font-size: 9px;'>just the thumb url - no tags</span></li>					
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium] - <span style='font-size: 9px;'>displays the medium sized thumbnail</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium_url] - <span style='font-size: 9px;'>displays the medium sized image's url</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[file_name] - <span style='font-size: 9px;'>image's file name</span></li>
 						
@@ -273,7 +298,11 @@ class BWBPS_LayoutsEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_url] - <span style='font-size: 9px;'>Post's permalink (not linkified)</span></li>
 						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_id] - <span style='font-size: 9px;'>Post's ID</span></li>						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_id] - <span style='font-size: 9px;'>Post's ID</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[blog_name] - <span style='font-size: 9px;'>Blog's name</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[bloginfo field='??'] - <span style='font-size: 9px;'>displays field as delivered by the WP <a href='http://codex.wordpress.org/Function_Reference/get_bloginfo'>get_bloginfo()</a> function</span></li>						
 						
 						<?php echo $customfieldlist;?>
 					</ul>

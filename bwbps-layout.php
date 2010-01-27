@@ -5,7 +5,6 @@ class BWBPS_Layout{
 	
 	var $custFields;
 	var $stdFields;
-	var $attFields;
 	var $psOptions;
 	var $tabindex;
 	var $moderateNonceCount = 0;
@@ -19,7 +18,6 @@ class BWBPS_Layout{
 		$this->psOptions = $options;
 		$this->custFields = $cfList;
 		$this->stdFields = $this->getStandardFields();
-		$this->attFields = $this->getFieldsWithAtts();
 	}
 	
 	function getStandardFields(){
@@ -53,25 +51,12 @@ class BWBPS_Layout{
 			, 'thumb_url'
 			, 'thumb_linktoimage'
 			, 'ps_rating'
+			, 'bloginfo'
+			, 'plugin_url'
+			, 'piclens'
 		);
 	}
 	
-	function getFieldsWithAtts(){
-		return array('caption'
-			, 'eval'
-			, 'image'
-			, 'thumb'
-			, 'thumbnail'
-			, 'linked_image'
-			, 'doc'
-			, 'video'
-			, 'youtube'
-			, 'caption_escaped'
-			, 'img_attribution'
-			, 'img_license'
-			, 'url'
-		);
-	}
 	
 	//  Build the Markup that gets inserted into the Content...$g == the gallery data
 	function getGallery($g, $layoutName = false, $image=false, $useAlt=false)
@@ -295,12 +280,14 @@ class BWBPS_Layout{
 					&& !$image['thumb_url'] ){
 					$image['file_name'] = $g['default_image'];
 				} 
-				
+							
 				if( !$image['thumb_url'] ){
 				
-					$image['thumb_url'] = PSTHUMBSURL.$image['file_name'];
-					$image['medium_url'] = PSTHUMBSURL.$image['file_name'];
-					$image['image_url'] = PSIMAGESURL.$image['file_name'];
+					if( $image['file_name'] ){
+						$image['thumb_url'] = PSTHUMBSURL.$image['file_name'];
+						$image['medium_url'] = PSTHUMBSURL.$image['file_name'];
+						$image['image_url'] = PSIMAGESURL.$image['file_name'];
+					}
 				
 				} else {
 				
@@ -345,7 +332,7 @@ class BWBPS_Layout{
 						break;
 				}
 				
-				$image['imgtitle'] = str_replace("'","",$image['image_caption']);
+				$image['imgtitle'] = esc_attr($image['image_caption']);
 				
 				
 				/*	CALCULATE the Image and Caption URL  */				
@@ -439,6 +426,24 @@ class BWBPS_Layout{
 				}else {
 					$ret .= $psTable;
 				}
+				
+				//Replace Standard Fields with values
+
+			if(!strpos($ret, 'piclens') === false){
+				unset($atts);
+				unset($replace);
+				
+				$atts = $this->getFieldAtts($ret, $fld);
+				
+									
+				$replace = $this->getPicLensLink($g, $atts);
+			
+				$fld = $atts['bwbps_match'];
+								
+				$ret = str_replace($fld, $replace, $ret);	
+
+			}
+				
 				
 			} else {
 				$ret = $psTable;
@@ -676,19 +681,12 @@ class BWBPS_Layout{
 			if(!strpos($ret, $fld) === false){
 				unset($atts);
 				unset($replace);
-				if(in_array($fld, $this->attFields)){
-					$atts = $this->getFieldAtts($ret, $fld);
-										
-					$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
 				
-					$fld = $atts['bwbps_match'];
-
-				} else {
-				
-					$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
-					$fld = "[".$fld."]";
-					
-				}
+				$atts = $this->getFieldAtts($ret, $fld);
+									
+				$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
+			
+				$fld = $atts['bwbps_match'];
 								
 				$ret = str_replace($fld, $replace, $ret);	
 
@@ -701,7 +699,7 @@ class BWBPS_Layout{
 		
 		  foreach($this->custFields as $fld){
 		
-			if(!strpos($ret, '['.$fld->field_name.']') === false){
+			if(!strpos($ret, '['.$fld->field_name) === false){
 			
 				//Format Date if it's a date
 				if( $image[$fld->field_name] && $fld->type == 5){
@@ -719,7 +717,33 @@ class BWBPS_Layout{
 
 				}
 				
-				$ret = str_replace('['.$fld->field_name.']', $val, $ret);
+				$fld = $fld->field_name;
+				
+				unset($atts);
+				unset($replace);
+				
+				$atts = $this->getFieldAtts($ret, $fld);
+				
+				if( ( $atts['if_before'] || $atts['if_after'] ) && !$val ) 
+				{
+					$val = "";
+				} else {
+					$val = $atts['if_before'] . $val . $atts['if_after'];
+				}
+				
+				// Allows you to specify a field to test if it has a value...if not, then it returns ""
+				if( $atts['if_field'] ){
+					if(!$image[$atts['if_field']]){
+						$val = "";
+					}
+				}
+				
+				if( !$val ) { $val = $atts['if_blank']; }
+			
+				$fld = $atts['bwbps_match'];
+								
+				$ret = str_replace($fld, $val, $ret);
+				
 			}
 		  }
 		}
@@ -863,11 +887,25 @@ class BWBPS_Layout{
 	function getCFFieldHTML($fld, $image, $g, $atts){
 			
 		//Set up thumb size
-		if((int)$g['thumb_height'] ){
-			$thumbsize = " height=" . (int)$g['thumb_height'];
-		}
-		if( (int)$g['thumb_width'] ){
-			$thumbsize .= " width=" . (int)$g['thumb_width'];
+		if($atts['h'] || $atts['w']){
+						
+						if($atts['h']){
+							$thumbsize = " height='" . $atts['h'] . "'";
+						} else {
+							$thumbsize = "";
+						}
+						
+						if($atts['w']){
+							$thumbsize .= " width='" . $atts['w'] . "'";
+						}
+						
+		} else {
+			if((int)$g['thumb_height'] ){
+				$thumbsize = " height=" . (int)$g['thumb_height'];
+			}
+			if( (int)$g['thumb_width'] ){
+				$thumbsize .= " width=" . (int)$g['thumb_width'];
+			}
 		}
 		
 		/* Set up image size */
@@ -965,8 +1003,7 @@ class BWBPS_Layout{
 			case '[linked_image]' :
 				if($image['thumb_url']){
 					
-					$ret = $image['imgurl']."
-						<img src='".$image['image_url']."'".$g['imgclass']
+					$ret = $image['imgurl']."<img src='".$image['image_url']."'".$g['imgclass']
 						. " alt='".$image['img_alt']."' $imagesize />"
 						. $image['imgurl_close'];
 						
@@ -974,10 +1011,10 @@ class BWBPS_Layout{
 				break;
 				
 			case '[thumbnail]' :
+								
 				if($image['thumb_url']){
 				
-					$ret = $image['imgurl']."
-						<img src='".$image['thumb_url']."'".$g['imgclass']
+					$ret = $image['imgurl']."<img src='".$image['thumb_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' $thumbsize />"
 						.$image['imgurl_close'];
 					
@@ -988,8 +1025,7 @@ class BWBPS_Layout{
 			case '[thumb]' :
 				if($image['thumb_url']){
 				
-					$ret = $image['imgurl']."
-						<img src='".$image['thumb_url']."'".$g['imgclass']
+					$ret = $image['imgurl']."<img src='".$image['thumb_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' $thumbsize />"
 						.$image['imgurl_close'];
 					
@@ -1000,8 +1036,7 @@ class BWBPS_Layout{
 			case '[thumb_linktoimage]' :
 				if($image['thumb_url']){
 				
-					$ret = $image['the_image_link']."
-						<img src='".$image['thumb_url']."'".$g['imgclass']
+					$ret = $image['the_image_link']."<img src='".$image['thumb_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' $thumbsize />"
 						.$image['imgurl_close'];
 					
@@ -1012,9 +1047,8 @@ class BWBPS_Layout{
 				
 			case '[thumb_image]' :
 				if($image['thumb_url']){
-				
-					$ret = "
-						<img src='".$image['thumb_url']."'".$g['imgclass']
+								
+					$ret = "<img src='".$image['thumb_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' $thumbsize />";
 					
 				} else { $ret = ""; }
@@ -1028,6 +1062,19 @@ class BWBPS_Layout{
 					
 				} else { $ret = ""; }
 				
+				break;
+				
+			case '[medium_url]' :
+				if($image['medium_url']){
+				
+					$ret = $image['medium_url'];
+					
+				} else { $ret = ""; }
+				
+				break;
+			
+			case '[blog_name]' :
+				$ret = get_bloginfo('name');
 				break;
 			
 			case '[medium]' :
@@ -1043,8 +1090,7 @@ class BWBPS_Layout{
 						}
 					}
 				
-					$ret = $image['imgurl']."
-						<img src='".$image['medium_url']."'".$g['imgclass']
+					$ret = $image['imgurl']."<img src='".$image['medium_url']."'".$g['imgclass']
 						." alt='".$image['img_alt']."' $mediumsize />"
 						.$image['imgurl_close'];
 					
@@ -1062,6 +1108,10 @@ class BWBPS_Layout{
 				
 			case '[gallery_name]' :
 				$ret = $g['gallery_name'];
+				break;
+				
+			case '[piclens]' :
+				$ret = $this->getPicLensLink($g, $atts);
 				break;
 			
 			case '[caption]' :
@@ -1290,6 +1340,16 @@ class BWBPS_Layout{
 								
 				break;
 				
+			case '[bloginfo]' :
+
+				$ret = get_bloginfo($atts['field']);
+
+				break;
+				
+			case '[plugin_url]' :
+				$ret = WP_PLUGIN_URL;
+				break;
+				
 				
 			/*
 			case '[contributor_url]' :
@@ -1323,9 +1383,23 @@ class BWBPS_Layout{
 			$ret = $atts['if_before'] . $ret . $atts['if_after'];
 		}
 		
+		// Allows you to specify a field to test if it has a value...if not, then it returns ""
+		if( $atts['if_field'] ){
+			if(!$image[$atts['if_field']]){
+				$ret = "";
+			}
+		}
+		
 		if( !$ret ) { $ret = $atts['if_blank']; }
 		
 		return $ret;
+	}
+	
+	function getPicLensLink($g, $atts){
+	
+		global $bwbPS;
+		
+		return $bwbPS->getPicLensLink($g, $atts);	
 	}
 	
 	function getCustomFormURL($g, $image){
@@ -1405,9 +1479,8 @@ class BWBPS_Layout{
 					if($this->validURL($image['user_url'])){
 					
 						$theurl = $image['user_url'];
-						$captionurl = "
-						<a href='".$theurl."'"
-							." title='".str_replace("'","",$image['image_caption'])
+						$captionurl = "<a href='".$theurl."'"
+							." title='". esc_attr(str_replace("'","",$image['image_caption']))
 							."' ".$g['url_attr']['nofollow']." $captiontargblank>";
 						$closeUserURL = "</a>
 						";
@@ -1430,9 +1503,8 @@ class BWBPS_Layout{
 					if($this->validURL($image['user_url'])){
 						
 						$theurl = $image['user_url'];
-						$captionurl = "
-						<a href='".$theurl."'"
-							." title='".str_replace("'","",$image['image_caption'])
+						$captionurl = "<a href='".$theurl."'"
+							." title='".esc_attr(str_replace("'","",$image['image_caption']))
 							."' ".$g['url_attr']['nofollow']." $captiontargblank>";
 						$closeUserURL = "</a>
 						";
@@ -1468,9 +1540,8 @@ class BWBPS_Layout{
 					if($this->validURL($image['url'])){
 						
 						$theurl = $image['user_url'];
-						$captionurl = "
-						<a href='".$theurl."'"
-							." title='".str_replace("'","",$image['image_caption'])
+						$captionurl = "<a href='".$theurl."'"
+							." title='".esc_attr(str_replace("'","",$image['image_caption']))
 							."' ".$g['url_attr']['nofollow']." $captiontargblank>";
 						$closeUserURL = "</a>
 						";
@@ -1491,7 +1562,7 @@ class BWBPS_Layout{
 					if($goturl){
 					
 						$captionurl = "<a href='".$theurl."'"
-							." title='".str_replace("'","",$image['image_caption'])
+							." title='".esc_attr(str_replace("'","",$image['image_caption']))
 							."' ".$g['url_attr']['nofollow']."  $captiontargblank>";
 							
 						$closeUserURL = "</a>";
@@ -1529,7 +1600,7 @@ class BWBPS_Layout{
 						if($goturl){
 													
 							$captionurl = "<a href='".$theurl."'"
-								." title='".str_replace("'","",$image['image_caption'])
+								." title='". esc_attr(str_replace("'","",$image['image_caption']))
 								."' ".$g['url_attr']['nofollow']."  $captiontargblank>";
 								
 							$closeUserURL = "</a>";
@@ -1580,8 +1651,7 @@ class BWBPS_Layout{
 					if($image['user_id']){
 					
 						$theurl = get_author_posts_url($image['user_id']);
-						$captionurl = "
-						<a href='".$theurl."'"
+						$captionurl = "<a href='".$theurl."'"
 							." title='View all images by contributor'"
 							.$g['url_attr']['nofollow']." $captiontargblank>";
 						$closeUserURL = "</a>
@@ -1621,7 +1691,7 @@ class BWBPS_Layout{
 					if($goturl){
 					
 						$captionurl = "<a href='".$theurl."'"
-							." title='".str_replace("'","",$image['image_caption'])
+							." title='". esc_attr( str_replace("'","",$image['image_caption']) )
 							."' ".$g['url_attr']['nofollow']."  $captiontargblank>";
 							
 						$closeUserURL = "</a>";
@@ -1935,7 +2005,7 @@ class BWBPS_Layout{
 					$g['limit_images'] = 8;
 				}
 				
-				$sortby .= "LIMIT ". (int)$g['limit_images'];
+				$sortby .= " LIMIT ". (int)$g['limit_images'];
 			
 				break;
 			
@@ -1945,7 +2015,7 @@ class BWBPS_Layout{
 					$g['limit_images'] = 8;
 				}
 				
-				$sortby .= "LIMIT ". (int)$g['limit_images'];
+				$sortby .= " LIMIT ". (int)$g['limit_images'];
 			
 				break;
 			case 40 :	//tag gallery
@@ -2009,6 +2079,13 @@ class BWBPS_Layout{
 				}
 								
 				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				if((int)$g['limit_images']){
+					
+					$sortby .= " LIMIT ". (int)$g['limit_images'];
+				
+				}
+				
 				break;
 			
 			case 99 : //Highest Ranked
@@ -2027,7 +2104,13 @@ class BWBPS_Layout{
 			
 			default :
 			
-				$sortby = $this->getSortbyField($g, $sortorder);	
+				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				if((int)$g['limit_images']){
+					
+					$sortby .= " LIMIT ". (int)$g['limit_images'];
+				
+				}
 				
 				break;					
 			

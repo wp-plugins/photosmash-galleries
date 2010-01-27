@@ -108,9 +108,9 @@ class BWBPS_Uploader{
 		$tags = $this->getFilterArrays();
 		
 		$this->json['succeed'] = 'false'; 
-		$this->json['size'] = $_POST['MAX_FILE_SIZE'];
+		$this->json['size'] = (int)$_POST['MAX_FILE_SIZE'];
 		
-		$this->json['form_name'] = esc_attr($_POST['bwbps_formname']);
+		$this->json['form_name'] = esc_attr(wp_kses($_POST['bwbps_formname'], $tags[3]));
 		
 		$this->json['post_id'] = (int)$_POST['bwbps_post_id'];
 		
@@ -180,7 +180,7 @@ class BWBPS_Uploader{
 			case 2 :	//Direct Link
 				$this->json['img'.$this->imageNumber] = "0";
 				$this->json['file_type'] = 2;
-				$image_url = $_POST['bwbps_uploaddl'.$fileFieldNumber];
+				$image_url = esc_url_raw($_POST['bwbps_uploaddl'.$fileFieldNumber]);
 				
 				if(!$this->psValidateURL($image_url)){
 					$this->json['file_url'] = "";		
@@ -245,7 +245,7 @@ class BWBPS_Uploader{
 	 *
 	*/
 	function processUpload($g, $fileFieldNumber = "", $allowNoImg=false){
-		
+			
 		$uploads = wp_upload_dir();
 	
 		switch ( (int)$this->json['file_type'] ){
@@ -264,8 +264,12 @@ class BWBPS_Uploader{
 		if( !$file ){
 			if(!$allowNoImg){
 				$this->exitUpload("Invalid image file.");
+				return false;
 			}
-			return false;
+			
+			$this->json['succeed'] = "true";
+			return true;
+			
 		}
 		
 		$relpath = $this->get_relative_path( $file['file'], $uploads );
@@ -287,7 +291,7 @@ class BWBPS_Uploader{
 		$this->json['image_fullurl'] = $uploads['baseurl'] . '/' . $this->json['image_url'];
 		
 		$this->json['succeed'] = "true";
-		
+				
 		$this->file = $file;
 		
 		return true;
@@ -359,7 +363,7 @@ class BWBPS_Uploader{
 	 */
 	function processFileFromURL($fileFieldNumber, $allowNoImg=false){
 					
-		$file_url = $_POST['bwbps_uploadurl'.$fileFieldNumber];	
+		$file_url = esc_url_raw( $_POST['bwbps_uploadurl'.$fileFieldNumber] );	
 		
 		if(!$this->psValidateURL($file_url)){
 			if(!$allowNoImg){

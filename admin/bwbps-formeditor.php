@@ -316,6 +316,9 @@ class BWBPS_FormEditor{
 						
 						<?php echo $custfieldlist;?>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat] - <span style='font-size: 9px;'>PS Extend users only - renders a multi-select dropdown of categories</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat1] - <span style='font-size: 9px;'>PS Extend users only - sames as post_cat - allows for multiple boxes with different parents</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat2] - <span style='font-size: 9px;'>PS Extend users only - sames as post_cat</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat3] - <span style='font-size: 9px;'>PS Extend users only - sames as post_cat</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_tags] - <span style='font-size: 9px;'>input box for tags (tags should be comma separated)</span></li>
 					</ul>
 				</td>

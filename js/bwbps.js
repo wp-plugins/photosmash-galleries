@@ -180,6 +180,8 @@ function bwbpsAjaxLoadImage(myForm){
 	$j('#' + form_pfx + 'bwbps_imgcaption').val($j('#' + form_pfx + 'bwbps_imgcaptionInput').val());
 	
 	//Show the loader image
+	$j('#' + form_pfx + 'bwbps_result').html('');
+	$j('#' + form_pfx + 'bwbps_message').html('');
 	$j("#" + form_pfx + "bwbps_loading").show();
 	$j("#" + form_pfx + "bwbps_loading").ajaxComplete(function(){
 		$j(this).hide();
@@ -195,9 +197,10 @@ function bwbpsAjaxLoadImage(myForm){
 		success: function(data, statusText){ bwbpsUploadSuccess(data, statusText, form_pfx); } , 
 		failure: function(){alert('failed');},
 		url:      bwbpsAjaxUpload,
+		iframe: true,
 		dataType:  'json'
 	}; 
-
+		
 	//Submit that baby
 	$j(myForm).ajaxSubmit(options); 
 	return false;
@@ -218,18 +221,13 @@ function psSetGalleryHts(){
 	}
 }
 
-function bwbpsVerifyUploadRequest(form_pfx) { 
-	var fileToUploadValue;
-					
-	if($j('#' + form_pfx + 'bwbpsSelectURLRadio').attr('checked')){
-		
-		fileToUploadValue = true;
-	} else {
-		fileToUploadValue = $j('#' + form_pfx + 'bwbps_uploadfile').val();		
-	}
+function bwbpsVerifyUploadRequest(form_pfx) { 				
 		
 	if ( !bwbpsVerifyFileFilled(form_pfx) ) { 
-		$j('#' + form_pfx + 'bwbps_message').html('<b>VALIDATION ERROR: Please select a file.</b>'); 
+		$j('#' + form_pfx + 'bwbps_message').html('<b>VALIDATION ERROR: Please select a file.</b>');
+		
+		$j('#' + form_pfx + 'bwbps_submitBtn').removeAttr('disabled');
+		$j('#' + form_pfx + 'bwbps_imgcaptionInput').removeAttr('disabled');
 		return false; 
 	} 
 
@@ -248,9 +246,10 @@ function bwbpsVerifyUploadRequest(form_pfx) {
  */
 function bwbpsVerifyFileFilled(form_pfx){
 	if( $j('#' + form_pfx + 'bwbps_allownoimg').val() == 1 ){ return true; }
-	var filetype = $j('input:radio[name=' + form_pfx + 'bwbps_filetype]:checked').val();
+	var filetype = $j('input:radio[name=bwbps_filetype]:checked').val();
 	
 	var bFilled = false;
+	
 	switch (Number(filetype)){
 		case 0 :	//Image
 			bFilled = $j('#' + form_pfx + 'bwbps_uploadfile').val();
@@ -270,7 +269,7 @@ function bwbpsVerifyFileFilled(form_pfx){
 			}
 			break;
 			
-		case 3 :	//Image URL
+		case 3 :	//YouTube URL
 			bFilled = $j('#' + form_pfx + 'bwbps_uploadyt').val();
 			break;
 		
@@ -293,7 +292,7 @@ function bwbpsVerifyFileFilled(form_pfx){
 			bFilled = true;
 			break;
 	}
-		
+	
 	if( bFilled ){ return true; } else { return false; }
 }
 

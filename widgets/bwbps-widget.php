@@ -16,6 +16,7 @@ class PhotoSmash_Widget extends WP_Widget {
 	}
 	
 	function widget( $args, $instance ) {
+		global $bwbPS;
 		extract( $args );
 
 		/* User-selected settings. */
@@ -24,15 +25,40 @@ class PhotoSmash_Widget extends WP_Widget {
 		$layout = $instance['layout'];
 		
 		if( $instance['gallery_type'] ){
+		
+			if($instance['gallery_type'] == "random_tags"){
+				$instance['gallery_type'] = "tags";
+				
+				$mincnt = (int)$instance['tags'];
+				
+				$instance['tags'] = $bwbPS->getRandomTag($mincnt);
+				
+				$url = get_term_link($instance['tags'], 'photosmash');
+				
+				$title = "Images tagged '<a href=\"" . $url ."\">".$instance['tags'] . "</a>'";
+			}
+			
+			if($instance['gallery_type'] == "tags"){
+			
+			}
 			
 			$gallery_type = 'gallery_type='.$instance['gallery_type'];
 			
 		}
+		
 		$gallery_id = (int)$instance['gallery_id'];
 		$images = (int)$instance['images'];
 		$where_gallery = (int)$instance['where_gallery'];
 		$thumb_height = (int)$instance['thumb_height'];
 		$thumb_width = (int)$instance['thumb_width'];
+		
+		//Tag Galleries
+		if($instance['gallery_type'] == "tags"){
+			$tags = strip_tags($instance['tags']);
+			if( $tags ){
+				$tags = " tags='$tags'";
+			}
+		}
 		
 		/* Before widget (defined by themes). */
 		echo $before_widget;
@@ -47,7 +73,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			
 			if(!$layout){$layout = 'Std_Widget'; }
 			
-			$sc = "[photosmash $gid $gallery_type images=$images where_gallery=$where_gallery layout='$layout' thumb_height=$thumb_height thumb_width=$thumb_width ]";
+			$sc = "[photosmash $gid $gallery_type images=$images where_gallery=$where_gallery layout='$layout' thumb_height=$thumb_height thumb_width=$thumb_width $tags no_form=true]";
 			
 			echo do_shortcode($sc);
 		
@@ -67,6 +93,7 @@ class PhotoSmash_Widget extends WP_Widget {
 		$instance['layout'] = strip_tags( $new_instance['layout'] );
 		$instance['gallery_id'] = (int)( $new_instance['gallery_id'] );
 		$instance['images'] = (int)( $new_instance['images'] );
+		$instance['tags'] = strip_tags( $new_instance['tags'] );
 		$instance['where_gallery'] = (int)( $new_instance['where_gallery'] );
 		$instance['thumb_height'] = (int)( $new_instance['thumb_height'] );
 		$instance['thumb_width'] = (int)( $new_instance['thumb_width'] );
@@ -81,6 +108,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			'title' => 'Random Images',
 			'gallery_type' => 'random',
 			'layout' => 'Std_Widget',
+			'tags' => '',
 			'id' => 0,
 			'images' => 8,
 			'where_gallery' => 0,
@@ -102,9 +130,20 @@ class PhotoSmash_Widget extends WP_Widget {
 				<option <?php if ( 'random' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='random'>Random</option>
 				<option <?php if ( 'recent' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='recent'>Recent</option>
 				<option <?php if ( 'ranked' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='ranked'>Highest Ranked</option>
+				<option <?php if ( 'tags' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='tags'>Tag</option>
+				<option <?php if ( 'random_tags' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='random_tags'>Random Tag</option>
 				<option <?php if ( "0" === $instance['gallery_type'] ) echo 'selected="selected"'; ?> value=0>normal</option>
 				
 			</select>
+		</p>
+		
+		
+		<p>
+			<label for="<?php echo $this->get_field_id( 'tags' ); ?>">Tags (or min. count) :</label><br/>
+			<input id="<?php echo $this->get_field_id( 'tags' ); ?>" name="<?php echo $this->get_field_name( 'tags' ); ?>" value="<?php echo $instance['tags']; ?>"   /> 
+			<br/>
+			<span style='font-size: 9px;'>For Tag Gallery, separate tags with Commas.</span><br/>
+			<span style='font-size: 9px;'>For Random Tag Gallery, enter minimum Image Count.</span>
 		</p>
 		
 		<p>
@@ -133,7 +172,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			<label for="<?php echo $this->get_field_id( 'where_gallery' ); ?>">Image Gallery ID (for random / recent) :</label><br/>
 			<input id="<?php echo $this->get_field_id( 'where_gallery' ); ?>" name="<?php echo $this->get_field_name( 'where_gallery' ); ?>" value="<?php echo (int)$instance['where_gallery']; ?>"   /> 
 			<br/>
-			<span style='font-size: 9px;'>Optionally limit selection to specific gallery.</span>
+			<span style='font-size: 9px;'>[Optional] Limits selection to specific gallery.</span>
 		</p>
 
 		<p>

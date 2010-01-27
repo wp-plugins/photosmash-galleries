@@ -125,6 +125,31 @@ class BWBPS_UploadForm{
 				";
 		}
 		
+		if($g['post_excerpt_field']){
+			$ret .= "<input type='hidden' name='bwbps_post_excerpt_field' value='" . $g['post_excerpt_field'] . "' />
+				";
+		}
+		
+		if($g['post_cat_selected'] == 'post_cats' ){
+			
+			if(!isset($post)){
+				global $post;
+			}		
+			
+			$pcats = wp_get_post_categories($post->ID);
+			
+			if(is_array($pcats)){
+				foreach($pcats as $pcat){
+					if((int)$pcat){
+						$ret .= "<input type='hidden' name='bwbps-post-cats[]' value='"
+				. (int)$pcat ."' />
+				";
+					}
+				}
+			
+			}		
+		}
+		
 		if($g['tags_for_uploads']){
 		
 			if($g['tags_for_uploads'] == 'tags'){ $g['tags_for_uploads'] = $g['tags']; }
@@ -347,36 +372,26 @@ class BWBPS_UploadForm{
 		if(is_array($this->stdFieldList)){
 			foreach($this->stdFieldList as $fname){
 				unset($replace);
-				unset($atts);
-						
-				
+				unset($atts);				
 						
 				//Check to see if the field name is in the form at all
 				if(!strpos($cf, $fname) === false){
-				
 					
 				
-					// Some fields can have attributes...special method for getting Attributes
-					if(in_array($fname, $this->attFields)){
-						
-						$atts = $this->getFieldAtts($cf, $fname);		
-						$fname = "[".$fname."]";
-						
-						
-						
-						//Get the new value for the replacement
-						$replace = $this->getStandardField($fname, $g, $atts);
-						//We need to replace the whole thing found by the regex
-						$fname = $atts['bwbps_match'];
-						
+					// Some fields can have attributes...special method for getting Attributes					
+					$atts = $this->getFieldAtts($cf, $fname);	
+					
+					if($fname == 'post_cat1' || $fname == 'post_cat2' || $fname == 'post_cat3'){
+						$std_name = "[post_cat]";
 					} else {
-						
-						$fname = "[".$fname."]";
-						$replace = $this->getStandardField($fname, $g);
-						
-					}
+						$std_name = "[".$fname."]";
+					}			
 					
-					
+					//Get the new value for the replacement
+					$replace = $this->getStandardField($std_name, $g, $atts);
+					//We need to replace the whole thing found by the regex
+					$fname = $atts['bwbps_match'];
+											
 					$cf = str_replace($fname, $replace, $cf);
 									
 				}
@@ -399,7 +414,7 @@ class BWBPS_UploadForm{
 						
 						$fldname = $atts['bwbps_match'];
 							
-						$ret = $this->getField($g, $fld, 50);
+						$ret = $this->getField($g, $fld, 50, false, false, $atts);
 						$cf = str_replace($fldname, $ret, $cf);
 					}
 				}
@@ -1079,8 +1094,11 @@ class BWBPS_UploadForm{
 						."' type='text' maxlength='255' class='bwbps_reset' />";
 				break;
 			case 1 :	//textarea
+			
+				$textarea_rows = (int)$atts['textarea_rows'] ? (int)$atts['textarea_rows'] : 4;
+								
 				$ret = "<textarea tabindex='".$tabindex."' ".$id
-					." ".$ele_name . " rows=4 ";
+					." ".$ele_name . " rows=". $textarea_rows ." ";
 					
 				if(!$txtarea_width){
 					$ret .= " cols=40 ";

@@ -3,19 +3,27 @@ Contributors: bennebw
 Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 2.9
-Stable tag: 0.5.00
+Tested up to: 2.9.1
+Stable tag: 0.5.02
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
 == Description ==
 
-PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  Following are the features:
+PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  PhotoSmash has incredibly flexible and simple models for designing custom gallery and form layouts, utilizing your own custom database fields, html, and css, or just use the standard.
+
+= Links =
+
+* <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Forum</a>
+* <a href="http://smashly.net/photosmash-galleries/photosmash-demo/" title="Demo Gallery">Demo Gallery</a>
+
+Following are the features:
 
 For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
-*   User contributable photo galleries
-*	Add images to the WordPress Media Library so you can use them in blog posts, etc
+*   User contributable photo galleries - allow your users to upload images to galleries
+*	NEW! Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
+*	Add images to the WordPress Media Library so you can use them in blog posts and even the Standard WordPress Image Gallery features
 *	Multiple simultaneous image uploads in Admin, using the WordPress Media Library, then import images to PhotoSmash!
 *   AJAX photo uploads from within Posts and Pages
 *	Star Ratings for images
@@ -44,7 +52,7 @@ For support and more documentation, visit the plugin's new homepage: [PhotoSmash
 
 = Is PhotoSmash free? =
 
-Yes...it's licensed under the GPL.
+Yes...and it's licensed under the GPL.
 
 = How many galleries can a Post have? =
 
@@ -77,7 +85,18 @@ You can also exclude the standard css file and include your own through options 
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
-= 0.5.00 – 12/27/2009 – (we’re going to 1.0 after 0.5.00 has time to flush out bugs)
+= 0.5.02 – 1/26/2010 – (not to 1.0 yet...need to make sure the PicLens addition is good...still in Beta) =
+
+    * NOTE: Photosmash Extend users - Please contact Byron for a new release of PhotoSmash Extend.  This version of Photosmash may not work with older versions of PS-Extend
+    * Added 'Delete Layout' button to Custom Layouts admin page...be careful.  Once deleted, they're gone forever! I know the hard way.
+    * Added 'images' attribute to shortcode - it's the number of images you want displayed. Use images=X to specify how many images you'd like the MySQL query to return.  Do not use for paging, as it will never retrieve all the images and generate the page links.  Use for special cases when you want to show a single image or a set number of images. Note that Random and the other Widget gallery types already had this option.
+    * Added PicLens support. Use [piclens] in your Custom Layouts to get the PicLens link, or use attribute piclens=true in the photosmash shortcode to get the link without tweaking a custom layout.  If you're going the shortcode route, you can also use the attribute piclens_link='Start Slideshow' for the text of the piclens link...use whatever text you're wanting in place of Start Slideshow.  It will default to 'Start Slideshow' with a little piclens icon.
+    * Added new widget gallery options: Random Tag and Tag (you specify one or more tags).  Note that the Random Tag widget will automatically create a title: "Images tagged 'your tag'.  For the Tag gallery, you'll need to  specify your own title for the widget.
+    * Re-added image counts to Photo Manager.
+    * Security enhancement - Added HTML filtering to title attributes on URL links.
+    * Added if_field attribute to Custom Layout fields - this will let you put a field into a layout like this:  [first_name if_field='last_name' if_before=', ']  This will put a comma before the first name if it exists...and only displays first_name if last_name exists.
+
+= 0.5.00 – 12/27/2009 =
 
     * Added 2 standard fields: Image Attribution and Image License. These must be turned on in PhotoSmash Settings to get them to display on the standard form. Also, the field values for uploaded images are only available on Custom Layouts at this time. Use the [img_attribution] and [img_license] tags to display the values on a custom layout.
     * Fixed Photo Tagging feature so that when you delete an image that has tags, the tags are also deleted…that wasn’t happening before.

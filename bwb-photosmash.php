@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.5.00
+Version: 0.5.02
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -34,7 +34,7 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.4.02');
+define('PHOTOSMASHVERSION', '0.5.01');
 
 
 //Database Verifications
@@ -198,7 +198,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 17;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 20;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -225,7 +225,8 @@ class BWB_PhotoSmash{
 	
 	var $images;
 	
-	var $footerJS; // Load this up with Javascript...PS uses wp_footer hook to put Javascript in footer
+	var $footerJS = ""; // Load this up with Javascript...PS uses wp_footer hook to put Javascript in footer
+	var $footerReady = "";
 	
 	//Constructor
 	function BWB_PhotoSmash(){
@@ -274,6 +275,7 @@ class BWB_PhotoSmash{
 	//Returns an array of default options
 	function getPSOptions()
 	{
+		$runUpdate = false;
 		$psOptions = get_option($this->adminOptionsName);
 		if($psOptions && !empty($psOptions))
 		{
@@ -427,7 +429,12 @@ class BWB_PhotoSmash{
 			'post_id',
 			'allow_no_image',
 			'post_cat',
-			'post_tags'
+			'post_cat1',
+			'post_cat2',
+			'post_cat3',
+			'post_tags',
+			'bloginfo',
+			'plugin_url'
 		);
 		return $ret;
 	}
@@ -656,6 +663,8 @@ function autoAddGallery($content='')
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 		$loadedGalleries[] = $g['gallery_id'];
 		$gallery = $this->buildGallery($g);
+		
+		
 		$gallery .= "
 			<script type='text/javascript'>
 				displayedGalleries += '|".$g['gallery_id']."';
@@ -711,16 +720,17 @@ function shortCodeGallery($atts, $content=null){
 			$atts = array();
 		}
 		
-		if(!$atts['id'] && $atts[0])
+		if(!isset($atts['id']) && isset($atts[0]) && $atts[0] )
 		{
 			$maybeid = str_replace("=", "", trim($atts[0]));
 			//Backwards compatibility with old shortcodes like: [photosmash=9]
 			if(is_numeric($maybeid)){$atts['id'] = (int)$maybeid;}
 		}
-		
+				
 		extract(shortcode_atts(array(
 			'id' => false,
 			'form' => false,
+			'no_gallery_header' => false,
 			'form_alone' => false,
 			'no_gallery' => false,
 			'gallery_type' => false,
@@ -729,6 +739,8 @@ function shortCodeGallery($atts, $content=null){
 			'gal_id' => false,
 			'image_id' => false,
 			'field' => false,
+			'if_before' => false,
+			'if_after' => false,
 			'layout' => false,
 			'thickbox' => false,
 			'form_visible' => false,
@@ -752,8 +764,11 @@ function shortCodeGallery($atts, $content=null){
 			'post_cat_single_select' => false,	// make this 0 to turn off multi-select
 			'post_thumbnail_meta' => false,	// use this as the name of the post meta (custom field) for post thumbnail
 			'post_tags' => false,	// whether or not to show an input box for tags (comma separated)
-			'post_tags_label' => false
-			
+			'post_tags_label' => false,
+			'post_excerpt_field' => false,	// For use with PExtend - will use this field to create an excerpt when creating new post
+			'piclens' => false, 	// Enter true to include a link to a piclens slideshow
+			'piclens_link' => '',	// Defaults to "Start Slideshow " with a little icon
+			'piclens_class' => ''	// Defaults to "alignright"
 		),$atts));
 		
 		
@@ -852,6 +867,11 @@ function shortCodeGallery($atts, $content=null){
 		$g['post_thumbnail_meta'] = $post_thumbnail_meta;
 		$g['post_tags'] = $post_tags;
 		$g['post_tags_label'] = $post_tags_label;
+		$g['post_excerpt_field'] = $post_excerpt_field;
+		$g['no_gallery_header'] = $no_gallery_header;
+		$g['piclens'] = $piclens;
+		$g['piclens_link'] = $piclens_link;
+		$g['piclens_class'] = $piclens_class;
 		
 		/*
 		 *	Random/Recent/Highest Ranked Gallery settings
@@ -863,7 +883,6 @@ function shortCodeGallery($atts, $content=null){
 			if(!$images){
 				$images = 8;
 			}
-			$g['limit_images'] = (int)$images;
 					
 			if((int)$where_gallery && !$g['gallery_type'] == 99){
 				$g['smart_where'] = array ( PSIMAGESTABLE.".gallery_id" => (int)$where_gallery );
@@ -872,6 +891,8 @@ function shortCodeGallery($atts, $content=null){
 			$no_form = true;
 			
 		}
+		
+		$g['limit_images'] = (int)$images;
 		
 		if($thumb_height){
 			$g['thumb_height'] = (int)$thumb_height;
@@ -998,11 +1019,14 @@ function shortCodeGallery($atts, $content=null){
 			
 			$this->loadedGalleries[] = $post->ID."-".$g['gallery_id'];
 			$ret .= $this->buildGallery($g, $skipForm, $layoutName, $formName );
-			$ret .= "
-				<script type='text/javascript'>
-					displayedGalleries += '|".$g['gallery_id']."';
-				</script>
-			";
+			
+			if(!$g['no_gallery_header']){			
+				$ret .= "
+					<script type='text/javascript'>
+						displayedGalleries += '|".$g['gallery_id']."';
+					</script>
+				";
+			}
 		}
 		
 		unset($galparms);
@@ -1433,10 +1457,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 {
 	$blogname = str_replace('"',"",get_bloginfo("blogname"));
 	$admin = current_user_can('level_10');
-		
-	$ret = '<div class="photosmash_gallery">';
+	
+	if(!$g['no_gallery_header']){
+		$ret = '<div class="photosmash_gallery">';
+	}
 			
-	if($this->moderateNonceCount < 1 && $admin)
+	if($this->moderateNonceCount < 1 && $admin && !$g['no_gallery_header'])
 	{
 		$nonce = wp_create_nonce( 'bwbps_moderate_images' );
 				
@@ -1467,15 +1493,24 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		}
 	} //closes out the use_manualform condition
 	
+	// Add PicLens link if needed
+	if( $g['piclens'] ){
+		$atts['link_text'] = $g['piclens_link'];
+		$class = $g['piclens_class'] ? $g['piclens_class'] : 'alignright';
+		
+		$ret = "<div class='bwbps-piclens-link $class'>" . $this->getPicLensLink($g, $atts) . "</div>" . $ret . "<div style='clear: both;'></div>";
+	}
+	
 	if(!isset($this->psLayout)){
 		require_once('bwbps-layout.php');
 		$this->psLayout = new BWBPS_Layout($this->psOptions, $this->cfList);
 	}
 
 	$ret .=	$this->psLayout->getGallery($g, $layoutName);
-	
-	$ret .= "</div>
-		<div class='bwbps_clear'></div>";
+	if(!$g['no_gallery_header']){
+		$ret .= "</div>
+			<div class='bwbps_clear'></div>";
+	}
 	
 	$this->galleries[$g['gallery_id']] = $g;
 	return $ret;
@@ -1546,6 +1581,13 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	<link rel="stylesheet" type="text/css" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/css/ui.core.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo WP_PLUGIN_URL;?>/photosmash-galleries/css/ui.datepicker.css" />
+	
+	<link rel="alternate" href="<?php echo WP_PLUGIN_URL; ?>/photosmash-galleries/bwbps-media-rss.php" type="application/rss+xml" title="" id="gallery" />
+
+	<?php if( !$this->psOptions['exclude_piclens_js'] ) { ?>
+      <script type="text/javascript" 
+    src="http://lite.piclens.com/current/piclens_optimized.js"></script>
+	<?php } ?>
 	
     <script type="text/javascript">
 	var displayedGalleries = "";
@@ -1646,6 +1688,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			'gallery' => false,
 			'gal_id' => false,
 			'field' => false,
+			'if_before' => false,
+			'if_after' => false,
 			'layout' => false,
 			'alt' => false,
 			'author' => false
@@ -1739,6 +1783,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 					
 			}
 		}
+		
+		if( $if_before && $ret ){ $ret = $if_before . $ret; }
+		if( $if_after && $ret ){ $ret = $if_after . $ret; }
+		
 		return $ret;
 	}
 	
@@ -1864,7 +1912,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		}
 						
 		
-		if($msg){$this->message = $msg. $this->message; $this->msgclass = 'error';}
+		if(isset($msg) && $msg){$this->message = $msg. $this->message; $this->msgclass = 'error';}
 		
 		return;
 	}
@@ -2061,6 +2109,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	function fixSpecialGalleryLinks($perma){
 		global $post;
+		
+		if(!isset($post->photosmash)){ return $perma; }
 				
 		switch ($post->photosmash) {
 		
@@ -2166,7 +2216,144 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	 function createTaxonomy(){
 	 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __('Photo tags', 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => 'photo-tag' ) ) );	
 	 }
+	 
+	 /**
+	  *	Get Random Tag with Count >= x
+	  *
+	  */
+	 function getRandomTag($min_count=0){
+	 	
+	 	global $wpdb;
+		$min_count = (int)$min_count - 1;
+	 	$sql = "SELECT name FROM $wpdb->terms JOIN " 
+	 		. $wpdb->term_taxonomy . " ON " . $wpdb->terms . ".term_id = "
+	 		. $wpdb->term_taxonomy . ".term_id "
+	 		. "WHERE " . $wpdb->term_taxonomy . ".taxonomy = 'photosmash' AND "
+	 		. $wpdb->term_taxonomy . ".count > " . $min_count . " ORDER BY RAND(); ";
+	 	
+	 	return $wpdb->get_var($sql);
+	 	
+	 }
+	 
+	 /*
+	  * Get 
+	  */
+	 
+	 function filterMRSSAttsFromArray($atts, $apostrophe=""){
+	 	
+	 	if(!is_array($atts)){ return array(); }
+	 
+		//Layout
+		if( isset($atts['layout']) ){
+			$sc_atts[] = "layout=$apostrophe" . $atts['layout'] . "$apostrophe";
+		} else {
+			$sc_atts[] = "layout=" . $apostrophe . "media_rss" .$apostrophe;
+		}
+		
+		//ID
+		if( isset($atts['id']) && (int)$atts['id'] ){
+			$sc_atts[] = "id=" . (int)$atts['id'];
+		}
+		
+		//Gallery Type
+		if( isset($atts['gallery_type']) ){
+			$sc_atts[] = "gallery_type=$apostrophe" . $atts['gallery_type'] . "$apostrophe";
+		}
+		
+		//Tags
+		if( isset($atts['tags']) ){
+			$sc_atts[] = "tags=$apostrophe" . $atts['tags'] . "$apostrophe";
+		}
+		
+		//Where Gallery = ID - this is for special galleries like highest rated or random...it limits the images ot this gallery, while using the settings of the gallery with id = id (above)
+		if( isset($atts['where_gallery']) ){
+			$sc_atts[] = "where_gallery=$apostrophe" . (int)$atts['where_gallery'] 
+				. "$apostrophe";
+		}
+		
+		//thumb_height
+		if( isset($atts['thumb_height']) ){
+			$sc_atts[] = "thumb_height=$apostrophe" . $atts['thumb_height'] . "$apostrophe";
+		}
+		
+		//thumb_width
+		if( isset($atts['thumb_width']) ){
+			$sc_atts[] = "thumb_width=$apostrophe" . $atts['thumb_width'] . "$apostrophe";
+		}
+		
+		//images
+		if( isset($atts['images']) ){
+			$sc_atts[] = "images=$apostrophe" . $atts['images'] . "$apostrophe";
+		}
+		
+		return $sc_atts;
+	}
 	
+	//Get a link for the Start Slideshow for PicLens
+	function getPicLensLink($g, $atts){
+		if($atts['link_text']){
+			$link_text = $atts['link_text'];
+		} else {
+			$link_text = 'Start Slideshow 
+  <img src="http://lite.piclens.com/images/PicLensButton.png"
+  alt="PicLens" width="16" height="12" border="0" align="absmiddle">';
+		}
+		
+		$picatts['id'] = $g['gallery_id'];
+		$picatts['thumb_width'] = $g['thumb_width'];
+		$picatts['thumb_height'] = $g['thumb_height'];
+		$picatts['gallery_type'] = $g['gallery_type'];
+		$picatts['images'] = $g['images'];
+		
+		
+		if($g['tags'] == 'post_tags'){
+			$picatts['tags'] = $this->getPostTags(0);
+		} else {
+			$picatts['tags'] = $g['tags'];
+		}
+		
+		$param_array = $this->filterMRSSAttsFromArray($picatts, "");
+		
+		if( is_array($param_array)){
+			$params = implode("&", $param_array);
+			$params = urlencode($params);
+		}
+				
+		$ret = '<a class="piclenselink" href="javascript:PicLensLite.start({feedUrl:\'' 
+			.  WP_PLUGIN_URL . '/photosmash-galleries/bwbps-media-rss.php?'
+			. $params . '\'});">
+			' . $link_text . ' </a>
+			';
+			
+		return $ret;
+	}
+	
+	function getPostTags($post_id){
+	
+		if(!$post_id ){
+			global $wp_query;
+			$post_id = $wp_query->post->ID;
+		}
+		$terms = wp_get_object_terms( $post_id, 'post_tag', $args ) ;
+		
+		if(is_array($terms)){
+		
+			foreach( $terms as $term ){
+				
+				$_terms[] = $term->name;
+			
+			}
+		
+			unset($terms);
+			if( is_array($_terms)){
+				$ret = implode("," , $_terms);
+			} else {
+				$ret = "";
+			}
+		}
+	
+		return $ret;	
+	}
 	
 } //End of BWB_PhotoSmash Class
 

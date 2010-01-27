@@ -343,6 +343,7 @@ class BWBPS_Init{
 		
 		global $wpdb;
 		
+		//Preload the Standard Widget layout
 		if(!$wpdb->get_var("SELECT layout_id FROM " 
 			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'Std_Widget'")){
 		
@@ -357,18 +358,42 @@ class BWBPS_Init{
 			$d['css'] = "";
 			
 			$d['pagination_class'] = "bwbps_pagination";
-			
-			//Strip slashes...I think WP adds slashes regardless, so you need to strip them
-			$d['layout'] = stripslashes($d['layout']);
-			$d['alt_layout'] = stripslashes($d['alt_layout']);
-			$d['css'] = stripslashes($d['css']);
-			$d['wrapper'] = stripslashes($d['wrapper']);
-			
+						
 			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
 					
 		}
-	
-	
+		
+		unset($d);
+		
+		//Preload the Media RSS layout
+		if(!$wpdb->get_var("SELECT layout_id FROM " 
+			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'media_rss'")){
+		
+			$d['layout_name'] = 'media_rss';
+			
+			$d['cells_perrow'] = 0;
+			$d['layout'] = "
+<item>
+	<title><![CDATA[[caption]]]></title>
+	<description><![CDATA[]]></description>
+	<link><![CDATA[]]></link>
+	<media:content url='[image_url]' medium='image' />
+	<media:title><![CDATA[[caption]]]></media:title>
+	<media:description><![CDATA[]]></media:description>
+	<media:thumbnail url='[thumb_url]' width='100' height='75' />
+	<media:keywords><![CDATA[]]></media:keywords>
+	<media:copyright><![CDATA[Copyright (c) [blog_name]]]></media:copyright>
+</item>
+			";
+			$d['alt_layout'] = "";
+			$d['wrapper'] = "";
+			$d['css'] = "";
+			
+			$d['pagination_class'] = "bwbps_pagination";
+						
+			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
+					
+		}	
 	}
 	
 	//Returns an array of default options

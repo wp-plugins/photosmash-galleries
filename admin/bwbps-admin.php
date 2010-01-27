@@ -272,6 +272,7 @@ class BWBPS_Admin{
 			$ps['use_wp_upload_functions'] = isset($_POST['ps_use_wp_upload_functions']) ? 1 : 0;
 			$ps['add_to_wp_media_library'] = isset($_POST['ps_add_to_wp_media_library']) ? 1 : 0;
 
+			$ps['exclude_piclens_js'] = isset($_POST['ps_exclude_piclens_js']) ? 1 : 0;
 
 			$ps['thumb_aspect'] = (int)$_POST['ps_thumb_aspect'];
 			$ps['thumb_width'] = (int)$_POST['ps_thumb_width'];
@@ -1661,6 +1662,13 @@ if($psOptions['use_customform']){ ?>
 			</tr>
 			
 			<tr>
+				<th>Exclude PicLens javascript file:</th>
+				<td>
+					<input type="checkbox" name="ps_exclude_piclens_js" <?php if($psOptions['exclude_piclens_js'] == 1) echo 'checked'; ?>> Might need to exclude PicLens javascript file if another plugin is loading it.
+				</td>
+			</tr>
+			
+			<tr>
 				<th>Alternate Ajax Upload Script:</th>
 				<td>
 					<input type="checkbox" name="ps_use_alt_ajaxscript" <?php if($psOptions['use_alt_ajaxscript'] == 1) echo 'checked'; ?>>
@@ -1800,12 +1808,14 @@ if($psOptions['use_customform']){ ?>
 			$galleryID ='moderation';
 			$ddlID = 0;
 			$caption = " > Images for Moderation";
+			$imgcount = $this->getGalleryImageCount('mod');
 		} else {
 			if(isset($_POST['showAllImages'])){
 				//Getting all images
 				$galleryID ='all';
 				$ddlID = 0;
 				$caption = " > All Images";
+				$imgcount = $this->getGalleryImageCount('all');
 			} else {
 				//We're getting a specific Gallery	
 				if($this->gallery_id){
@@ -1818,8 +1828,12 @@ if($psOptions['use_customform']){ ?>
 					}
 				}
 				$ddlID = $galleryID;
+				
+				$imgcount = $this->getGalleryImageCount($galleryID);
 			}
 		}
+		
+		if(!$imgcount){ $imgmsg = 'no images'; } else { $imgmsg = $imgcount . " images";}
 		
 		if(!$galleryID){
 			$galleryID ='moderation';
@@ -1855,7 +1869,7 @@ if($psOptions['use_customform']){ ?>
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
 		?>		
-		<h3>Photo Manager<?php echo $caption;?></h3>
+		<h3>Photo Manager<?php echo $caption;?> [<?php echo $imgmsg; ?>]</h3>
 		<?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
 		<br/>
 		<?php 
@@ -1898,6 +1912,35 @@ if($psOptions['use_customform']){ ?>
 
  	</div>
 <?php
+	}
+	
+	function getGalleryImageCount($gid){
+		global $wpdb;
+		
+		switch ($gid) {
+			case 'mod' :
+				$where = ' WHERE status < 0 OR alerted < 0 ';
+				break;
+			
+			case 'all' :
+				$where = '';
+				break;
+				
+			default :
+				$where = " WHERE gallery_id = " 
+				. (int)$gid;
+		
+		}
+	
+			
+		// Get total images in gallery
+		$sql = "SELECT COUNT(image_id) FROM " . PSIMAGESTABLE
+			. $where;
+			
+		$ret = $wpdb->get_var($sql);
+		
+		return $ret;
+	
 	}
 
 	
