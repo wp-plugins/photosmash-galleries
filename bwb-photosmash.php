@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.5.03
+Version: 0.5.04
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -374,7 +374,9 @@ class BWB_PhotoSmash{
 				'mod_send_msg' => 0,
 				'mod_approve_msg' => "Thanks for submitting your image to [blogname]! It has been accepted and is now visible in the appropriate galleries.",
 				'mod_reject_message' => "Sorry, the image you submitted to [blogname] has been reviewed, but did not meet our submission guidelines.  Please review our guidelines to see what types of images we accept.  We look forward to your future submissions.",
-				'version' => PHOTOSMASHVERSION
+				'version' => PHOTOSMASHVERSION,
+				'tb_height' => 390,
+				'tb_width' => 545
 		);
 	
 	}
@@ -1391,8 +1393,12 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 		
 	if( $use_tb	)
 	{
+		$this->psOptions['tb_height'] = (int)$this->psOptions['tb_height'] ? (int)$this->psOptions['tb_height'] : 390;
+		$this->psOptions['tb_width'] = (int)$this->psOptions['tb_width'] ? (int)$this->psOptions['tb_width'] : 545;
 	
-		$ret = '<span class="bwbps_addphoto_link"><a href="TB_inline?height=390&amp;width=545&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
+		$ret = '<span class="bwbps_addphoto_link"><a href="TB_inline?height='
+			. $this->psOptions['tb_height'] .'&amp;width=' 
+			. $this->psOptions['tb_width']. '&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
 	
 	} else {
 

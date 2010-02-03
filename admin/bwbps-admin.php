@@ -340,6 +340,8 @@ class BWBPS_Admin{
 			$ps['custom_formid'] = (int)$_POST['ps_custom_formid'];
 			$ps['use_customfields'] = isset($_POST['ps_use_customfields']) ? 1 : 0;
 			$ps['use_thickbox'] = isset($_POST['ps_use_thickbox']) ? 1 : 0;
+			$ps['tb_height'] = (int)$_POST['ps_tb_height'];
+			$ps['tb_width'] = (int)$_POST['ps_tb_width'];
 			$ps['caption_targetnew'] = isset($_POST['ps_caption_targetnew']) ? 1 : 0;
 			$ps['img_targetnew'] = isset($_POST['ps_img_targetnew']) ? 1 : 0;
 			
@@ -662,8 +664,9 @@ if($psOptions['use_advanced'] ==1){
 				<td>
 					<select name="gal_sort_field">
 						<option value="0" <?php if(!$galOptions['sort_field']) echo 'selected=selected'; ?>>When uploaded</option>
-						<?php /*
+						
 						<option value="1" <?php if($galOptions['sort_field'] == 1) echo 'selected=selected'; ?>>Manual sort</option>
+						<?php /*
 						<option value="2" <?php if($galOptions['sort_field'] == 2) echo 'selected=selected'; ?>>Custom field</option>
 						*/
 						?>
@@ -730,9 +733,12 @@ if($psOptions['use_advanced'] ==1){
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?>>No caption (thumbs links to post)<br/>	
-						<input type="radio" name="gal_show_imgcaption"  value="13" <?php if($galOptions['show_imgcaption'] == 13) echo 'checked'; ?>>Caption (thumbs & links to post)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?>>No caption (thumbs link to post)<br/>	
+						<input type="radio" name="gal_show_imgcaption"  value="13" <?php if($galOptions['show_imgcaption'] == 13) echo 'checked'; ?>>Caption (thumbs & captions link to post)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="14" <?php if($galOptions['show_imgcaption'] == 14) echo 'checked'; ?>>No caption (thumbs link to WP Attachment Page)<br/>	
+						<input type="radio" name="gal_show_imgcaption"  value="15" <?php if($galOptions['show_imgcaption'] == 15) echo 'checked'; ?>>Caption (thumbs & captions link to WP Attachment Page)<br/>	
 						<br/>
+						
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
 
@@ -1109,7 +1115,9 @@ if($psOptions['use_customform']){ ?>
 						<br/><hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?> />No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?> />Caption (thumbs & captions link to user submitted url)<br/>
-						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?> />No caption (thumbs link to post)<br/>					
+						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?> />No caption (thumbs link to post)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="14" <?php if($galOptions['show_imgcaption'] == 14) echo 'checked'; ?> />No caption (thumbs link to WP Attachment Page)<br/>	
+						<input type="radio" name="gal_show_imgcaption"  value="15" <?php if($galOptions['show_imgcaption'] == 15) echo 'checked'; ?> />Caption (thumbs & captions link to WP Attachment Page)<br/>									
 						<br/>
 						(Website links will be the website in the user's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, default is to user's WordPress profile)<br/>
@@ -1392,6 +1400,8 @@ if($psOptions['use_customform']){ ?>
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="ps_show_imgcaption"  value="8" <?php if($psOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="9" <?php if($psOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="14" <?php if($psOptions['show_imgcaption'] == 14) echo 'checked'; ?>>No caption (thumbs link to WP Attachment Page)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="15" <?php if($psOptions['show_imgcaption'] == 15) echo 'checked'; ?>>Caption (thumbs & captions link to WP Attachment Page)<br/>
 						
 						
 						
@@ -1530,6 +1540,16 @@ if($psOptions['use_customform']){ ?>
 					<input type="checkbox" id='bwbps_use_thickbox' name="ps_use_thickbox" onclick='bwbpsToggleFormAlwaysVisible();' <?php if($psOptions['use_thickbox'] == 1) echo 'checked'; ?>> Use Thickbox for floating upload form.
 				</td>
 			</tr>
+			
+			<tr>
+				<th>Thickbox sizes:</th>
+				<td>
+					<input type="text" id='bwbps_tb_height' name="ps_tb_height" value='<?php echo $psOptions['tb_height'];?>'> height 
+					<input type="text" id='bwbps_tb_width' name="ps_tb_width" value='<?php echo $psOptions['tb_width'];?>'> width 
+				</td>
+			</tr>
+			
+			
 			<tr <?php if($psOptions['use_thickbox']){echo 'style="display:none;"';} ?> id='bwbps_formviz'>
 				<th>Keep upload form visible:</th>
 				<td>
@@ -2169,7 +2189,11 @@ if($psOptions['use_customform']){ ?>
 					<td>
 						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", "
 				.$image->image_id.");' class='ps-modbutton'>save</a></span>
-					</td><td>&nbsp;</td>
+					</td><td>Sequence: <input type='text' id='imgseq_" 
+						. (int)$image->image_id."' name='imgseq"
+						. (int)$image->image_id."' value='"
+						. (int)$image->seq . "' style='width: 45px !important;' />
+					</td>
 				</tr>
 				
 			</table>";

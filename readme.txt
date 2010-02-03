@@ -4,7 +4,7 @@ Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-r
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.1
-Stable tag: 0.5.03
+Stable tag: 0.5.04
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -23,6 +23,7 @@ For support and more documentation, visit the plugin's new homepage: [PhotoSmash
 
 *   User contributable photo galleries - allow your users to upload images to galleries
 *	NEW! Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
+*	Link gallery thumbnails to various destinations including full-size image, related post, and WP Attachment Page when using Media Library integration
 *	Add images to the WordPress Media Library so you can use them in blog posts and even the Standard WordPress Image Gallery features
 *	Multiple simultaneous image uploads in Admin, using the WordPress Media Library, then import images to PhotoSmash!
 *   AJAX photo uploads from within Posts and Pages
@@ -42,7 +43,7 @@ For support and more documentation, visit the plugin's new homepage: [PhotoSmash
 
 == Installation ==
 
-1. Upload the plugin folder, bwb-photosmash, to the `/wp-content/plugins/` directory
+1. Upload the plugin folder, bwb-photosmash, to the '/wp-content/plugins/' directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
 1. To automatically add a new gallery to a post, put this shortcode in the body of the post where you want it to show up: [photosmash]
 1. To add a specific existing gallery to a post, use this shortcode (replacing ## with the gallery's id): [photosmash id=##] 
@@ -85,7 +86,18 @@ You can also exclude the standard css file and include your own through options 
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
-= 0.5.02 – 1/26/2010 – (not to 1.0 yet...need to make sure the PicLens addition is good...still in Beta) =
+= 0.5.04 - 2/3/2010
+
+    * Added manual sort option - set the sequence numbers in the Photo Manager and then set the Sort Field to Manual sort in Gallery Settings.
+    * Added options for linking to WP Attachment Pages - this lets you link your thumbnails to standard WordPress Attachment Pages just like the standard WordPress galleries do.  Either choose the link option from Caption Styles (near very bottom) in Gallery Settings (also set defaults in PhotoSmash Settings), or use:  href='[wp_attachment_link]'  in you link tags in a custom layout.
+    * Added the height and width settings for the Thickbox forms - set this in Uploading in PhotoSmash Settings
+
+
+= 0.5.03 – 1/27/2010 
+
+    * The SVN archive missed a file during the creation of the Stable Tag folder
+
+= 0.5.02 – 1/26/2010 
 
     * NOTE: Photosmash Extend users - Please contact Byron for a new release of PhotoSmash Extend.  This version of Photosmash may not work with older versions of PS-Extend
     * Added 'Delete Layout' button to Custom Layouts admin page...be careful.  Once deleted, they're gone forever! I know the hard way.
@@ -104,7 +116,7 @@ Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "C
     * Tweaked PhotoSmash so that PhotoSmash Extend can now add Post Thumbnails available in WP 2.9. This might make PhotoSmash Extend a 2.9+ plugin, though PhotoSmash is still compatible with 2.8+.
     * Fixed the Permalink for the title of the tag gallery on the Photo Tags page.
     * Added ‘tab_index’ attribute to Custom Fields and Standard fields (except file upload and buttons) in custom forms.  Use like: …photosmash id=5 tab_index=4]
-    * Added attributes to the Posts Category dropdown [post_cat] custom form option: show_option_none=’– none –’ will show an option in the category dropdown called — none — (replace with whatever text you like). id=’my_id’ was added so you can now have multiple category dropdowns (or multi-select listboxes) with different ID’s so you can do javascript manipulations in the form…the id gets appended to: bwbps-post-cats like ‘bwbps-post-cats-my-id’. Now you can do something like onclick=’jQuery(“#bwbps-post-cats-my-id�?).val(“-1″); return false;’ to se that particular category dropdown value to none (if you’ve got none turned on).
+    * Added attributes to the Posts Category dropdown [post_cat] custom form option: show_option_none=’– none –’ will show an option in the category dropdown called — none — (replace with whatever text you like). id=’my_id’ was added so you can now have multiple category dropdowns (or multi-select listboxes) with different ID’s so you can do javascript manipulations in the form…the id gets appended to: bwbps-post-cats like ‘bwbps-post-cats-my-id’. Now you can do something like onclick=’jQuery(“#bwbps-post-cats-my-id�?).val(“-1″); return false;’ to se that particular category dropdown value to none (if you’ve got none turned on).
     * Added attributes to Custom Layout fields:
           o if_before – allows you to specify html to place before the field if the field has a value
           o if_after – allows you to specify html to place after the field if the field has a value

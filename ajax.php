@@ -176,9 +176,14 @@ class BWBPS_AJAX{
 			$data['image_caption'] = stripslashes($_POST['image_caption']);
 			$data['url'] = stripslashes($_POST['image_url']);
 			$json['image_id'] = (int)$_POST['image_id'];
+			$data['seq'] = (int)$_POST['seq'];
+			$json['seq'] = (int)$_POST['seq'];
 			$where['image_id'] = $json['image_id'];
+			
+			//update now
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where) + 1;
 			$json['action'] = 'saved';
+			
 			$json['deleted'] = '';
 			
 			$tags = $_POST['image_tags'];

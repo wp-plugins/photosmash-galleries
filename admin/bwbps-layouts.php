@@ -296,6 +296,10 @@ class BWBPS_LayoutsEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_id] - <span style='font-size: 9px;'>image id in database</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[wp_attachment_link] - <span style='font-size: 9px;'>WP attachment page link - from std. WP gallery functionality</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[wp_attach_id] - <span style='font-size: 9px;'>WP attachment ID #</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_url] - <span style='font-size: 9px;'>Post's permalink (not linkified)</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_id] - <span style='font-size: 9px;'>Post's ID</span></li>

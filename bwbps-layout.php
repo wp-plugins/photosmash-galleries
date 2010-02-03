@@ -54,6 +54,8 @@ class BWBPS_Layout{
 			, 'bloginfo'
 			, 'plugin_url'
 			, 'piclens'
+			, 'wp_attachment_link'
+			, 'wp_attach_id'
 		);
 	}
 	
@@ -783,10 +785,10 @@ class BWBPS_Layout{
 			//Set up thumb size
 			if(!$g['thumb_aspect'] ){
 				if((int)$g['thumb_height'] ){
-					$imagesize = " height=" . (int)$g['thumb_height'];
+					$imagesize = " height='" . (int)$g['thumb_height'] . "'";
 				}
 				if( (int)$g['thumb_width'] ){
-					$imagesize .= " width=" . (int)$g['thumb_width'];
+					$imagesize .= " width='" . (int)$g['thumb_width'] . "'";
 				}		
 			}
 		} else {
@@ -901,10 +903,10 @@ class BWBPS_Layout{
 						
 		} else {
 			if((int)$g['thumb_height'] ){
-				$thumbsize = " height=" . (int)$g['thumb_height'];
+				$thumbsize = " height='" . (int)$g['thumb_height'] . "'";
 			}
 			if( (int)$g['thumb_width'] ){
-				$thumbsize .= " width=" . (int)$g['thumb_width'];
+				$thumbsize .= " width='" . (int)$g['thumb_width'] . "'";
 			}
 		}
 		
@@ -1083,10 +1085,10 @@ class BWBPS_Layout{
 					//Set up medium size
 					if($g['enforce_sizes']){
 						if((int)$g['medium_height'] ){
-							$mediumsize = " height=" . (int)$g['medium_height'];
+							$mediumsize = " height='" . (int)$g['medium_height'] . "'";
 						}
 						if( (int)$g['medium_width'] ){
-							$mediumsize .= " width=" . (int)$g['medium_width'];
+							$mediumsize .= " width='" . (int)$g['medium_width'] . "'";
 						}
 					}
 				
@@ -1100,6 +1102,20 @@ class BWBPS_Layout{
 				
 			case '[image_id]' :
 				$ret = $image['psimageID'];
+				break;
+				
+			case '[wp_attachment_link]' :
+				if((int)$image['wp_attach_id']){
+					$ret = get_attachment_link( (int)$image['wp_attach_id']);
+				}
+				
+				break;
+			
+			case '[wp_attach_id]' :
+				if((int)$image['wp_attach_id']){
+					$ret = (int)$image['wp_attach_id'];
+				}
+				
 				break;
 			
 			case '[gallery_id]' :
@@ -1764,6 +1780,56 @@ class BWBPS_Layout{
 						$image['capurl'] = "";
 					}																			
 					break;	
+				
+				case 14: //No caption - Thumbnail links to Attachment Page
+				
+					$image['capurl'] = "";
+					$image['capurl_close'] = "";
+					$scaption = "";	//Close out the link from above
+										
+					if((int)$image['wp_attach_id']){
+						$attach_perma = get_attachment_link( (int)$image['wp_attach_id']);
+					}
+					
+					if($attach_perma){
+						$perma = "<a href='".$attach_perma."' title='View post'>";
+					}
+				
+									
+					if($attach_perma){
+						$image['imgurl'] = $perma;
+					}
+																			
+					break;
+					
+				case 15: //Caption & Thumbnail link to Attachment Page
+				
+					if((int)$image['wp_attach_id']){
+						$attach_perma = get_attachment_link( (int)$image['wp_attach_id']);
+					}
+					
+					if($attach_perma){
+						$perma = "<a href='".$attach_perma."' title='View post'>";
+					}				
+									
+					if($perma){
+						$image['imgurl'] = $perma;
+					}
+				
+					if($image['image_caption']){
+					
+						$image['capurl'] = $perma;
+						
+						$scaption = "<span ".$g['url_attr']['captionclass'] .">"
+							. $image['image_caption']."</span>";
+					
+						$image['capurl_close'] = $image['imgurl_close'];
+						
+					} else {
+						$image['capurl'] = "";
+					}																			
+					break;
+				
 			}
 			
 			return $scaption;
