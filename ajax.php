@@ -95,11 +95,219 @@ class BWBPS_AJAX{
 			case 'publishpost' :
 				$this->publishPost();
 				break;
+				
+			case 'copyimagestogal' :
+				$this->copyImagesToGallery(true);
+				break;
+				
+			case 'moveimagestogal' :
+				$this->copyImagesToGallery(false);
+				break;
 		
 			default :
 				break;
 		}
 	}
+	
+	
+	//Copy or Move to Gallery
+	function copyImagesToGallery($copy){
+		
+		global $wpdb;
+	
+		$galid = (int)$_POST['newgallery'];
+		
+		$json['newgallery'] = $galid;
+				
+		
+		if(current_user_can('level_10') && $json['newgallery'] && is_array($_POST['image_ids'])){		
+							
+			// Check to make sure new gallery is not a virtual gallery type (tag, ranked, contributor, etc)
+			$sql = "SELECT gallery_type FROM " . PSGALLERIESTABLE . " WHERE gallery_id = " . (int)$galid 
+				. " AND gallery_type < 10";
+			
+			$res = $wpdb->get_col($sql);
+						
+			if(empty($res)){
+				$json['updated'] = 0;
+				$json['message'] = "** Gallery type is not valid for copy/move.  **\n\n" 
+					. "Gallery id: " . $galid . "\n\nVirtual galleries such as tag, ranked, contributor, random, etc should not have images assigned directly to them as they will not be displayed as part of the gallery...display is based on the virtual aspects of the gallery.";
+				echo json_encode($json);
+				return;
+			}
+			
+			unset($res);
+			
+			//Get list of Image IDs
+			foreach($_POST['image_ids'] as $img_id){
+				if((int)$img_id){
+					$imgs[] = (int)$img_id;
+				}
+			}
+			
+			
+			//We've got a good gallery...check image id's and perform update/inserts as needed
+			if(is_array($imgs)){
+			
+				$img_ids = implode(",", $imgs);
+				
+				if(!$copy){
+					
+					//Code to Move images to a different gallery
+					$sql = "UPDATE " . PSIMAGESTABLE . " SET gallery_id = " . (int)$galid
+						. " WHERE image_id IN (" . $img_ids . ")";
+						
+					$json['updated'] = $wpdb->query($sql);		//The database update
+					$json['message'] = 'Moved images to gallery';
+									
+				} else {
+					
+					//Code to COPY images to a different gallery
+				
+					//Determine if any of these images are already in the gallery...and ignore them
+					
+					$skip = array("id", "image_id", "updated_date");
+					
+					$cols = $this->getCustomDataTableCols(true, $skip);
+					
+					if(!$cols){
+						$json['updated'] = 0;
+						$json['message'] = "Error...images table columns not accessible!";
+						echo json_encode($json);
+						return;
+					
+					}
+					
+					$sql = "SELECT * FROM " . PSIMAGESTABLE . " WHERE image_id IN (" 
+						. $img_ids . ")";
+						
+					$imgs = $wpdb->get_results($sql, ARRAY_A);
+					
+					if($imgs && is_array($imgs)){
+						$json['message'] = 'Copied images to gallery';
+						foreach($imgs as $img){
+							
+							if( $galid != $img['gallery_id']){
+							
+								$data = $img;
+								unset( $data['image_id']);
+								$data['gallery_id'] = (int)$galid;
+								
+								$wpdb->insert(PSIMAGESTABLE, $data);	//Insert new iMage record
+								
+								$newid = $wpdb->insert_id;	//Get new Image id
+								
+								//Copy the custom data
+							
+								 
+								$sql = "INSERT INTO " . PSCUSTOMDATATABLE . "(image_id, " . $cols 
+									. ") SELECT " . (int)$newid . ", " . $cols . " FROM "
+									. PSCUSTOMDATATABLE . " WHERE image_id = " . (int)$img['image_id'];
+									
+								$json['updated'] += $wpdb->query($sql);
+								
+								//Copy Tags to new Image
+								if( isset($terms) ){ unset($terms); }
+								$terms = wp_get_object_terms( $img['image_id'], 'photosmash', $argsarray);
+								
+								if(is_array($terms)){
+									if(isset($tags)){unset($tags);}
+									foreach($terms as $t){
+									
+										$tags[] = $t->name;
+									
+									}
+								
+									if(is_array($tags)){
+										
+										$this->saveImageTags($newid, $tags);
+									
+									}	
+																	
+								}
+																
+								
+							}
+						}
+					}
+					
+				
+				}				
+				
+			}
+			
+			
+			
+		} else {
+			$json['status'] = 'false';
+		}
+		
+		echo json_encode($json);
+		return;
+	
+	}
+	
+	function getCustomDataTableCols($ret_sql = true, $skip = false){
+		global $wpdb;
+		
+		$sql = "SHOW COLUMNS FROM ".PSCUSTOMDATATABLE;
+	
+		$ret = $wpdb->get_results($sql);
+		
+		if($ret_sql && $ret){
+			if(!$skip){$skip = array(); }
+			foreach($ret as $row){
+				
+				if(!in_array($row->Field, $skip)){
+					$r[] = $row->Field;
+				}
+			}
+			
+			if(is_array($r)){
+			
+				$cols = implode(", ", $r);
+				return $cols;
+				
+			}
+		
+		}
+		
+		return $ret;
+	
+	}
+	
+	/*
+	 *	Save image tags
+	*/
+	function saveImageTags($image_id, $tags){
+	
+		global $wpdb;
+		
+		if(!(int)$image_id || !$tags){ return; }
+		
+		$t = is_array($tags) ? $tags : explode( ',', trim($tags, " \n\t\r\0\x0B,") );
+		wp_set_object_terms($image_id, $t, 'photosmash', false);
+		
+		return;
+		
+		$data['image_id'] = (int)$image_id;
+		$data['category_id'] = 0;
+		
+		$sql = $wpdb->prepare("DELETE FROM " . PSCATEGORIESTABLE
+			. " WHERE image_id = %d AND category_id = 0", $image_id);
+			
+		$wpdb->query($sql);		 
+		 
+		
+		foreach($t as $tag){
+			
+			$data['tag_name'] = $tag;
+			$wpdb->insert(PSCATEGORIESTABLE, $data);
+		
+		}
+		
+	}
+	
 	
 	function saveCustomFields(){
 	

@@ -52,6 +52,127 @@ $j(document).ready(function() {
 	
 });
 
+/* -------- ADMIN Copy/Move Image Functions ------------ */
+function bwbpsActivateCopyMoveImages(){
+
+	jQuery('.ps_clickmsg').toggle();
+	
+	if( jQuery('#copymoveimages').is(' :visible')){
+		
+		jQuery('.ps_copy').click(function(){
+			var tid = this.id;
+			var t = $j(this);
+						
+			if(jQuery(this).hasClass('bwbps-sel')){			
+				jQuery(this).removeClass('bwbps-sel');			
+			} else {
+				jQuery(this).addClass('bwbps-sel');
+			}
+			
+			return false;
+			}
+		);
+	
+	} else {
+		bwbpsDeactivateCopyMoveImages();	
+	}
+
+	
+	
+	return false;
+}
+
+function bwbpsDeactivateCopyMoveImages(){
+	
+	jQuery('.ps_copy').unbind('click');
+	jQuery('.bwbps-sel').removeClass('bwbps-sel');
+	
+	return false;
+}
+
+function bwbpsCopyMoveSelect(sel){
+	jQuery('.ps_copy').removeClass('bwbps-sel');
+	if(sel){
+		jQuery('.ps_copy').addClass('bwbps-sel');
+	}	
+}
+
+function bwbpsCopyToGallery(copytogal){
+
+	var i = 0;
+	var _data = {};
+	
+	var imgids = "";
+	var ind="";
+	
+	jQuery('.bwbps-sel').each(function(index){
+		
+		ind = this.id;
+		imgids += ind.replace("psimg_","") + ",";
+				
+	});
+	
+	if(imgids == ""){ alert("No images selected...click on images to select for copy/move."); return; }
+	
+	_data['image_ids[]'] = imgids.split(",");
+	
+	if(copytogal){
+		_data['action'] = 'copyimagestogal';
+	} else {
+		_data['action'] = 'moveimagestogal';
+	}
+	
+	_data['newgallery'] = jQuery("#copygalbwbpsGalleryDDL").val();
+		
+	
+	if(copytogal){
+		if(!confirm('Do you want to COPY image(s) to new gallery? (note...does not create new file, just references existing image files.')){ return false;}
+	} else {
+		if(!confirm('Do you want to move image(s) to new gallery?')){ return false;}
+	}
+	
+	
+	
+	var _moderate_nonce = jQuery("#_moderate_nonce").val();
+	
+	_data['_ajax_nonce'] = _moderate_nonce;
+		
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	$j.ajax({
+		type: 'POST',
+		url: bwbpsAjaxURL,
+		data : _data,
+		dataType: 'json',
+		success: function(data) {
+			bwbpsCopyMoveSuccess(data);
+		}
+	});
+	return false;
+
+}
+
+
+function bwbpsCopyMoveSuccess(data){
+	$j("#ps_savemsg").hide();
+	if(data == -1){
+			alert('Failed due to security: invalid nonce');
+			return false;
+	 	}
+	 	
+		if( data.message){
+			alert(data.message + " --- updated: " + data.updated);
+				
+			$j('.ps_copy').removeClass('bwbps-sel');
+			
+			
+		}
+	return false;
+}
+
+
 /* -------- ADMIN Image Importer Functions ------------ */
 function bwbpsActivateImageImports(){
 
@@ -246,7 +367,7 @@ function bwbpsVerifyUploadRequest(form_pfx) {
  */
 function bwbpsVerifyFileFilled(form_pfx){
 	if( $j('#' + form_pfx + 'bwbps_allownoimg').val() == 1 ){ return true; }
-	var filetype = $j('input:radio[name=bwbps_filetype]:checked').val();
+	var filetype = $j('#' + form_pfx + 'bwbps_uploadform :input:radio[name=bwbps_filetype]:checked').val();
 	
 	var bFilled = false;
 	
@@ -621,12 +742,10 @@ function bwbpsModerateImage(action, image_id, post_id)
 	var image_caption = '';
 	var image_url = "";
 	var image_tags = "";
-	var image_seq = 0;
 	if(action == 'savecaption'){ 
 		image_caption = $j('#imgcaption_' + imgid).val(); 
 		image_url = $j('#imgurl_' + imgid).val();
 		image_tags = $j('#imgtags_' + imgid).val(); 
-		image_seq = $j('#imgseq_' + imgid).val();
 	}
 	
 	try{
@@ -642,7 +761,6 @@ function bwbpsModerateImage(action, image_id, post_id)
        'image_caption' : image_caption,
        'image_url' : image_url,
        'image_tags' : image_tags,
-       'seq' : image_seq,
        'post_id' : postid,
 	   'mod_msg' : modMsg,
 	   'send_msg' : sendMsg

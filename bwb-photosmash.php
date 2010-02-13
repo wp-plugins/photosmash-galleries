@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.5.04
+Version: 0.5.05
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -34,7 +34,7 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.5.03');
+define('PHOTOSMASHVERSION', '0.5.05');
 
 
 //Database Verifications
@@ -773,6 +773,8 @@ function shortCodeGallery($atts, $content=null){
 			'piclens_class' => ''	// Defaults to "alignright"
 		),$atts));
 		
+		$tags = html_entity_decode($tags, ENT_QUOTES);
+		
 		
 		//A beautiful little shortcode that lets you set a different layout for single Post and Page pages than the one on Main Page, Categories, and Archives
 		if($single_layout){
@@ -886,7 +888,8 @@ function shortCodeGallery($atts, $content=null){
 				$images = 8;
 			}
 					
-			if((int)$where_gallery && !$g['gallery_type'] == 99){
+			//removed:  && !$g['gallery_type'] == 99
+			if((int)$where_gallery ){
 				$g['smart_where'] = array ( PSIMAGESTABLE.".gallery_id" => (int)$where_gallery );
 			}
 			
@@ -1929,8 +1932,21 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		
 		if(!$tag){ return $theposts; } //leave if this isn't the tag page
 		
+		$tag = str_replace("'","",$tag);
+		
+		$tags = explode(",", $tag);
+		
+		$tags = array_map("esc_sql", $tags);
+		
+		$tag = implode("','", $tags);
+		
+		
+		
 		global $wpdb;
-		$tag = $wpdb->get_var($wpdb->prepare("SELECT name FROM " . $wpdb->terms . " WHERE slug = %s", $tag));
+		unset($tags);
+		$tags = $wpdb->get_col($wpdb->prepare("SELECT name FROM " . $wpdb->terms . " WHERE slug IN ('" . $tag . "')"));
+		
+		$tag = implode(", ", $tags);
 		
 		add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
 		
@@ -1941,7 +1957,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			$newpost->post_author = $author;
 			$newpost->post_date = $d;
 			$newpost->post_date_gmt = $d;
-			$newpost->post_content = "[photosmash gallery_type=tags tags='".$tag
+			$newpost->post_content = "[photosmash gallery_type=tags tags='". esc_attr($tag)
 				."' no_form=true]";
 			$newpost->post_title = 'Images tagged ' . $tag; 
 			$newpost->post_category = 0;

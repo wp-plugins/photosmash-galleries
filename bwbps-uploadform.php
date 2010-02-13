@@ -629,7 +629,7 @@ class BWBPS_UploadForm{
 				}
 				
 				if($g['post_cat_exclude']){
-					$opts['exclude'] = $g['exclude'];
+					$opts['exclude'] = $g['post_cat_exclude'];
 				} else {
 					if($atts['exclude']){
 						$opts['exclude'] = $atts['exclude'];

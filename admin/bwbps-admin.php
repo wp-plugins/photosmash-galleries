@@ -630,6 +630,18 @@ if($psOptions['use_advanced'] ==1){
 	<tr>
 				<th>Gallery type:</th>
 				<td>
+					<?php
+				
+					/* ******** NOTE   ***********
+						
+						Any gallery above type = 9 should be a VIRTUAL GALLERY that does not
+						get images posted to it.
+						
+						If this needs to change, you need to change ajax.php copyImagesToGallery()
+						where it checks to see if a gallery_type < 10 to be eligible for move/copy operation
+						
+					*/
+					?>
 					<select name="gal_gallery_type">
 						<option value="0" <?php if($psOptions['gallery_type'] == 0) echo 'selected=selected'; ?>>Photo gallery</option>
 						<option value="3" <?php if($galOptions['gallery_type'] == 3) echo 'selected=selected'; ?>>YouTube gallery</option>
@@ -1904,12 +1916,15 @@ if($psOptions['use_customform']){ ?>
 				?>' /> images.  Starting at image:
 				<input type='text' name='bwbpsStartImg' size=5 value='<?php  echo $start;
 				?>' />
-			&nbsp; | &nbsp; Custom Fields: <a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>toggle</a>
-			&nbsp; | &nbsp; <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Edit/hide</a> moderation msgs
+		</div>
+		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'>
+			<a href='javascript: void(0);' onclick='jQuery(".ps-imagedata").toggle(); return false;'>Toggle Image Data</a> | 
+			<a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>Custom Fields</a>
+			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='jQuery("#copymoveimages").toggle(); bwbpsActivateCopyMoveImages();  return false;'>Copy/Move Images</a> 
 		</div>
 		</form>	
 		
-		<div id='moderationmessages' style='display: none;'>
+		<div id='moderationmessages' style='display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
 		<b>Send message?</b> <input id="ps_mod_send_msg" type="checkbox" name='ps_mod_send_msg' <?php if($psOptions['mod_send_msg'] == 1) echo 'checked'; ?>>
 		<br/>
 		<b>Approve message:</b><br/>
@@ -1917,6 +1932,23 @@ if($psOptions['use_customform']){ ?>
 		<br/>
 		<b>Reject message:</b><br/>
 		<textarea  id="ps_mod_reject_msg" name="ps_mod_reject_msg" cols="60" rows="4"><?php esc_html_e($psOptions['mod_reject_msg']);?></textarea>
+		</div>
+		
+		<div id='copymoveimages' style='display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<span style='font-size: 14px; font-weight: bold; margin:0; padding: 0 0 5px;'>Copy/Move Images to new Gallery:</span> &nbsp; <span>Click images to select.</span>
+		<p style="margin: 2px 0;">
+			<span><a href='javascript: void(0);' onclick='bwbpsCopyMoveSelect(true); return false;'>Select All</a> </span> | 
+			<span><a href='javascript: void(0);' onclick='bwbpsCopyMoveSelect(false); return false;'>Deselect All</a> </span> | 
+			<span><a class='ps-modbutton' href='javascript: void(0);' onclick='bwbpsCopyToGallery(true); return false;'>&nbsp;Copy&nbsp;</a> </span> | 
+			<span><a class='ps-modbutton' href='javascript: void(0);' onclick='bwbpsCopyToGallery(false); return false;'>&nbsp;Move&nbsp;</a> </span> | 
+			<span>Copy/move to: 
+			<?php
+			
+				echo $this->getGalleryDDL( 0, $newtag = "skipnew", "copygal", "copygal_gallery_id", 30);
+			
+			?>
+			</span>
+		</p>
 		</div>
 		<?php
 			
@@ -1931,6 +1963,9 @@ if($psOptions['use_customform']){ ?>
 	
 
  	</div>
+	
+	
+ 		
 <?php
 	}
 	
@@ -2090,16 +2125,17 @@ if($psOptions['use_customform']){ ?>
 			$modMenu = "
 			<p style='margin-top: 7px;'>
 				<span class='ps-modmenu' id='psmod_".$image->image_id."'>"
-				.$modMenu."</span></p><p style='margin-top: 7px; '><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", "
-				.$image->image_id.");' class='ps-modbutton'>delete</a></p><p style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a></p><p style='text-align: center;'>Status: " 
+				.$modMenu."</span></p><p style='margin-top: 7px;' class='ps-imagedata'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", "
+				.$image->image_id.");' class='ps-modbutton'>delete</a></p><p style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a></p><p style='text-align: center;' class='ps-imagedata'>Status: " 
 				. $image->status . "<br/>Alerted: " . $image->alerted . "</p>
 				";
 			
 			//Image HTML
 			
 			$psTable .= "
-				<td class='psgal_".$image->gallery_id."' id='psimg_"
+				<td class='ps_copy psgal_".$image->gallery_id."' id='psimg_"
 				. $image->image_id."' style='width: 80px;'>
+				<span class='ps_clickmsg' style='display:none;'>Click to select</span>
 				<a target='_blank' href='"
 				. $image->image_url."' rel='"
 				. $g['img_rel']."' title='".str_replace("'","",$image->image_caption)
@@ -2124,6 +2160,8 @@ if($psOptions['use_customform']){ ?>
 			$argsarray = array('name');
 			
 			$terms = wp_get_object_terms( $image->image_id, 'photosmash', $argsarray);
+			$termlist = "";
+			$termlist = get_the_term_list($image->image_id, 'photosmash', '', ', ');
 			
 			if(isset($_terms)){ unset($_terms); }
 					
@@ -2140,7 +2178,7 @@ if($psOptions['use_customform']){ ?>
 			
 			$psTable .= "<td $border>
 									
-			<table class='widefat fixed' cellspacing=0>
+			<table class='widefat fixed ps-imagedata' cellspacing=0>
 				<thead><tr>
 					<th class='manage-column' style='width: 30%;'>Label</th>
 					<th class='manage-column' style='width: 70%;'>Field</th>
@@ -2182,6 +2220,7 @@ if($psOptions['use_customform']){ ?>
 						. $image->image_id."' name='imgtags"
 						. $image->image_id."' value='"
 						. $terms . "' style='width: 165px !important;' />
+						". $termlist ."
 					</td>
 				</tr>
 				

@@ -36,6 +36,7 @@ class BWBPS_Layout{
 			, 'user_url'
 			, 'user_link'
 			, 'author_link'
+			, 'author'
 			, 'contributor'
 			, 'full_caption'
 			, 'date_added'
@@ -56,6 +57,7 @@ class BWBPS_Layout{
 			, 'piclens'
 			, 'wp_attachment_link'
 			, 'wp_attach_id'
+			, 'tag_links'
 		);
 	}
 	
@@ -685,7 +687,7 @@ class BWBPS_Layout{
 				unset($replace);
 				
 				$atts = $this->getFieldAtts($ret, $fld);
-									
+													
 				$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
 			
 				$fld = $atts['bwbps_match'];
@@ -1356,6 +1358,20 @@ class BWBPS_Layout{
 								
 				break;
 				
+			case '[author]' :
+
+				if( (int)$image['user_id'] ){
+									
+						$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
+				
+				} else {
+				
+					$ret = "";
+				
+				}
+								
+				break;
+				
 			case '[bloginfo]' :
 
 				$ret = get_bloginfo($atts['field']);
@@ -1365,20 +1381,7 @@ class BWBPS_Layout{
 			case '[plugin_url]' :
 				$ret = WP_PLUGIN_URL;
 				break;
-				
-				
-			/*
-			case '[contributor_url]' :
-				$ret = "";
-				if($this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])){
-					if($image['user_url'] && $this->validURL($image['user_url'])){
-						$ret = "<a href='".esc_url($image['user_url'])."' title=''>"
-							.$this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])."</a>";
-					}
-				}
-				break;
-			*/
-			
+							
 			case '[url]' :
 				$ret = $image['url'];
 				break;
@@ -1387,7 +1390,18 @@ class BWBPS_Layout{
 				
 				$ret = $image['ps_rating'];
 				break;
-			
+				
+			case '[tag_links]' :
+				
+				if($atts['sep'] || $atts['before'] || $atts['after']){
+					
+					$ret = get_the_term_list($image['image_id'], 'photosmash', $atts['before'], $atts['sep'], $atts['after']);
+				} else {
+					$ret = get_the_term_list($image['image_id'], 'photosmash', '');
+				}
+				
+				break;
+							
 			default :
 				break;
 		}
@@ -2116,12 +2130,13 @@ class BWBPS_Layout{
 					}
 
 					$tagtemp = explode(",", $g['tags']);
+				
 		
 					if( !is_array($tagtemp) ){
 						$tagtemp = array($tagtemp);
 					}
 					
-					$tagtemp = array_map("trim", $tagtemp);
+					$tagtemp = array_map("trim", $tagtemp);	//gets esc_sql in getSmartWhereField
 															
 					$g['smart_where'] = array( $wpdb->terms . '.name' => $tagtemp);
 					
@@ -2156,7 +2171,9 @@ class BWBPS_Layout{
 			
 			case 99 : //Highest Ranked
 				
-				$g['smart_gallery'] = true;
+				if(!$g['smart_gallery']){
+					$g['smart_gallery'] = true;
+				}
 				
 				if(!(int)$g['limit_images']){
 					$g['limit_images'] = 8;
@@ -2233,6 +2250,7 @@ class BWBPS_Layout{
 				
 		}
 		
+		
 		$images = $wpdb->get_results($sql, ARRAY_A);
 						
 		return $images;
@@ -2287,21 +2305,20 @@ class BWBPS_Layout{
 				
 					foreach ($val as $v){
 					
-						$valarray[] = $v;
+						$valarray[] = esc_sql($v);	//escape the sql
 						
 					}
 					$ret = $key . " IN ( '" . implode( "','" , $valarray) . "' ) ";
 					
 				} else {
-				
-					$ret = $key . " = '" . $val . "'" ;
 					
+					$ret = $key . " = '" . esc_sql($val) . "'" ;	//escape the sql
 				}
 							
 			}
 		
 		}
-		
+
 		return $ret;
 	}
 
@@ -2325,6 +2342,25 @@ class BWBPS_Layout{
 		$attr = $this->field_parse_atts($matches[2][0]);
 
 		$attr['bwbps_match'] = $matches[0][0];
+		return $attr;
+				
+	}
+	
+	function getFieldAttsMulti($content, $fieldname){
+				
+		$pattern = '\[('.$fieldname.')\b(.*?)(?:(\/))?\](?:(.+?)\[\/\1\])?';
+		
+		preg_match_all('/'.$pattern.'/s', $content,  $matches );
+		if(is_array($matches)){
+			$mcnt = 0;
+			foreach( $matches[0] as $m ){
+				
+				$attr[$mcnt] = $this->field_parse_atts($matches[2][$mcnt]);
+
+				$attr[$mcnt]['bwbps_match'] = $matches[0][$mcnt];
+				$mcnt ++;
+			}
+		}
 		return $attr;
 				
 	}
