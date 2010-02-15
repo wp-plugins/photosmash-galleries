@@ -56,7 +56,7 @@ class PhotoSmash_Widget extends WP_Widget {
 		if($instance['gallery_type'] == "tags"){
 			$tags = strip_tags($instance['tags']);
 			if( $tags ){
-				$tags = " tags='$tags'";
+				$tags = ' tags="' . esc_attr($tags) .'"';
 			}
 		}
 		

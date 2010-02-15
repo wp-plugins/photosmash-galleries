@@ -689,7 +689,7 @@ class BWBPS_Layout{
 				$atts = $this->getFieldAtts($ret, $fld);
 													
 				$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
-			
+							
 				$fld = $atts['bwbps_match'];
 								
 				$ret = str_replace($fld, $replace, $ret);	
@@ -1392,12 +1392,12 @@ class BWBPS_Layout{
 				break;
 				
 			case '[tag_links]' :
-				
+								
 				if($atts['sep'] || $atts['before'] || $atts['after']){
 					
-					$ret = get_the_term_list($image['image_id'], 'photosmash', $atts['before'], $atts['sep'], $atts['after']);
+					$ret = get_the_term_list($image['psimageID'], 'photosmash', $atts['before'], $atts['sep'], $atts['after']);
 				} else {
-					$ret = get_the_term_list($image['image_id'], 'photosmash', '');
+					$ret = get_the_term_list($image['psimageID'], 'photosmash', '', ' ');
 				}
 				
 				break;
