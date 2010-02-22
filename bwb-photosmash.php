@@ -35,6 +35,7 @@ Author URI: http://www.whypad.com/
 
 //VERSION - Update PhotoSmash Extend!!!
 define('PHOTOSMASHVERSION', '0.5.05');
+define('PHOTOSMASHEXTVERSION', '0.2.00');
 
 
 //Database Verifications
@@ -768,6 +769,7 @@ function shortCodeGallery($atts, $content=null){
 			'post_tags' => false,	// whether or not to show an input box for tags (comma separated)
 			'post_tags_label' => false,
 			'post_excerpt_field' => false,	// For use with PExtend - will use this field to create an excerpt when creating new post
+			'tags_has_all' => false,	// Enter true to display only images have all tags
 			'piclens' => false, 	// Enter true to include a link to a piclens slideshow
 			'piclens_link' => '',	// Defaults to "Start Slideshow " with a little icon
 			'piclens_class' => ''	// Defaults to "alignright"
@@ -775,6 +777,11 @@ function shortCodeGallery($atts, $content=null){
 		
 		$tags = html_entity_decode($tags, ENT_QUOTES);
 		
+
+		
+		if( isset($_POST['bwbps_photo_tag']) && !get_query_var( 'bwbps_wp_tag' )){	
+			$tags = $this->getRequestedTags($tags);
+		}
 		
 		//A beautiful little shortcode that lets you set a different layout for single Post and Page pages than the one on Main Page, Categories, and Archives
 		if($single_layout){
@@ -870,12 +877,15 @@ function shortCodeGallery($atts, $content=null){
 		$g['post_cat_selected'] = $post_cat_selected;
 		$g['post_thumbnail_meta'] = $post_thumbnail_meta;
 		$g['post_tags'] = $post_tags;
+		$g['tags_has_all'] = $tags_has_all;
 		$g['post_tags_label'] = $post_tags_label;
 		$g['post_excerpt_field'] = $post_excerpt_field;
 		$g['no_gallery_header'] = $no_gallery_header;
 		$g['piclens'] = $piclens;
 		$g['piclens_link'] = $piclens_link;
 		$g['piclens_class'] = $piclens_class;
+		
+		if( isset($_POST['bwbps_tags_has_all'] )){ $g['tags_has_all'] = true; }
 		
 		/*
 		 *	Random/Recent/Highest Ranked Gallery settings
@@ -1928,31 +1938,16 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	function displayTagGallery($theposts){
 			
-		$tag = get_query_var( 'bwbps_wp_tag' );
 		
-		if(!$tag){ return $theposts; } //leave if this isn't the tag page
+		if(!get_query_var( 'bwbps_wp_tag' )){ return $theposts; } //leave if this isn't the tag page
 		
-		$tag = str_replace("'","",$tag);
-		
-		$tags = explode(",", $tag);
-		
-		$tags = array_map("esc_sql", $tags);
-		
-		$tag = implode("','", $tags);
-		
-		
-		
-		global $wpdb;
-		unset($tags);
-		$tags = $wpdb->get_col($wpdb->prepare("SELECT name FROM " . $wpdb->terms . " WHERE slug IN ('" . $tag . "')"));
-		
-		$tag = implode(", ", $tags);
+		$tag = $this->getRequestedTags();
 		
 		add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
 		
 		$d = date( 'Y-m-d H:i:s' );
 		
-		//Create an objec for a new post to un_shift onto the posts array
+		//Create an object for a new post to un_shift onto the posts array
 			$newpost->ID = -1;
 			$newpost->post_author = $author;
 			$newpost->post_date = $d;
@@ -1985,6 +1980,61 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		$theposts = array($newpost);
 				
 		return $theposts;
+	}
+	
+	function getFormSubmittedTags(){
+	
+		if(isset($_POST['bwbps_photo_tag'])){
+	
+			if(is_array($_POST['bwbps_photo_tag'])){
+				foreach($_POST['bwbps_photo_tag'] as $posttag){
+					if($posttag){
+						$posttags[] = $posttag;
+					}
+				}
+			} else {
+				$posttags = explode(',', $_POST['bwbps_photo_tag']);
+			}
+		
+		}
+		
+		return $posttags;
+	
+	}
+	
+	function getRequestedTags($tags=""){
+	
+		$qtags = get_query_var( 'bwbps_wp_tag' );
+	
+		$qtags = str_replace("'","",$qtags);
+		
+		$qtags = explode(",", $qtags);
+		
+		// Get tags submitted by Form...and merge with $qtags array
+		$formtags = $this->getFormSubmittedTags();
+		if(!empty($formtags) && is_array($formtags)){
+			$qtags = array_merge($qtags, $formtags);
+		}
+		
+		// Get tags passed in and merge with $qtags
+		if($tags){
+			$tags = str_replace("'","",$tags);
+			$tags = explode(",", $tags);
+			$qtags = array_merge($qtags, $tags);
+		}
+		
+		$qtags = array_map("esc_sql", $qtags);
+		
+		$qtags = implode("','", $qtags);
+		
+		global $wpdb;
+		unset($tags);
+		$tags = $wpdb->get_col($wpdb->prepare("SELECT name FROM " . $wpdb->terms . " WHERE slug IN ('" . $qtags . "')"));
+		
+		$tags = implode(",", $tags);
+		
+		return $tags;
+	
 	}
 
 	function getTagContextUrl(){

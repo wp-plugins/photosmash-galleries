@@ -125,7 +125,7 @@ class BWBPS_LayoutsEditor{
 	 */
 	function showLayoutsForm(){
 		global $wpdb;
-				
+		global $psmashExtend;
 		$layoutsDDL = $this->getLayoutsDDL($this->layout_id);
 		
 		$customfieldlist = $this->getCustomFieldList();
@@ -314,7 +314,20 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[new_gallery attributes] - <span style='font-size: 9px;'>PhotoSmash Extend only - add new galleries when creating New Posts on upload</span></li>
 						
 						<?php echo $customfieldlist;?>
+						
 					</ul>
+					
+								<?php
+						
+						if( $psmashExtend->options['ext_nav'] ){
+						?>
+						<h3>Extended Navigation Fields</h3>
+						<ul style='padding: 6px; background-color: #fff; border: 1px solid #d8e9ec;'>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_dropdown] - include tags like:  [tag_dropdown tags='red,green,blue']</li>
+						</ul>
+						<?php
+						};
+						?>
 				</td>
 </tr>
 </table>

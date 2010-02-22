@@ -13,6 +13,8 @@ class BWBPS_Layout{
 	
 	var $ratings;
 	
+	var $layoutFields;
+	
 	//Constructor
 	function BWBPS_Layout($options, $cfList){
 		$this->psOptions = $options;
@@ -44,6 +46,7 @@ class BWBPS_Layout{
 			, 'gallery_name'
 			, 'eval'
 			, 'post_id'
+			, 'post_name'
 			, 'post_url'
 			, 'ps_rating'
 			, 'image_url'
@@ -58,7 +61,78 @@ class BWBPS_Layout{
 			, 'wp_attachment_link'
 			, 'wp_attach_id'
 			, 'tag_links'
+			, 'tag_dropdown'
+			, 'submit'
+			, 'tags_has_all'
 		);
+	}
+	
+	// Gets all Image IDs containing the given terms - $terms is either an array of terms or string (comma separated)
+	// Used for filtering queries like 'term1' AND 'term2'
+	function get_objects_in_term( $terms, $object_ids = false ) {
+		global $wpdb;
+
+		if ( !is_array( $terms) )
+			$terms = explode(",", $terms);
+
+		if ( !is_array($taxonomies) )
+			$taxonomies = array($taxonomies);
+			
+		$terms = array_map("trim", $terms);
+		
+		$terms = array_map("esc_sql", $terms);
+															
+		$terms = "'" . implode("', '", $terms) . "'";
+		
+		if( !empty($object_ids) ){
+		
+			if( is_array($object_ids)){
+				$object_ids = array_map("intval", $object_ids);
+				$object_ids = " AND tr.object_id IN ('" . implode("', '", $object_ids) . "') ";
+			}
+		
+		}
+		
+		$sql = "SELECT DISTINCT tr.object_id, tm.name FROM $wpdb->terms AS tm INNER JOIN  $wpdb->term_taxonomy AS tt ON tm.term_id = tt.term_id AND tt.taxonomy = 'photosmash' INNER JOIN  $wpdb->term_relationships AS tr  ON tr.term_taxonomy_id = tt.term_taxonomy_id WHERE tm.name IN ($terms) $object_ids ORDER BY tr.object_id";
+		
+
+		$object_ids = $wpdb->get_results($sql);
+
+		if ( ! $object_ids )
+			return array();
+
+		return $object_ids;
+	}
+	
+	// Makes sure all images have all the given tags ("AND" query)
+	function filter_tagged_images($tags, $img_ids){
+		
+		
+		$object_ids = $this->get_objects_in_term( $tags, $img_ids);
+		
+		if(empty($object_ids)){ return false; }
+				
+		if(is_array($object_ids)){
+			
+			if ( !is_array( $tags) )
+			$tags = explode(",", $tags);
+			
+			$tag_cnt = count($tags);
+			
+			foreach($object_ids as $o){
+				$r[$o->object_id]++;
+			}
+						
+			if(is_array($r)){
+				foreach($r as $key => $val){
+					if($tag_cnt == $val){
+						$imgs[] = $key;
+					}
+				}
+			}
+		}
+		
+		return $imgs;
 	}
 	
 	
@@ -122,6 +196,40 @@ class BWBPS_Layout{
 		
 			$images[] = $image;
 			
+		}
+		
+		// For TAG gallery - if tags_has_all, then filter out any images that do not have all of the tags
+		if($g['gallery_type'] == 40 && $g['tags_has_all'] && is_array($images) && !empty($images)){		
+			
+			unset($imgids);
+			
+			foreach($images as $img){
+					$imgids[] = $img['psimageID'];
+			}
+			
+			unset($img);
+			
+			$imgs = $this->filter_tagged_images($g['tags'], $img_ids);
+			
+			if($imgs && is_array($imgs)){
+			
+				$images_temp = $images;
+				unset($images);
+				
+				foreach($images_temp as $img){
+					
+					if(in_array($img['psimageID'], $imgs)){
+						$images[] = $img;
+					}
+					
+				}
+				
+			} else {
+				unset($images);
+			}
+			unset($imgs);
+			unset($img);
+			unset($images_temp);
 		}
 	
 		//Calculate Pagination variables
@@ -667,6 +775,7 @@ class BWBPS_Layout{
 	 * @param (bool) $alt - alternating image or regular (even or odd)
 	 */
 	function getCustomLayout($g, $image, $layout, $alt){
+	
 		
 		if($alt){
 			//Use Alternate layout
@@ -681,74 +790,132 @@ class BWBPS_Layout{
 		}
 		
 		//Replace Standard Fields with values
-		foreach($this->stdFields as $fld){
-			if(!strpos($ret, $fld) === false){
-				unset($atts);
-				unset($replace);
+		
+		// Optimizing 	- First go-around, we save matched fields in an array
+		//				- Next go-around, we only search fields that were found
+		if(!$layout->layout_name || empty($this->layoutFields[$layout->layout_name . $alt])){ 
+			$bfirstpass = true; 
+			$usedFields = $this->stdFields;	//On first pass, use full list of standard fields
+		} else {
+			$bfirstpass = false;
+			$usedFields = $this->layoutFields[$layout->layout_name . $alt]; //future passes, only use matched fields
+		}
 				
-				$atts = $this->getFieldAtts($ret, $fld);
-													
-				$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
-							
-				$fld = $atts['bwbps_match'];
+		if(is_array($usedFields)){
+			foreach($usedFields as $fld){
+				if( !$bfirstpass || ($bfirstpass && !strpos($ret, $fld) === false)){
+					if($bfirstpass){
+						$this->layoutFields[$layout->layout_name . $alt][] = $fld;
+					}
+					unset($atts);
+					unset($replace);
+					unset($matches);
+					unset($m);
+					$m_num = 0;
+					
+					$matches = $this->getFieldAttsMulti($ret, $fld);
+					
+					if( is_array($matches) ){
+						foreach ($matches as $atts){
+							$atts['match_num'] = $m_num;												
+							$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
 								
-				$ret = str_replace($fld, $replace, $ret);	
-
+							$m = $atts['bwbps_match'];
+							
+							$ret = str_replace($m, $replace, $ret);	
+							$m_num++;
+						}
+						
+					} else {
+					
+						$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
+								
+						$fld = $atts['bwbps_match'];
+									
+						$ret = str_replace($fld, $replace, $ret);
+					}
+	
+				}
 			}
 		}
 		
-		
 		//Replace Custom Fields with values
+		
 		if($this->psOptions['use_customfields']){
 		
-		  foreach($this->custFields as $fld){
-		
-			if(!strpos($ret, '['.$fld->field_name) === false){
-			
-				//Format Date if it's a date
-				if( $image[$fld->field_name] && $fld->type == 5){
-				
-					if($image[$fld->field_name] <> "0000-00-00 00:00:00"){
-					
-						$val = date($this->getDateFormat()
-							,strtotime ($image[$fld->field_name]));
-					
-					}
-
-				} else {
-
-					$val = $image[$fld->field_name];
-
-				}
-				
-				$fld = $fld->field_name;
-				
-				unset($atts);
-				unset($replace);
-				
-				$atts = $this->getFieldAtts($ret, $fld);
-				
-				if( ( $atts['if_before'] || $atts['if_after'] ) && !$val ) 
-				{
-					$val = "";
-				} else {
-					$val = $atts['if_before'] . $val . $atts['if_after'];
-				}
-				
-				// Allows you to specify a field to test if it has a value...if not, then it returns ""
-				if( $atts['if_field'] ){
-					if(!$image[$atts['if_field']]){
-						$val = "";
-					}
-				}
-				
-				if( !$val ) { $val = $atts['if_blank']; }
-			
-				$fld = $atts['bwbps_match'];
-								
-				$ret = str_replace($fld, $val, $ret);
-				
+			// Optimizing 	- First go-around, we save matched fields in an array
+			//				- Next go-around, we only search fields that were found
+			if(!$layout->layout_name || empty($this->layoutFields['c'.$layout->layout_name . $alt])){ 
+				$bfirstpass = true; 
+				$usedcustFields = $this->custFields;	//On first pass, use full list of standard fields
+			} else {
+				$bfirstpass = false;
+				$usedcustFields = $this->layoutFields['c'.$layout->layout_name . $alt]; //future passes, only use matched fields
 			}
+			if(is_array($usedcustFields)){	
+			  foreach($usedcustFields as $fld){
+			  
+			  	if( !$bfirstpass || ($bfirstpass && !strpos($ret, '['.$fld->field_name) 
+			  		=== false))
+			  	{
+					if($bfirstpass){
+						$this->layoutFields['c'.$layout->layout_name . $alt][] = $fld;
+					}
+						
+					//Format Date if it's a date
+					if( $image[$fld->field_name] && $fld->type == 5){
+					
+						if($image[$fld->field_name] <> "0000-00-00 00:00:00"){
+						
+							$val = date($this->getDateFormat()
+								,strtotime ($image[$fld->field_name]));
+						
+						}
+					} else {
+						$val = $image[$fld->field_name];
+					}
+					
+					$fld = $fld->field_name;					
+					
+					unset($atts);
+					unset($replace);
+					unset($matches);
+					unset($m);
+					
+					$matches = $this->getFieldAttsMulti($ret, $fld);
+					
+					if( is_array($matches) ){
+						foreach ($matches as $atts){
+						
+							if( ( $atts['if_before'] || $atts['if_after'] ) && !$val ) 
+							{
+								$tempval = "";
+							} else {
+								$tempval = $atts['if_before'] . $val . $atts['if_after'];
+							}
+					
+							// Allows you to specify a field to test if it has a value...if not, then it returns ""
+							if( $atts['if_field'] ){
+								if(!$image[$atts['if_field']]){
+									$tempval = "";
+								}
+							}
+							if( !$tempval ) { $tempval = $atts['if_blank']; }
+								
+							$m = $atts['bwbps_match'];
+							
+							$ret = str_replace($m, $tempval, $ret);	
+						}
+						
+					} else {
+								
+						$m = $atts['bwbps_match'];
+									
+						$ret = str_replace($fld, $val, $ret);
+					}				
+					
+				}
+			  }
 		  }
 		}
 		
@@ -1222,6 +1389,17 @@ class BWBPS_Layout{
 				}
 				break;
 			
+			case '[post_name]' :
+				if((int)trim($image['post_id'])){
+					$ret = (int)$image['post_id'];
+				} else {
+					$ret = (int)$g['post_id'];
+				}
+				
+				$ret = get_post($ret);
+				$ret = $ret->post_title;
+				break;
+			
 			case '[file_name]' :
 				$ret = $image['image_name'];
 				break;
@@ -1401,6 +1579,80 @@ class BWBPS_Layout{
 				}
 				
 				break;
+				
+			// PhotoSmash Extend - Extended Nav tags
+			case '[tag_dropdown]' :
+				
+				//Get the form element's name
+				if(!$atts['name']){
+					$n = 'bwbps_photo_tag[]';
+				} else {
+					$n = esc_attr($atts['name']);
+				}
+				
+				//Get the tag values
+				if($atts['tags']){
+				
+					//Get array of selected values, to mark as selected in dropdown
+					unset($selected);
+					$fldname = str_replace("[]", "", $n);
+					if(isset($_POST[$fldname])){
+						if(!is_array($_POST[$fldname])){
+							$selected = $_POST[$fldname];
+						} else {
+							$selected = $_POST[$fldname][$atts['match_num']];
+						}
+					} else {
+						$selected = array();
+					}
+					
+					$tags = $this->getTermObjects($atts['tags']);
+									
+					unset($selmarked);
+					if(is_array($tags)){
+						foreach($tags as $t){
+							if($t->slug == $selected){ $selattr = "selected=selected"; $selmarked=true;}
+							
+							$r .= "<option value='" . esc_attr($t->slug) . "' $selattr>"
+								. $t->name . "</option
+								";
+							$selattr = "";
+						}
+					}
+				}
+								
+				if($atts['id']){
+					$id = "id='" . esc_attr($atts['id']) . "'";
+				}
+				
+				if($atts['onclick']){
+					$onclick = "onclick='" . $atts['onclick'] . "'";
+				}
+				
+				if($r){
+					$ret = "<select $id name='$n' $onclick >" . $r . "</select>";
+				}
+				
+				break;
+				
+			case '[tags_has_all]' :
+				
+				$ret = "<input type='hidden' name='bwbps_tags_has_all' value='true' />";
+				break;
+				
+			case '[submit]' :
+				
+				if($atts['name']){
+					$submitname = $atts['name'];
+				} else {
+					$submitname = 'Submit';
+				}
+				$ret = '<input type="submit" class="ps-submit ext-nav-submit" value="'.$submitname.'" name="bwbps_submit" />';
+				break;
+				
+			case '[tag_search]' :
+				$ret = '<input type="text" name="bwbps_tagsearch" class="bwbps_reset ps-ext-nav-search" ' . $value . ' />';
+				break;
 							
 			default :
 				break;
@@ -1423,6 +1675,29 @@ class BWBPS_Layout{
 		if( !$ret ) { $ret = $atts['if_blank']; }
 		
 		return $ret;
+	}
+	
+	function getTermObjects($qtags){
+		
+		if(!$qtags){ return $qtags; }		
+		
+		//Get Post Tags if requested
+		if(!is_array($qtags) && $qtags == 'post_tags'){
+		
+			global $wp_query;
+			$tags = wp_get_object_terms( $wp_query->post->ID, 'post_tag', $args ) ;
+			return $tags;
+		}
+		
+		//Get Slug and Name for requested tags from DB
+		global $wpdb;
+		$qtags = explode(",", $qtags);			
+		$qtags = array_map("esc_sql", $qtags);
+		$qtags = implode("','", $qtags);
+		
+		$tags = $wpdb->get_results($wpdb->prepare("SELECT name, slug FROM " . $wpdb->terms . " WHERE name IN ('" . $qtags . "')"));
+		
+		return $tags;
 	}
 	
 	function getPicLensLink($g, $atts){
@@ -2109,7 +2384,7 @@ class BWBPS_Layout{
 							global $wp_query;
 						}
 						$terms = wp_get_object_terms( $wp_query->post->ID, 'post_tag', $args ) ;
-						
+												
 						if(is_array($terms)){
 						
 							foreach( $terms as $term ){
