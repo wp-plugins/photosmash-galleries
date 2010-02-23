@@ -1,10 +1,10 @@
-=== PhotoSmash Galleries ===
+﻿=== PhotoSmash Galleries ===
 Contributors: bennebw
 Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 2.9.1
-Stable tag: 0.5.04
+Tested up to: 2.9.2
+Stable tag: 0.5.05
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -86,18 +86,32 @@ You can also exclude the standard css file and include your own through options 
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
-= 0.5.04 - 2/3/2010
+= 0.5.05 - 2/23/2010 =
+
+    * Enabled Extended Navigation for PhotoSmash Extend - ExtNav gives ability to create various navigations using drop down lists with Tags.  Use multiple drop down lists to limit displayed images to specific tags.
+    * Optimized gallery display code for Custom Layouts - in bwbps-layout.php, added code so that on the first image for each layout and each alternate html, it will remember which fields are being used and only do the find and replace on subsequent images.  There are now over 35 standard fields available to custom layouts, so in a gallery of 30 images, this becomes a lot of search and replace, particularly when only 4 - 7 fields are typically being used.
+    * Added Copy / Move multiple images from one gallery to another gallery - in Photo Manager, look for Copy/Move Images link.  This will display the Copy/Move menu box.  Select which gallery you want to copy/move images to (there is a dropdown for this in the Copy/Move menu box).  Click on images to select for copy/move (the background will turn green when selected).  Then click either the Copy or Move link.  NOTE: copying an image does not copy the image files.  It merely adds a new reference to the image files to another gallery.  You can change the tags and custom fields for the new record without affecting the old image.  VERY IMPORTANT, or you might delete images you don't meant to...If you "DELETE" an image that is in 2 separate galleries, it will orphan the image in the gallery that you did not delete.  To remove an image from one gallery and keep the files and also keep the image record in any other galleries, you should use "REMOVE" instead of "DELETE".
+    * Photo Manager enhancements - Tweaked layout of the menu structure in Photo Manager.  Added ability to toggle on/off Image Data
+    * Added field tag [tag_links] to Custom Layouts - this will display an images tags, linked to the tag gallery.
+    * Bug fixed - there was a problem with the bwbps.js javascript file where if there were multiple forms on a page, it was not looking at the right set of radio buttons during the upload file validation and was giving a validation error without uploading.
+    * Added esc_sql() to image query - with the addition of multiple tag viewing support, this was needed to prevent SQL injection attacks.
+    * Bug fixed - post_cat_exclude attribute of the photosmash shortcode was not working.  This will now allow you to exclude categories when using the category dropdown via the shortcode.
+    * Added - ability to restrict Highest Ranked galleries to display images from a single gallery.  Include the 'where_gallery=id' attribute in the shortcode.
+    * Added [author] tag to Custom Layouts - tag will display the image contributor's login or nice name.  Allows you to build your own links to an author page or other uses.  Use [author_link] to get an automatic link to the author page.
+
+
+= 0.5.04 - 2/3/2010 =
 
     * Added manual sort option - set the sequence numbers in the Photo Manager and then set the Sort Field to Manual sort in Gallery Settings.
     * Added options for linking to WP Attachment Pages - this lets you link your thumbnails to standard WordPress Attachment Pages just like the standard WordPress galleries do.  Either choose the link option from Caption Styles (near very bottom) in Gallery Settings (also set defaults in PhotoSmash Settings), or use:  href='[wp_attachment_link]'  in you link tags in a custom layout.
     * Added the height and width settings for the Thickbox forms - set this in Uploading in PhotoSmash Settings
 
 
-= 0.5.03 – 1/27/2010 
+= 0.5.03 – 1/27/2010 =
 
     * The SVN archive missed a file during the creation of the Stable Tag folder
 
-= 0.5.02 – 1/26/2010 
+= 0.5.02 – 1/26/2010 =
 
     * NOTE: Photosmash Extend users - Please contact Byron for a new release of PhotoSmash Extend.  This version of Photosmash may not work with older versions of PS-Extend
     * Added 'Delete Layout' button to Custom Layouts admin page...be careful.  Once deleted, they're gone forever! I know the hard way.

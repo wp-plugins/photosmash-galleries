@@ -1606,7 +1606,7 @@ class BWBPS_Layout{
 						$selected = array();
 					}
 					
-					$tags = $this->getTermObjects($atts['tags']);
+					$tags = $this->getTermObjects($atts['tags'], $atts['select_msg']);
 									
 					unset($selmarked);
 					if(is_array($tags)){
@@ -1677,7 +1677,7 @@ class BWBPS_Layout{
 		return $ret;
 	}
 	
-	function getTermObjects($qtags){
+	function getTermObjects($qtags, $select_msg = ""){
 		
 		if(!$qtags){ return $qtags; }		
 		
@@ -1692,10 +1692,23 @@ class BWBPS_Layout{
 		//Get Slug and Name for requested tags from DB
 		global $wpdb;
 		$qtags = explode(",", $qtags);			
+		$qtags = array_map("trim", $qtags);
 		$qtags = array_map("esc_sql", $qtags);
+		
+		//Check for any or none
+		if($select_msg){
+			$any->name = $select_msg;
+			$any->slug = "";
+		}
+		
+		
 		$qtags = implode("','", $qtags);
 		
 		$tags = $wpdb->get_results($wpdb->prepare("SELECT name, slug FROM " . $wpdb->terms . " WHERE name IN ('" . $qtags . "')"));
+		
+		if(isset($any)){
+			array_unshift($tags, $any);
+		}
 		
 		return $tags;
 	}

@@ -775,14 +775,7 @@ function shortCodeGallery($atts, $content=null){
 			'piclens_class' => ''	// Defaults to "alignright"
 		),$atts));
 		
-		$tags = html_entity_decode($tags, ENT_QUOTES);
-		
-
-		
-		if( isset($_POST['bwbps_photo_tag']) && !get_query_var( 'bwbps_wp_tag' )){	
-			$tags = $this->getRequestedTags($tags);
-		}
-		
+				
 		//A beautiful little shortcode that lets you set a different layout for single Post and Page pages than the one on Main Page, Categories, and Archives
 		if($single_layout){
 			if(is_page() || is_single()){
@@ -797,9 +790,23 @@ function shortCodeGallery($atts, $content=null){
 			}
 		}
 		
-		
-		
 		$galparms = $atts;
+		$galparms['gallery_id'] = (int)$id;
+		$galparms['photosmash'] = $galparms['gallery_id'];
+		
+		//Figure out Tags
+		$tags = html_entity_decode($tags, ENT_QUOTES);
+		
+
+		//Was an Extended Nav form submitted (PhotoSmash Extend)
+		if( isset($_POST['bwbps_photo_tag']) && !get_query_var( 'bwbps_wp_tag' )){
+			if(!isset($_POST['bwbps_extnav_gal']) || 
+				((int)$_POST['bwbps_extnav_gal'] == $galparms['gallery_id']))
+			{
+				$tags = $this->getRequestedTags($tags);	
+			}	
+		}
+
 		
 		if($tags){$gallery_type = 'tags';}
 		
@@ -851,9 +858,6 @@ function shortCodeGallery($atts, $content=null){
 		
 		}	
 		
-		
-		$galparms['gallery_id'] = (int)$id;
-		$galparms['photosmash'] = $galparms['gallery_id'];
 		
 		$galparms['no_signin_msg'] = $no_signin_msg;	//used with $psOptions['upload_authmessage'] to not show signin message if this is true in shortcode
 	
