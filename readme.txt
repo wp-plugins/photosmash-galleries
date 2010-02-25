@@ -1,6 +1,6 @@
 ﻿=== PhotoSmash Galleries ===
 Contributors: bennebw
-Donate link: http://www.whypad.com/posts/photosmash-galleries-wordpress-plugin-released/507/#donate
+Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2

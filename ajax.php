@@ -52,6 +52,10 @@ class BWBPS_AJAX{
 
 
 		switch ($action){
+			case 'getmediagalvideos' :
+				$this->getMediaGalleryVideos();
+				break;
+				
 			case 'savecustfields' :
 				$this->saveCustomFields();
 				break;
@@ -107,6 +111,40 @@ class BWBPS_AJAX{
 			default :
 				break;
 		}
+	}
+	
+	//Get Media Gallery videos
+	function getMediaGalleryVideos(){
+		
+		global $wpdb;
+		
+		if($_POST['search_term']){
+			
+			$search = esc_sql( stripslashes( $_POST['search_term'] ) );
+			
+			$sql = "SELECT post_name, guid FROM " . $wpdb->posts 
+				. "WHERE post_type LIKE 'attachment video%' AND post_name LIKE '%" . $search
+				. "%' ORDER BY post_name";
+		} else {
+			
+			$sql = "SELECT post_name, guid FROM " . $wpdb->posts 
+				. "WHERE post_type LIKE 'attachment video%' ORDER BY post_name";
+				
+		}
+			
+		$res = $wpdb->get_results($sql);
+		
+		if($res){
+			
+			foreach($res as $row){
+				$json['images'][] = array($row->post_name, $row->guid);
+			}
+		
+		}
+		
+		echo json_encode($json);
+		return;
+
 	}
 	
 	
@@ -379,13 +417,17 @@ class BWBPS_AJAX{
 	
 	function saveCaption(){
 		global $wpdb;
-		if(current_user_can('level_1')){
+		if(current_user_can('level_10')){
 		
 			$data['image_caption'] = stripslashes($_POST['image_caption']);
-			$data['url'] = stripslashes($_POST['image_url']);
+			$data['url'] = esc_url_raw(stripslashes($_POST['image_url']));
 			$json['image_id'] = (int)$_POST['image_id'];
 			$data['seq'] = (int)$_POST['seq'];
 			$json['seq'] = (int)$_POST['seq'];
+			
+			$data['file_url'] = esc_url_raw(stripslashes($_POST['file_url']));	
+			
+			$json['status']	= $data['file_url'];
 			$where['image_id'] = $json['image_id'];
 			
 			//update now

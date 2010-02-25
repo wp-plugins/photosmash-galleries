@@ -2137,7 +2137,7 @@ if($psOptions['use_customform']){ ?>
 			
 			$psTable .= "
 				<td class='ps_copy psgal_".$image->gallery_id."' id='psimg_"
-				. $image->image_id."' style='width: 72px;'>
+				. $image->image_id."' style='width: 80px;'>
 				<span class='ps_clickmsg' style='display:none;'>Click to select</span>
 				<a target='_blank' href='"
 				. $image->image_url."' rel='"
@@ -2228,14 +2228,14 @@ if($psOptions['use_customform']){ ?>
 				</tr>
 				<tr>
 					<td style='padding: 3px;'>Video/File URL:</td>
-					<td style='padding: 3px 2px 3px 7px;'><input type='text' id='fileurl_" 
+					<td><input type='text' id='fileurl_" 
 						. $image->image_id."' name='fileurl"
 						. $image->image_id."' value='"
 						. $image->file_url . "' style='width: 165px !important;' />
 						<a href='" 
 						. BWBPSPLUGINURL 
 						. "ajax_medialoader.php?image_id=" . $image->image_id
-						. "&width=640&height=234' class='thickbox' title='Select Media' onclick='return false;'>
+						. "&TB_iframe=false&width=640&height=234' class='thickbox' onclick='return false;'>
 							<img src='" 
 						. BWBPSPLUGINURL . "images/exp.png' alt='Find' />
 						</a>

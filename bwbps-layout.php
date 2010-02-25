@@ -412,6 +412,10 @@ class BWBPS_Layout{
 				
 				}
 				
+				if( $image['file_url'] && $this->psValidateURL($image['file_url']) ){
+					$image['image_url'] = $image['file_url'];
+				}
+				
 				if(!$image['medium_url']){ $image['medium_url'] = $image['thumb_url']; }
 			
 				$g['modMenu'] = "";
