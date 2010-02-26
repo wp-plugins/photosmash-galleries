@@ -107,10 +107,24 @@ class BWBPS_AJAX{
 			case 'moveimagestogal' :
 				$this->copyImagesToGallery(false);
 				break;
+				
+			case 'togglefileurl' :
+				$this->toggleFileURL();
+				break;
 		
 			default :
 				break;
 		}
+	}
+	
+	//Toggle whether the file URL field is visible in Photo Manager
+	function toggleFileURL(){
+	
+		update_option( 'bwbps_show_fileurl', (int)$_POST['showfileurl']);
+		$json['status'] = 1;
+		echo json_encode($json);
+		return;
+	
 	}
 	
 	//Get Media Gallery videos

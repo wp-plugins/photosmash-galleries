@@ -46,8 +46,41 @@ class BWBPS_MEDIALOADER{
 			wp_die ( __('You are not allowed to access this page.') );
 		}
 		
-		$this->getMediaGalleryVideos();
+		if($_POST['action'] == 'getmedia'){
+			$this->getMediaGalleryVideos();
+		} else {
+			$this->getMediaGalleryForm();
+		}
 					
+	}
+	
+	function getMediaGalleryForm(){
+		
+		$ret = $this->getMediaGalleryVideos();
+		
+		$image_id = (int)$_GET["image_id"];
+		
+		?>
+		<script type="text/javascript">
+		//<![CDATA[
+		var ps_imgid = <?php echo (int)$image_id; ?>;
+		//]]>
+		</script>
+		<?php		
+		//$this->getHeader($image_id);
+		echo "
+		<h3>Click file name to select:</h3>
+		<div>
+		<form onsubmit='bwbpsGetMediaGalURL(); return false;'>
+		Show <input id='bwbps_fileurlrecs' type='text' size=4 value='20' name='recs' /> recs.
+		Starting at <input id='bwbps_fileurlstart' type='text' size=4 value='1' name='start' /> &nbsp;  &nbsp; 
+		Search <input id='bwbps_fileurlsearch' type='text' size=30 value='' name='search_term' /> <input type='submit' value='Get Media' name='callback'  /></form></div>
+		<table class='widefat' id='bwbps_fileurl_table'>" . $ret . "</table>
+		
+		";
+		
+		return;	
+	
 	}
 			
 			
@@ -56,24 +89,32 @@ class BWBPS_MEDIALOADER{
 		
 		global $wpdb;
 		
-		if(isset($_POST['search_term'])){
+		$start = (int)$_POST['start'];
+		$recs = (int)$_POST['recs'];
+		if(!$recs){ $recs = 20; }
+		
+		if($start > 0){
+			$start--;
+		} else {
+			$start = 0;
+		}
+		
+		if(isset($_POST['search_term']) && $_POST['search_term']){
 			
 			$search = esc_sql( stripslashes( $_POST['search_term'] ) );
 			
 			$sql = "SELECT post_name, guid, post_mime_type FROM " . $wpdb->posts 
-				. " post_mime_type LIKE 'video%' AND post_name LIKE '%" . $search
-				. "%' ORDER BY post_type, post_name";
+				. " WHERE post_mime_type LIKE 'video%' AND (post_name LIKE '%" . $search
+				. "%' OR post_mime_type LIKE '%$search%' OR guid LIKE '%$search%') ORDER BY post_type, post_name LIMIT $start, $recs";
+				
+			
 		} else {
 			
 			$sql = "SELECT post_name, guid, post_mime_type FROM " . $wpdb->posts 
-				. " WHERE post_mime_type LIKE 'video%' ORDER BY post_type, post_name";
+				. " WHERE post_mime_type LIKE 'video%' ORDER BY post_type, post_name LIMIT $start, $recs";
 				
 		}
 		
-		wp_enqueue_script('jquery');
-		
-		$image_id = (int)$_GET["image_id"];
-			
 		$res = $wpdb->get_results($sql);
 				
 		if($res){
@@ -89,44 +130,20 @@ class BWBPS_MEDIALOADER{
 		
 		}
 		
-		?>
-		<script type="text/javascript">
-		//<![CDATA[
-		var ps_imgid = <?php echo (int)$image_id; ?>;
-		//]]>
-		</script>
-		<?php		
-		//$this->getHeader($image_id);
-		echo "
-		<h3>Click file name to select:</h3>
-		<table class='widefat'><thead><tr><th>File name</th><th>URL</th><th>File type</th></tr></thead>" . $ret . "</table>
+		$ret = "<thead><tr><th>File name</th><th>URL</th><th>File type</th></tr></thead>" . $ret;
 		
-		";
+		
+		if($_POST['action'] == 'getmedia'){
 			
-		return;
+			
+			echo $ret;
+			return;
+		
+		}
+		return $ret;
 
 	}
 	
-	function getHeader($imgid){
-	
-		?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"  dir="ltr" lang="en-US"<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title><?php bloginfo('name'); ?> - Choose File URL</title>
-<link rel='stylesheet' href='<?php bloginfo('url'); ?>/wp-admin/load-styles.php?c=1&amp;dir=ltr&amp;load=global,wp-admin,media' type='text/css' media='all' />
-<script type="text/javascript">
-//<![CDATA[
-var ps_imgid = <?php echo (int)$imgid; ?>;
-//]]>
-</script>
-<?php wp_head(); ?>
-
-</head>
-<body>
-<?php
-		return;
-	}
 }
 
 $bwbMediaLoader = new BWBPS_MEDIALOADER();

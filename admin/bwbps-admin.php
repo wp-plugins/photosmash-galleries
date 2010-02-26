@@ -1919,7 +1919,8 @@ if($psOptions['use_customform']){ ?>
 		</div>
 		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'>
 			<a href='javascript: void(0);' onclick='jQuery(".ps-imagedata").toggle(); return false;'>Toggle Image Data</a> | 
-			<a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>Custom Fields</a>
+			<a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>Custom Fields</a> | 
+			<a href='javascript: void(0);' onclick='bwbpsToggleFileURL(); return false;'>Toggle Video URL</a>
 			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='jQuery("#copymoveimages").toggle(); bwbpsActivateCopyMoveImages();  return false;'>Copy/Move Images</a> 
 		</div>
 		</form>	
@@ -2102,6 +2103,10 @@ if($psOptions['use_customform']){ ?>
 			
 			}
 			
+			if(!(int)get_option('bwbps_show_fileurl')){
+				$showfileurl = "display: none;";
+			}
+			
 			$galDDL = $this->getGalleryDDL($image->gallery_id, "skipnew"
 				, "g".$image->image_id, "bwbps_set_imggal", 15, false);
 			
@@ -2226,9 +2231,10 @@ if($psOptions['use_customform']){ ?>
 						". $termlist ."
 					</td>
 				</tr>
-				<tr>
+				<tr class='ps-fileurl' style='$showfileurl'>
 					<td style='padding: 3px;'>Video/File URL:</td>
-					<td style='padding: 3px 2px 3px 7px;'><input type='text' id='fileurl_" 
+					<td style='padding: 3px 2px 3px 7px;'>
+						<input type='text' id='fileurl_" 
 						. $image->image_id."' name='fileurl"
 						. $image->image_id."' value='"
 						. $image->file_url . "' style='width: 165px !important;' />
