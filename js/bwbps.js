@@ -181,6 +181,7 @@ function bwbpsGetMediaGalURL(){
 	_data['recs'] = jQuery("#bwbps_fileurlrecs").val();
 	_data['start'] = jQuery("#bwbps_fileurlstart").val();
 	_data['search_term'] = jQuery("#bwbps_fileurlsearch").val();
+	_data['filetype'] = jQuery("#bwbps_filetype").val();
 	_data['action'] = 'getmedia';
 	
 	jQuery("#bwbps_fileurl_table").html('<tr align="center" valign="middle"><td style="padding-top: 45px; height: 110px; text-align: center !important; width: 100%;"><img src="' + bwbpsPhotoSmashURL + 'images/ajax-loader.gif" /></td></tr>');

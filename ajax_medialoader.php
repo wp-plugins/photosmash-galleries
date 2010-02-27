@@ -69,12 +69,12 @@ class BWBPS_MEDIALOADER{
 		<?php		
 		//$this->getHeader($image_id);
 		echo "
-		<h3>Click file name to select:</h3>
+		<h3>Click file name to select the file from your WP Media Library:</h3>
 		<div>
 		<form onsubmit='bwbpsGetMediaGalURL(); return false;'>
 		Show <input id='bwbps_fileurlrecs' type='text' size=4 value='20' name='recs' /> recs.
-		Starting at <input id='bwbps_fileurlstart' type='text' size=4 value='1' name='start' /> &nbsp;  &nbsp; 
-		Search <input id='bwbps_fileurlsearch' type='text' size=30 value='' name='search_term' /> <input type='submit' value='Get Media' name='callback'  /></form></div>
+		Starting at <input id='bwbps_fileurlstart' type='text' size=4 value='1' name='start' /> &nbsp; 
+		Search <input id='bwbps_fileurlsearch' type='text' size=20 value='' name='search_term' /> <select id='bwbps_filetype'><option value='video' selected=selected>Video</option><option value='pdf'>PDF</option><option value='image'>Image</option><option value='non-image'>Non-image</option><option value='any'>Any</option></select><input type='submit' value='Get Media' name='callback'  /></form></div>
 		<table class='widefat' id='bwbps_fileurl_table'>" . $ret . "</table>
 		
 		";
@@ -91,6 +91,34 @@ class BWBPS_MEDIALOADER{
 		
 		$start = (int)$_POST['start'];
 		$recs = (int)$_POST['recs'];
+		
+		$filetype = $_POST['filetype'];
+		
+		switch ($filetype){
+			case 'video' :
+				break;
+			case 'pdf' :
+				$filetype = 'application/pdf';
+				break;
+				
+			case 'image' :
+				$filetype = 'image';
+				break;
+			case 'any' :
+				$filetype = '';
+				break;
+			case 'non-image' :
+				$filetype = 'image';
+				$not = " NOT ";
+				break;
+			default :
+				$filetype = 'video';
+				break;
+		
+		}
+		
+		$filetype = esc_sql(strtolower($filetype));
+		
 		if(!$recs){ $recs = 20; }
 		
 		if($start > 0){
@@ -104,14 +132,14 @@ class BWBPS_MEDIALOADER{
 			$search = esc_sql( stripslashes( $_POST['search_term'] ) );
 			
 			$sql = "SELECT post_name, guid, post_mime_type FROM " . $wpdb->posts 
-				. " WHERE post_mime_type LIKE 'video%' AND (post_name LIKE '%" . $search
-				. "%' OR post_mime_type LIKE '%$search%' OR guid LIKE '%$search%') ORDER BY post_type, post_name LIMIT $start, $recs";
+				. " WHERE post_mime_type $not LIKE '" . $filetype . "%' AND (post_name LIKE '%" . $search
+				. "%' OR post_mime_type LIKE '%$search%' OR guid LIKE '%$search%') AND post_type = 'attachment' ORDER BY post_mime_type, post_name LIMIT $start, $recs";
 				
 			
 		} else {
 			
 			$sql = "SELECT post_name, guid, post_mime_type FROM " . $wpdb->posts 
-				. " WHERE post_mime_type LIKE 'video%' ORDER BY post_type, post_name LIMIT $start, $recs";
+				. " WHERE post_mime_type $not LIKE '" . $filetype . "%' AND post_type = 'attachment' ORDER BY post_mime_type, post_name LIMIT $start, $recs";
 				
 		}
 		

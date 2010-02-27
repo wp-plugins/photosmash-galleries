@@ -1920,7 +1920,7 @@ if($psOptions['use_customform']){ ?>
 		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'>
 			<a href='javascript: void(0);' onclick='jQuery(".ps-imagedata").toggle(); return false;'>Toggle Image Data</a> | 
 			<a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>Custom Fields</a> | 
-			<a href='javascript: void(0);' onclick='bwbpsToggleFileURL(); return false;'>Toggle Video URL</a>
+			<a href='javascript: void(0);' onclick='bwbpsTogglet(); return false;'>Toggle Video/File URL</a>
 			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='jQuery("#copymoveimages").toggle(); bwbpsActivateCopyMoveImages();  return false;'>Copy/Move Images</a> 
 		</div>
 		</form>	
@@ -2241,7 +2241,7 @@ if($psOptions['use_customform']){ ?>
 						<a href='" 
 						. BWBPSPLUGINURL 
 						. "ajax_medialoader.php?image_id=" . $image->image_id
-						. "&width=640&height=234' class='thickbox' title='Select Media' onclick='return false;'>
+						. "&width=700&height=430' class='thickbox' title='Select Media' onclick='return false;'>
 							<img src='" 
 						. BWBPSPLUGINURL . "images/exp.png' alt='Find' />
 						</a>

@@ -280,6 +280,9 @@ div.bwbps_pag_2{
     }
 }
 
+/* Admin Styling */
+#bwbps_fileurl_table a {color: #21759B !important; }
+
 /* *****  Styling for Tabls borrowed from NextGeneration Gallery http://wordpress.org/extend/plugins/nextgen-gallery/ */
 
 /* Skin */
