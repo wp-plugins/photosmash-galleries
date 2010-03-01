@@ -119,7 +119,14 @@ class BWBPS_Uploader{
 		$this->json['image_caption'] = $this->getImageCaption();
 		
 		if(isset($_POST['bwbps_post_tags'])){
-			$this->json['post_tags'] = wp_kses($_POST['bwbps_post_tags'], $tags[3]);
+		
+			if(is_array($_POST['bwbps_post_tags'])){
+				$bbpost_tags = implode(",", $_POST['bwbps_post_tags']);
+			} else {
+				$bbpost_tags =  $_POST['bwbps_post_tags'];
+			}
+		
+			$this->json['post_tags'] = wp_kses($bbpost_tags, $tags[3]);
 		}
 		
 		if(isset($_POST['bwbps_img_attribution'])){

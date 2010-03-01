@@ -33,6 +33,7 @@ class BWBPS_UploadForm{
 			, 'img_license'
 			, 'caption'
 			, 'post_tags'
+			, 'tag_dropdown'
 			);
 	}
 	
@@ -379,22 +380,40 @@ class BWBPS_UploadForm{
 					
 				
 					// Some fields can have attributes...special method for getting Attributes					
-					$atts = $this->getFieldAtts($cf, $fname);	
+					$matches = $this->getFieldAttsMulti($cf, $fname);
 					
 					if($fname == 'post_cat1' || $fname == 'post_cat2' || $fname == 'post_cat3'){
 						$std_name = "[post_cat]";
 					} else {
 						$std_name = "[".$fname."]";
-					}			
+					}
 					
-					//Get the new value for the replacement
-					$replace = $this->getStandardField($std_name, $g, $atts);
-					//We need to replace the whole thing found by the regex
-					$fname = $atts['bwbps_match'];
-											
-					$cf = str_replace($fname, $replace, $cf);
+					if( is_array($matches) ){
+						foreach ($matches as $atts){
+						
+							$atts['match_num'] = $m_num;
+										
+							//Get the new value for the replacement
+							$replace = $this->getStandardField($std_name, $g, $atts);
+								
+							$m = $atts['bwbps_match'];
+							
+							$cf = str_replace($m, $replace, $cf);	
+							$m_num++;
+						}
+						
+					} else {
+						
+						$replace = $this->getStandardField($std_name, $g, $atts);
+								
+						$m = $matches['bwbps_match'];
+							
+						$cf = str_replace($m, $replace, $cf);	
+					}
 									
 				}
+				
+				
 			}
 		}
 		
@@ -613,9 +632,52 @@ class BWBPS_UploadForm{
 				
 				$val = esc_attr($val);
 				
-				$ret = "<input type='text' name='bwbps_post_tags' tabindex='". $tab_index . "'"
+				$ret = "<input type='text' name='bwbps_post_tags[]' tabindex='". $tab_index . "'"
 					. " id='" . $g["pfx"] . "bwbps_post_tags' class='bwbps_reset' value='" . $val . "' />";
 					
+				break;
+			
+			case '[tag_dropdown]' :
+				
+				//Get the form element's name
+				if(!$atts['name']){
+					$n = 'bwbps_post_tags[]';
+				} else {
+					$n = esc_attr($atts['name']);
+				}
+				
+				//Get the tag values
+				if($atts['tags']){
+				
+					//Get array of selected values, to mark as selected in dropdown
+					$tags = explode(",", $atts['tags']);
+						
+					unset($selmarked);
+					if(is_array($tags)){
+						foreach($tags as $t){
+							$t = trim($t);
+							if($t == $atts['selected']){ $selattr = "selected=selected"; $selmarked=true;}
+							
+							$r .= "<option value='" . esc_attr($t) . "' $selattr>"
+								. $t . "</option
+								";
+							$selattr = "";
+						}
+					}
+				}
+								
+				if($atts['id']){
+					$id = "id='" . esc_attr($atts['id']) . "'";
+				}
+				
+				if($atts['onclick']){
+					$onclick = "onclick='" . $atts['onclick'] . "'";
+				}
+				
+				if($r){
+					$ret = "<select $id name='$n' $onclick >" . $r . "</select>";
+				}
+				
 				break;
 				
 			case "[post_cat]" :
@@ -689,6 +751,7 @@ class BWBPS_UploadForm{
 				if($atts['id']){ $atts['id'] = "-" . $atts['id']; }
 				
 				$ret = str_replace("id='bwbps-post-cats[]'", "id='bwbps-post-cats" . $atts['id'] . "'", $ret);
+				break;
 
 			default:
 			
@@ -698,6 +761,42 @@ class BWBPS_UploadForm{
 		
 		return $ret;
 	
+	}
+	
+	function getTermObjects($qtags, $select_msg = ""){
+		
+		if(!$qtags){ return $qtags; }		
+		
+		//Get Post Tags if requested
+		if(!is_array($qtags) && $qtags == 'post_tags'){
+		
+			global $wp_query;
+			$tags = wp_get_object_terms( $wp_query->post->ID, 'post_tag', $args ) ;
+			return $tags;
+		}
+		
+		//Get Slug and Name for requested tags from DB
+		global $wpdb;
+		$qtags = explode(",", $qtags);			
+		$qtags = array_map("trim", $qtags);
+		$qtags = array_map("esc_sql", $qtags);
+		
+		//Check for any or none
+		if($select_msg){
+			$any->name = $select_msg;
+			$any->slug = "";
+		}
+		
+		
+		$qtags = implode("','", $qtags);
+		
+		$tags = $wpdb->get_results($wpdb->prepare("SELECT name, slug FROM " . $wpdb->terms . " WHERE name IN ('" . $qtags . "')"));
+		
+		if(isset($any)){
+			array_unshift($tags, $any);
+		}
+		
+		return $tags;
 	}
 	
 	/**
@@ -1377,6 +1476,25 @@ class BWBPS_UploadForm{
 		$attr = $this->field_parse_atts($matches[2][0]);
 
 		$attr['bwbps_match'] = $matches[0][0];
+		return $attr;
+				
+	}
+	
+	function getFieldAttsMulti($content, $fieldname){
+				
+		$pattern = '\[('.$fieldname.')\b(.*?)(?:(\/))?\](?:(.+?)\[\/\1\])?';
+		
+		preg_match_all('/'.$pattern.'/s', $content,  $matches );
+		if(is_array($matches)){
+			$mcnt = 0;
+			foreach( $matches[0] as $m ){
+				
+				$attr[$mcnt] = $this->field_parse_atts($matches[2][$mcnt]);
+
+				$attr[$mcnt]['bwbps_match'] = $matches[0][$mcnt];
+				$mcnt ++;
+			}
+		}
 		return $attr;
 				
 	}

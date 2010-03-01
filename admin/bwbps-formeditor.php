@@ -320,6 +320,7 @@ class BWBPS_FormEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat2] - <span style='font-size: 9px;'>PS Extend users only - sames as post_cat</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat3] - <span style='font-size: 9px;'>PS Extend users only - sames as post_cat</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_tags] - <span style='font-size: 9px;'>input box for tags (tags should be comma separated)</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_dropdown] - <span style='font-size: 9px;'>drop down lists for tags - [tag_dropdown tags='my,tags,go,here' selected='my']</span></li>
 					</ul>
 				</td>
 			</tr>

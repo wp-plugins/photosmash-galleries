@@ -199,7 +199,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 20;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 21;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -436,6 +436,7 @@ class BWB_PhotoSmash{
 			'post_cat2',
 			'post_cat3',
 			'post_tags',
+			'tag_dropdown',
 			'bloginfo',
 			'plugin_url'
 		);
