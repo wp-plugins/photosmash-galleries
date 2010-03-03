@@ -304,15 +304,15 @@ class BWBPS_LayoutsEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_url] - <span style='font-size: 9px;'>Post's permalink (not linkified)</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_name] - <span style='font-size: 9px;'>Post's name (not linkified)</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_id] - <span style='font-size: 9px;'>Post's ID</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_links] - <span style='font-size: 9px;'>Links to the tags - to separate with commas (or other), use attribute like sep=', '. Other attributes:  before and after</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[blog_name] - <span style='font-size: 9px;'>Blog's name</span></li>
 						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[bloginfo field='??'] - <span style='font-size: 9px;'>displays field as delivered by the WP <a href='http://codex.wordpress.org/Function_Reference/get_bloginfo'>get_bloginfo()</a> function</span></li>						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[new_gallery attributes] - <span style='font-size: 9px;'>PhotoSmash Extend only - add new galleries when creating New Posts on upload</span></li>
-						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[bloginfo field='??'] - <span style='font-size: 9px;'>displays field as delivered by the WP <a href='http://codex.wordpress.org/Function_Reference/get_bloginfo'>get_bloginfo()</a> function</span></li>												
 						<?php echo $customfieldlist;?>
 						
 					</ul>
@@ -323,10 +323,24 @@ class BWBPS_LayoutsEditor{
 						?>
 						<h3>Extended Navigation Fields</h3>
 						<ul style='padding: 6px; background-color: #fff; border: 1px solid #d8e9ec;'>
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_dropdown] - include tags like:  [tag_dropdown tags='red,green,blue']</li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_dropdown] - <span style='font-size: 9px;'>include tags like:  [tag_dropdown tags='red,green,blue' select_msg='-select-']</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tags_has_all] - <span style='font-size: 9px;'>a hidden input field that tells PhotoSmash to only get images having all tags</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[nav_search] - <span style='font-size: 9px;'>text input box to provide search functionality</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[submit] - <span style='font-size: 9px;'>submit button</span></li>
 						</ul>
 						<?php
 						};
+						
+						if($psmashExtend->options['new_posts']){
+						?>
+						<h3>PhotoSmash Extend - New Posts</h3>
+						<ul style='padding: 6px; background-color: #fff; border: 1px solid #d8e9ec;'>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[new_gallery attributes] - <span style='font-size: 9px;'>PhotoSmash Extend only - add new galleries when creating New Posts on upload</span></li>
+						</ul>
+						
+						
+						<?php	
+						}
 						?>
 				</td>
 </tr>

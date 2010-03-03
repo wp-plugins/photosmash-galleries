@@ -81,10 +81,34 @@ class BWBPS_Importer{
 				
 				$imgdata['image_url'] =  $img[0]['file'];
 				
-				$imgdata['wp_attach_id'] = $attach_id;
+				$imgdata['wp_attach_id'] = $attach_id;	
+				
+				
+				//Resize and Get Image URL
+				if( $g['image_width'] || $g['image_height'] ){
+					$this->createResized($g, 'image', $file, $uploads, $relpath, $imgdata, $img );
+				}
+				if(!$imgdata['image_url']){
+					$imgdata['image_url'] =  $img[0]['file'];
+				}
 								
-				$this->createResized($g, 'thumb', $file, $uploads, $relpath, $imgdata );
-				$this->createResized($g, 'medium', $file, $uploads, $relpath, $imgdata );
+				
+				//Resize and Get Medium URL
+				if( $g['medium_width'] || $g['medium_height'] ){
+					$this->createResized($g, 'medium', $file, $uploads, $relpath, $imgdata, $img );
+				}
+				if(!$imgdata['medium_url']){
+					$imgdata['medium_url'] =  $imgdata['image_url'];
+				}
+				
+				//Resize and Get Thumb URL
+				if( $g['thumb_width'] || $g['thumb_height'] ){
+					$this->createResized($g, 'thumb', $file, $uploads, $relpath, $imgdata, $img );
+				}
+				if(!$imgdata['thumb_url']){
+					$imgdata['thumb_url'] =  $imgdata['medium_url'];
+				}
+				
 				
 				$this->saveImageToDB($g, $imgdata);
 				
@@ -107,7 +131,7 @@ class BWBPS_Importer{
 		return;
 	}
 	
-	function createResized( $g, $size, $file, $uploads, $relpath, &$imgdata ){
+	function createResized( $g, $size, $file, $uploads, $relpath, &$imgdata, $attach ){
 	
 		$resized = image_make_intermediate_size( $file,
 			$g[$size.'_width'], $g[$size.'_height'], !$g[$size.'_aspect']  );
@@ -119,10 +143,21 @@ class BWBPS_Importer{
 		} else {
 			
 			//We didn't need to resize it, so just use the same image
-			$imgdata[$size.'_url'] = $imgdata['image_url'];
-		
+			if(isset($attach[0]["sizes"]) && is_array($attach[0]["sizes"])){
+				
+				$sizeattach = $size == 'thumb' ? 'thumbnail' : 'medium';
+				
+				
+				if( $size == 'image' ){
+					$imgdata['image_url'] =  $attach[0]['file'];
+				} else {
+					$imgdata[$size.'_url'] = $attach[0]['sizes'][$sizeattach]['file'];	
+				}
+				
+			
+			}
 		}
-	
+			
 	}
 	
 	/*	

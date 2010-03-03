@@ -546,22 +546,31 @@ class BWBPS_AJAX{
 						//Delete images that may be hanging out in the Meta
 						if((int)$row['wp_attach_id']){
 							$meta = get_post_meta((int)$row['wp_attach_id'], '_wp_attachment_metadata', true);
-																			
-							$folders = str_replace(basename($meta['file']), '', $meta['file']);
 							
-							if( is_file($uploads['basedir'] . '/' . $meta['file']) ){
-								unlink($uploads['basedir'] . '/' . $meta['file']);
+							
+							if(isset($meta['file']) && !empty($meta['file'])){
+																	
+								$folders = str_replace(basename($meta['file']), '', $meta['file']);
+								
+								if( is_file($uploads['basedir'] . '/' . $meta['file']) ){
+									unlink($uploads['basedir'] . '/' . $meta['file']);
+								}
+								
+								if(is_array($meta['sizes']['thumbnail'])){
+									$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['thumbnail']['file'];
+									if( is_file($url) ){
+										unlink($url);
+									}		
+								}
+								
+								
+								if(is_array($meta['sizes']['medium'])){
+									$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['medium']['file'];
+									if( is_file($url) ){
+										unlink($url);
+									}	
+								}		
 							}
-							
-							$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['thumbnail']['file'];
-							if( is_file($url) ){
-								unlink($url);
-							}		
-							
-							$url = $uploads['basedir'] . '/' . $folders. $meta['sizes']['medium']['file'];
-							if( is_file($url) ){
-								unlink($url);
-							}			
 							
 						}
 					}

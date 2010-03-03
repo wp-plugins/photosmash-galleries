@@ -62,6 +62,8 @@ class BWBPS_Layout{
 			, 'wp_attach_id'
 			, 'tag_links'
 			, 'tag_dropdown'
+			, 'nav_search'
+			, 'nav_gallery'
 			, 'submit'
 			, 'tags_has_all'
 		);
@@ -1572,7 +1574,7 @@ class BWBPS_Layout{
 				
 				$ret = $image['ps_rating'];
 				break;
-				
+							
 			case '[tag_links]' :
 								
 				if($atts['sep'] || $atts['before'] || $atts['after']){
@@ -1639,6 +1641,17 @@ class BWBPS_Layout{
 				
 				break;
 				
+			case '[nav_search]' :
+				
+				$ret = '<input type="text" name="bwbps_q" size="30" maxlength="60" class="ps-ext-nav-search" value="' 
+					. esc_attr( stripslashes($_POST['bwbps_q'])) . '" />';
+				
+				break;
+			
+			case '[nav_gallery]' :
+				$ret = "<input type='hidden' name='bwbps_extnav_gal' value='" . (int)$atts['id'] ."' />";
+				break;
+				
 			case '[tags_has_all]' :
 				
 				$ret = "<input type='hidden' name='bwbps_tags_has_all' value='true' />";
@@ -1655,7 +1668,7 @@ class BWBPS_Layout{
 				break;
 				
 			case '[tag_search]' :
-				$ret = '<input type="text" name="bwbps_tagsearch" class="bwbps_reset ps-ext-nav-search" ' . $value . ' />';
+				$ret = '<input type="text" name="bwbps_tagsearch" class="ps-ext-nav-search" ' . $value . ' />';
 				break;
 							
 			default :
@@ -2369,6 +2382,13 @@ class BWBPS_Layout{
 			
 		}
 		
+		if(isset($_POST['bwbps_q']) ){
+			$sqlSpecialWhere = $this->getSearchSQL();
+			if($sqlSpecialWhere){
+				$g['gallery_type'] = 98;
+			}
+		}
+		
 		switch ($g['gallery_type']){
 			
 			case 20:
@@ -2461,6 +2481,24 @@ class BWBPS_Layout{
 				
 				break;
 			
+			case 98 : //Search - Extended Navigation (PhotoSmash Extend only)
+				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				$custDataJoin .= " "
+						. "LEFT OUTER JOIN ". $wpdb->term_relationships 
+						. " ON ". $wpdb->term_relationships . ".object_id = "
+						. PSIMAGESTABLE . ".image_id "
+						. "LEFT OUTER JOIN " . $wpdb->term_taxonomy
+						. " ON " . $wpdb->term_taxonomy . ".term_taxonomy_id = "
+						. $wpdb->term_relationships . ".term_taxonomy_id AND " 
+						. " wp_term_taxonomy.taxonomy = 'photosmash' "
+						. "LEFT OUTER JOIN ". $wpdb->terms 
+						. " ON ". $wpdb->terms . ".term_id = "
+						. $wpdb->term_taxonomy . ".term_id "
+						;
+				
+				$g['smart_gallery'] = true;
+				break;
 			case 99 : //Highest Ranked
 				
 				if(!$g['smart_gallery']){
@@ -2490,7 +2528,7 @@ class BWBPS_Layout{
 				break;					
 			
 		}
-						
+		
 		// Add the WHERE clause for the Smart Galleries
 		if ( $g['smart_gallery'] ){
 			
@@ -2505,13 +2543,15 @@ class BWBPS_Layout{
 		
 		} else {
 			
-			$sqlWhere = " WHERE " . PSIMAGESTABLE . ".gallery_id = " . (int)$g['gallery_id'];
+			$sqlWhere = " WHERE " . PSIMAGESTABLE . ".gallery_id = " . (int)$g['gallery_id'] ;
 		
 		}
+		
+		$sqlWhere .= " " . $sqlSpecialWhere;
 				
 		//Admins can see all images
 		if(current_user_can('level_10')){
-			$sql = $wpdb->prepare('SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
+			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'
@@ -2520,14 +2560,14 @@ class BWBPS_Layout{
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
-				. $sqlWhere . ' ORDER BY '.$sortby);	
+				. $sqlWhere . ' ORDER BY '.$sortby;	
 									
 			
 		} else {
 			//Non-Admins can see their own images and Approved images
 			$uid = $user_ID ? $user_ID : -1;
 					
-			$sql = $wpdb->prepare('SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
+			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
 				.$wpdb->users.'.display_name,'
@@ -2537,15 +2577,39 @@ class BWBPS_Layout{
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin
 				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
-				.$uid.')  ORDER BY '.$sortby
-				);			
+				.$uid.')  ORDER BY '.$sortby;			
 				
 		}
-		
 		
 		$images = $wpdb->get_results($sql, ARRAY_A);
 						
 		return $images;
+	}
+	
+	function getSearchSQL(){
+		global $wpdb;
+		
+		$q = trim(stripslashes($_POST['bwbps_q']));
+			
+		if(!$q){ return false; }
+		
+		$q = explode(" ", $q);
+				
+		if(is_array($q)){
+		
+			foreach($q as $r){
+				$res[] = " (CONCAT(image_caption, image_url, img_attribution) LIKE '%" . esc_sql($r) . "%' OR " . $wpdb->terms . ".name LIKE '%" 
+					. esc_sql($r) . "%' OR " . $wpdb->users. ".user_login LIKE '%" 
+					. esc_sql($r) . "%') ";
+			}
+			
+			$ret = implode(" AND ", $res);
+			
+			if($ret){ $ret = " AND " . $ret; }
+		
+		}
+		
+		return $ret;
 	}
 	
 	function getSortbyField($g, $sortorder){
