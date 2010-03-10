@@ -24,36 +24,38 @@ class BWBPS_Layout{
 	
 	function getStandardFields(){
 		return array('caption'
+			, 'full_caption'
+			, 'caption_escaped'
 			, 'url'
+			, 'file_name'
 			, 'img_attribution'
 			, 'img_license'
 			, 'image'
 			, 'linked_image'
 			, 'image_id'
-			, 'gallery_id'
-			, 'thumbnail'
-			, 'medium'
+			, 'image_url'
 			, 'thumb'
+			, 'thumbnail'
+			, 'thumb_image'
+			, 'thumb_url'
+			, 'thumb_linktoimage'
+			, 'mini'	
+			, 'mini_url'	
+			, 'medium'
+			, 'medium_url'
+			, 'gallery_id'
+			, 'gallery_name'
 			, 'user_name'
 			, 'user_url'
 			, 'user_link'
 			, 'author_link'
 			, 'author'
 			, 'contributor'
-			, 'full_caption'
 			, 'date_added'
-			, 'file_name'
-			, 'gallery_name'
 			, 'eval'
 			, 'post_id'
 			, 'post_name'
 			, 'post_url'
-			, 'ps_rating'
-			, 'image_url'
-			, 'caption_escaped'
-			, 'thumb_image'
-			, 'thumb_url'
-			, 'thumb_linktoimage'
 			, 'ps_rating'
 			, 'bloginfo'
 			, 'plugin_url'
@@ -349,6 +351,7 @@ class BWBPS_Layout{
 					
 			foreach($images as $image){
 			
+				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 				
 				$imgNum++;
 				//Pagination - not the most efficient, 
@@ -398,6 +401,7 @@ class BWBPS_Layout{
 				if( !$image['thumb_url'] ){
 				
 					if( $image['file_name'] ){
+						$image['mini_url'] = PSTHUMBSURL.$image['file_name'];
 						$image['thumb_url'] = PSTHUMBSURL.$image['file_name'];
 						$image['medium_url'] = PSTHUMBSURL.$image['file_name'];
 						$image['image_url'] = PSIMAGESURL.$image['file_name'];
@@ -408,6 +412,8 @@ class BWBPS_Layout{
 					// Add the Uploads base URL to the image urls.
 					// This way if the user ever moves the blog, everything might still work ;-) 
 					// set $uploads at top of function...only do it once
+					if(!$image['mini_url']){ $image['mini_url'] = $image['thumb_url']; }
+					$image['mini_url'] = $uploads['baseurl'] . '/' . $image['mini_url'];
 					$image['thumb_url'] = $uploads['baseurl'] . '/' . $image['thumb_url'];
 					$image['medium_url'] = $uploads['baseurl'] . '/' . $image['medium_url'];
 					$image['image_url'] = $uploads['baseurl'] . '/' . $image['image_url'];
@@ -417,6 +423,8 @@ class BWBPS_Layout{
 				if( $image['file_url'] && $this->psValidateURL($image['file_url']) ){
 					$image['image_url'] = $image['file_url'];
 				}
+				
+				if(!$image['mini_url']){ $image['mini_url'] = $image['thumb_url']; }
 				
 				if(!$image['medium_url']){ $image['medium_url'] = $image['thumb_url']; }
 			
@@ -663,30 +671,46 @@ class BWBPS_Layout{
 				if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9 || $g['show_imgcaption'] == 12 || $g['show_imgcaption'] == 13)
 				{
 
-					
-					if($this->validURL($image['url'])){
-						$theurl = $image['url'];
-						$anchor_class = "";
+					$imgrel = $g['url_attr']['imgrel'];
 
-					} else {
-						if($this->validURL($image['user_url'])){
-							$theurl = $image['user_url'];
+					//Submitted URLS
+					if($g['show_imgcaption'] == 8 || $g['show_imgcaption'] == 9){
+						if($this->validURL($image['url'])){
+							$theurl = $image['url'];
 							$anchor_class = "";
+							$imgrel = "";
+	
 						} else {
-							
-							$theurl = $image['image_url'];
-							$image['special_url'] = false;
+							if($this->validURL($image['user_url'])){
+								$theurl = $image['user_url'];
+								$anchor_class = "";
+								$imgrel = "";
+							} else {
+								
+								$theurl = $image['image_url'];
+								$image['special_url'] = false;
+							}
 						}
+					} else {
+						//Link to Posts
+						if((int)$image['post_id']){
+							$theurl = get_permalink((int)$image['post_id']);
+						} else {
+							$theurl = get_permalink((int)$image['gal_post_id']);
+						}
+						$anchor_class = "";
+						$imgrel = "";
+											
 					}
 				
 					$image['imgurl'] = "<a href='".$theurl."'"
-						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
+						.$imgrel." title='".$image['imgtitle']."' "
 						.$g['url_attr']['imagetargblank'].$anchor_class.">";
 						
 					$image['capurl'] = "<a href='".$theurl."'"
 						.$g['url_attr']['caprel']." title='".$image['imgtitle']."' "
 						.$g['url_attr']['imagetargblank'].">";
-															
+																				
 				} else {
 			
 					$image['imgurl'] = $image['the_image_link'];
@@ -947,6 +971,7 @@ class BWBPS_Layout{
 	 */
 	function getPartialLayout($g, $image, $layoutName, $alt=false){
 		$g['suppress_no_image'] = false;
+		if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 		return $this->getGallery($g, $layoutName, $image, $alt);
 	
 	}
@@ -1062,7 +1087,7 @@ class BWBPS_Layout{
 	 */
 	 
 	function getCFFieldHTML($fld, $image, $g, $atts){
-			
+				
 		//Set up thumb size
 		if($atts['h'] || $atts['w']){
 						
@@ -1075,6 +1100,8 @@ class BWBPS_Layout{
 						if($atts['w']){
 							$thumbsize .= " width='" . $atts['w'] . "'";
 						}
+						
+						$minisize = $thumbsize;
 						
 		} else {
 			if((int)$g['thumb_height'] ){
@@ -1250,6 +1277,15 @@ class BWBPS_Layout{
 				
 				break;
 			
+			case '[mini_url]' :
+				if($image['mini_url']){
+				
+					$ret = $image['mini_url'];
+					
+				} else { $ret = ""; }
+				
+				break;
+			
 			case '[blog_name]' :
 				$ret = get_bloginfo('name');
 				break;
@@ -1274,9 +1310,30 @@ class BWBPS_Layout{
 				} else { $ret = ""; }
 				
 				break;
+			
+			case '[mini]' :
+				if($image['thumb_url']){
+				 
+					//Set up mini size
+					if(($g['enforce_sizes'] && !$minisize ) || !$g['mini_aspect']){
+						if((int)$g['mini_height'] ){
+							$minisize = " height='" . (int)$g['mini_height'] . "'";
+						}
+						if( (int)$g['mini_width'] ){
+							$minisize .= " width='" . (int)$g['mini_width'] . "'";
+						}
+					}
+				
+					$ret = $image['imgurl']."<img src='".$image['mini_url']."'".$g['imgclass']
+						." alt='".$image['img_alt']."' $minisize />"
+						.$image['imgurl_close'];
+					
+				} else { $ret = ""; }
+				
+				break;
 				
 			case '[image_id]' :
-				$ret = $image['psimageID'];
+				$ret = (int)$image['psimageID'];
 				break;
 				
 			case '[wp_attachment_link]' :

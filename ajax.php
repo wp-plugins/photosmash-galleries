@@ -1,8 +1,19 @@
 <?php
 
+define('DOING_AJAX', true);
+define('WP_ADMIN', true);
+
+
+
+
 if (!function_exists('add_action'))
 {
 	require_once("../../../wp-load.php");
+	
+	require_once('../../../wp-admin/includes/admin.php');
+	
+	do_action('admin_init');
+
 }
 
 check_ajax_referer( "bwbps_moderate_images" );
@@ -109,7 +120,15 @@ class BWBPS_AJAX{
 				break;
 				
 			case 'togglefileurl' :
-				$this->toggleFileURL();
+				$this->toggleAdminOption('bwbps_show_fileurl');
+				break;
+				
+			case 'togglecustomdata' :
+				$this->toggleAdminOption('bwbps_show_customdata');
+				break;
+			
+			case 'resizeimage' :
+				$this->updateImageSizes();
 				break;
 		
 			default :
@@ -118,9 +137,9 @@ class BWBPS_AJAX{
 	}
 	
 	//Toggle whether the file URL field is visible in Photo Manager
-	function toggleFileURL(){
+	function toggleAdminOption($optionname){
 	
-		update_option( 'bwbps_show_fileurl', (int)$_POST['showfileurl']);
+		update_option( $optionname, (int)$_POST['adminoption']);
 		$json['status'] = 1;
 		echo json_encode($json);
 		return;
@@ -861,6 +880,44 @@ class BWBPS_AJAX{
  		wp_mail($email, "Image moderation notice: ". $accepted, $msg, $headers );
 				
 	}
+	
+	
+	function updateImageSizes(){
+		global $wpdb;
+	
+		if(current_user_can('level_10')  ){
+		
+			$image_id = (int)$_POST['image_id'];
+			
+			if($image_id){
+			
+				require_once('admin/image-functions.php');
+				
+				$imgFunc = new BWBPS_ImageFunc();
+				
+				$json = $imgFunc->resizeImage($image_id);
+				
+				echo json_encode($json);
+				return;
+			} else {
+			
+				$json['message'] = 'Invalid image ID';
+				$json['status'] = 0;
+				echo json_encode($json);
+				
+			}
+		
+		} else {
+				
+				$json['message'] = "Invalid credentials.";
+				$json['status'] = 0;
+				echo json_encode($json);
+				return;
+		
+		}		
+	
+	}
+	
 
 }
 

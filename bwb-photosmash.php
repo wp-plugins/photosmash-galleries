@@ -3,13 +3,13 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.5.06
+Version: 0.5.07
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
  
 /** 
- * Copyright 2009  Byron W Bennett (email: bwbnet@gmail.com)
+ * Copyright 2009-2010  Byron W Bennett (email: bwbnet@gmail.com)
  *
  * LICENSE: GPL
  *
@@ -34,13 +34,13 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.5.05');
-define('PHOTOSMASHEXTVERSION', '0.2.00');
+define('PHOTOSMASHVERSION', '0.5.07');
+define('PHOTOSMASHEXTVERSION', '0.2.01');
 
 
 //Database Verifications
-define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_categories');
-define('PHOTOSMASHVERIFYFIELD', 'tag_name');
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_galleries');
+define('PHOTOSMASHVERIFYFIELD', 'mini_width');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -199,7 +199,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
-	var $customFormVersion = 21;  //Increment this to force PS to update the Custom Fields Option
+	var $customFormVersion = 22;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
 	var $uploadFormCount;
@@ -321,6 +321,10 @@ class BWB_PhotoSmash{
 				'img_perrow' => 0,
 				'use_wp_upload_functions' => 1,
 				'add_to_wp_media_library' => 1,
+				'max_file_size' => 0,
+				'mini_aspect' => 0,
+				'mini_width' => 125,
+				'mini_height' => 125,
 				'thumb_aspect' => 0,
 				'thumb_width' => 125,
 				'thumb_height' => 125,
@@ -438,7 +442,9 @@ class BWB_PhotoSmash{
 			'post_tags',
 			'tag_dropdown',
 			'bloginfo',
-			'plugin_url'
+			'plugin_url',
+			'preview_post'
+			
 		);
 		return $ret;
 	}
@@ -1190,7 +1196,7 @@ function getGallery($g){
 				
 				break;
 				
-			case 99 : // Recent images
+			case 99 : // Highest Ranked
 				$gquery = false;
 				if($g['gallery_id']){
 									
@@ -1831,7 +1837,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		
 		//Admins can see all images
 		if(current_user_can('level_10')){
-			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, ".PSGALLERIESTABLE.".img_class,"
+				
+			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, "
+					.PSIMAGESTABLE.".image_id as psimageID, ".PSGALLERIESTABLE.".img_class,"
 					.PSGALLERIESTABLE.".img_rel, "
 					.$wpdb->users.".user_nicename,"
 					.$wpdb->users.".display_name,"

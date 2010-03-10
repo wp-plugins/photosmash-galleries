@@ -34,6 +34,7 @@ class BWBPS_UploadForm{
 			, 'caption'
 			, 'post_tags'
 			, 'tag_dropdown'
+			, 'preview_post'
 			);
 	}
 	
@@ -327,8 +328,10 @@ class BWBPS_UploadForm{
 	        		<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />	
 	        	</td>
 	        </tr>
-	        <tr><th><span id="' . $g["pfx"] . 'bwbps_message"></span></th>
-	        <td><span id="' . $g["pfx"] . 'bwbps_result"></span></td>
+	        <tr><th><span id="' . $g["pfx"] . 'bwbps_message" class="bwbps_message"></span></th>
+	        <td><span id="' . $g["pfx"] . 'bwbps_result" class="bwbps_result"></span>
+	        <span id="' . $g["pfx"] . 'bwbps_previewpost" class="bwbps_previewpost"></span>
+	        </td>
 	        </tr>
 	        </table>
         </form>
@@ -581,11 +584,17 @@ class BWBPS_UploadForm{
 				break;
 				
 			case "[thumbnail]":
-				$ret = '<span id="' . $g["pfx"] . 'bwbps_result"></span>';
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_result" class="bwbps_result"></span>';
+				break;
+			
+			case "[preview_post]":
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_previewpost" class="bwbps_previewpost"></span>
+				<input type="hidden" name="bwbps_preview_post" value="1" />
+				';
 				break;
 				
 			case "[thumbnail_2]":
-				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2"></span>';
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2" class="bwbps_result bwbps_result2"></span>';
 				break;
 			case "[url]":
 				$ret = '<input tabindex="'. $tab_index . '" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" ' . $value . ' />';
@@ -594,7 +603,7 @@ class BWBPS_UploadForm{
 				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />';
 				break;
 			case "[message]" :
-				$ret = '<span id="' . $g["pfx"] . 'bwbps_message"></span>';
+				$ret = '<span id="' . $g["pfx"] . 'bwbps_message" class="bwbps_message"></span>';
 				break;
 				
 			case "[img_attribution]" :

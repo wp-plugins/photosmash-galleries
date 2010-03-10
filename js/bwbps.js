@@ -2,6 +2,8 @@ var $j = jQuery.noConflict();
 var bwbpsActiveGallery = 0;
 var displayedGalleries = "";
 var bwbpsUploadStatus = false;
+var bwbpsSelectedImages;
+var bwbpsStopResizing = false;
 var bwbpsAllImport = 0; //variable for handling Admin Import toggling
 
 $j.fn.tagName = function() {
@@ -52,12 +54,24 @@ $j(document).ready(function() {
 	
 });
 
-/* -------- ADMIN Copy/Move Image Functions ------------ */
-function bwbpsActivateCopyMoveImages(){
-
-	jQuery('.ps_clickmsg').toggle();
+/* -------- ADMIN Copy/Move/Resize Image Functions ------------ */
+function bwbpsPrepareImageSelection(psAction){
 	
-	if( jQuery('#copymoveimages').is(' :visible')){
+	if(psAction == 'copymoveimages'){
+		if( jQuery('#resizeimages').is(' :visible')){
+			bwbpsUnPrepareImageSelection()
+			jQuery("#resizeimages").hide();
+		}
+	} else {
+		if( jQuery('#copymoveimages').is(' :visible')){
+			bwbpsUnPrepareImageSelection()
+			jQuery("#copymoveimages").hide();
+		}
+	}
+	
+	if( jQuery('#' + psAction).is(' :visible')){
+	
+		jQuery('.ps_clickmsg').show();
 		
 		jQuery('.ps_copy').click(function(){
 			var tid = this.id;
@@ -74,7 +88,7 @@ function bwbpsActivateCopyMoveImages(){
 		);
 	
 	} else {
-		bwbpsDeactivateCopyMoveImages();	
+		bwbpsUnPrepareImageSelection();	
 	}
 
 	
@@ -82,8 +96,8 @@ function bwbpsActivateCopyMoveImages(){
 	return false;
 }
 
-function bwbpsDeactivateCopyMoveImages(){
-	
+function bwbpsUnPrepareImageSelection(){
+	jQuery('.ps_clickmsg').hide();
 	jQuery('.ps_copy').unbind('click');
 	jQuery('.bwbps-sel').removeClass('bwbps-sel');
 	
@@ -268,9 +282,21 @@ function bwbpsToggleFileURL(){
 	jQuery(".ps-fileurl").toggle();
 	
 	if( jQuery(".ps-fileurl").is(":visible")){
-		bwbpsSaveAdminOptions('togglefileurl', 'showfileurl', 1);
+		bwbpsSaveAdminOptions('togglefileurl', 'adminoption', 1);
 	} else {
-		bwbpsSaveAdminOptions('togglefileurl', 'showfileurl', 0);
+		bwbpsSaveAdminOptions('togglefileurl', 'adminoption', 0);
+	}
+
+}
+
+function bwbpsToggleCustomData(){
+
+	jQuery(".ps-customflds").toggle();
+	
+	if( jQuery(".ps-customflds").is(":visible")){
+		bwbpsSaveAdminOptions('togglecustomdata', 'adminoption', 1);
+	} else {
+		bwbpsSaveAdminOptions('togglecustomdata', 'adminoption', 0);
 	}
 
 }
@@ -364,6 +390,124 @@ function bwbpsSaveCustSuccess(data, image_id){
 		}
 
 }
+
+// Resize Multiple Images...
+function bwbpsResizeSelectedImages(){
+
+	var imgids = "";
+	bwbpsStopResizing = false;
+	
+	jQuery('.bwbps-sel').each(function(index){
+		
+		ind = this.id;
+		imgids += ind.replace("psimg_","") + ",";
+				
+	});
+	
+	if(imgids == ""){ alert("No images selected...click on images to select for resizing."); return; }
+		
+	bwbpsSelectedImages = imgids.split(",");
+	
+	if(jQuery.isArray(bwbpsSelectedImages) ){
+		bwbpsSelectedImages.pop();
+	}
+	
+	jQuery("#bwbpsStopResizing").show();
+	bwbpsGetNextImageToResize();
+	
+}
+
+function bwbpsGetNextImageToResize(data){
+
+	if(data){
+		jQuery("#resizeresultmsg").val(data.message + "\n" + jQuery("#resizeresultmsg").val());
+	}
+	
+	if(jQuery.isArray(bwbpsSelectedImages) && !bwbpsStopResizing && bwbpsSelectedImages.length > 0){
+				
+		var image_id = bwbpsSelectedImages.shift();
+				
+		jQuery("#resizestatusmsg").html("Resizing: " + image_id + " Remaining: " + bwbpsSelectedImages.length );
+		bwbpsResizeImage(image_id, false, true);
+		return;
+	}
+	
+	jQuery("#resizestatusmsg").html("Resize complete...see log for results");
+	$j('#ps_savemsg').hide();
+	jQuery("#bwbpsStopResizing").hide();
+	jQuery('.bwbps-sel').removeClass('bwbps-sel');
+	
+}
+
+// Resize Image by Ajax
+function bwbpsResizeImage(image_id, my_confirm, multiimages){
+	
+	//Get the Form Prefix...this is needed due to multiple forms being possible
+	
+	var _data = {};
+	_data['image_id'] = image_id;
+	_data['action'] = 'resizeimage';
+
+	
+		
+	if(my_confirm)
+	{
+		if(!confirm('Do you want to regenerate image sizes per gallery settings?'))
+		{ 
+			return false;
+		}
+	}
+		
+	var _moderate_nonce = jQuery("#_moderate_nonce").val();
+	
+	_data['_ajax_nonce'] = _moderate_nonce;
+		
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	jQuery.ajax({
+		type: 'POST',
+		url: bwbpsAjaxURL,
+		data : _data,
+		dataType: 'json',
+		success: function(data) {
+			bwbpsResizeSuccess(data, image_id, multiimages);
+		}
+	});
+	return false;
+
+}
+
+function bwbpsResizeSuccess(data, image_id, multiimages){
+
+	if(multiimages){
+		bwbpsGetNextImageToResize(data);
+		return;
+	}
+	
+	$j('#ps_savemsg').hide();
+	
+	if(data == -1){
+			alert('Failed due to security: invalid nonce');
+			//The nonce	 check failed
+			$j('#psmod_' + image_id).html("fail: security"); 
+			return false;
+	}
+	 	
+	if( data.status == 'false' || data.status == 0){
+		//Failed for some reason
+		$j('#psmod_' + image_id).html("update: fail"); 
+		return false;
+	} else {
+		alert("Succeed");
+		$j('#ps-customflds-' + image_id).bwbpsFade({start:'#ffff99',
+			speed : 1000
+			});
+	}
+
+}
+
 
 
 // Upload Image by Ajax
@@ -632,11 +776,11 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 			bwbps_equalHeight($j('.psgal_' + data.gallery_id));
 			
 			li.append('&nbsp;');
-			
+
 			if(data.special_msg){
 				var pv = "";
 				if(data.preview_id){ pv = "<a href='/?p=" + data.preview_id + "&preview=true' target='_blank'>Preview</a>";}
-				$j('#' + form_pfx + 'bwbps_message').append("<p>" + pv + unescape(data.special_msg) + "</p>");
+				$j('#' + form_pfx + 'bwbps_previewpost').append("<p>" + pv + unescape(data.special_msg) + "</p>");
 			}
 			
 			

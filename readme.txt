@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.5.05
+Stable tag: 0.5.07
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -79,12 +79,28 @@ You can also exclude the standard css file and include your own through options 
 
 == Screenshots ==
 
-1.  Top portion of the PhotoSmash options page
-2.  Sample photo gallery...visit Smashly.net for a working demo
+1.  Example gallery
+2.  Widgets - random, recent, random tag, highest rated
+3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.5.07 - 3/9/2010 =
+
+    * Photo Manager enhancement - Resize Image - added ability to resize individual images or multiple images by selecting, creating new size files based on Gallery settings.
+Photo Manager enhancement - made toggling Custom Field data sticky.
+    * Added tag [preview_post] to Custom Form - for PhotoSmash Extend use to show a link to preview newly created post.
+    * Changed bwbps-layout.php so that Caption Styles that link thumbs to Posts works - these particular settings are not ideal unless you use a different layout for posts, which can be accomplished by specifying a separate single_layout in the shortcode: so something like
+[ photosmash layout='main_pagelayout' single_layout='post_pagelayout' ]
+(without the space before photosmash.
+    * Added Maximum Image Size - in PhotoSmash Settings, go to Images tab. You can set the maximum number of bytes an uploaded image is allowed. This will let you gracefully reject images that are so large that they would cause the Out of Memory error associated with resizing images that are too big. Example: Enter 500000 for a max of 500kB image upload size.
+    * Added New Image Size...mini - now, in addition to thumb, medium, and image, you have a 4th image size called mini. Use this in your custom layouts with tags: [mini] for an full blown image tag or [mini_url] for just the URL so you can built your own links and image tags.
+    * Added Search field to Extended Navigation for PhotoSmash Extend users - this allows you to add a search field that searches the Image Tags, Image Caption, Image URL, Image Contributor, and Image Attribution.
+    * Fixed bug in Image Importing - when importing Images from the Media Library that had thumbnail and medium sized images that were the dimensions set for the photosmash gallery to which they were being imported, it was using the large image URL for all fields. Now it will use the appropriate file urls based on size.
+    * Added Ability to Attach/Display Other File Types - this ability allows you to Select Attachments from the WP Media Gallery and have a Thumbnail in a gallery link to those attachments (or you can paste in any URL manually). Go to Photo Manager, toggle "Toggle Video/File URL" to show the File URL field, either paste in the URL of the file you wish to link to or click the browse icon beside the field, use the pop-up to search for attachments in your WP Media Library (you can add them through the Media/Add New interface independently of posts), click the name of the file you wish to use, the save the image record. At this point, your thumbnail will link to the file based on the rules you have set in Caption Settings in your Gallery Settings.
+    * Fixed image_id tag in Layouts - you can use the Image ID as a tag in your Layouts (especially useful when creating new posts through PhotoSmash Extend - it allows you to use the psmash id=## shortcode to show individual images or fields attached to an image record
 
 = 0.5.05 - 2/23/2010 =
 

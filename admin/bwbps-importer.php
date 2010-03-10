@@ -72,6 +72,7 @@ class BWBPS_Importer{
 				// make the file name
 				
 				$file = $uploads['basedir'] . "/" . $img[0]['file'];
+				
 				if(!is_file($file)) {
 					$failed[] = "No image: " . $img[0]['file'];
 					continue;
@@ -109,6 +110,13 @@ class BWBPS_Importer{
 					$imgdata['thumb_url'] =  $imgdata['medium_url'];
 				}
 				
+				//Create Mini Size
+				if( $g['mini_width'] || $g['mini_height'] ){
+					$this->createResized($g, 'mini', $file, $uploads, $relpath, $imgdata, $img );
+				}
+				if(!$imgdata['mini_url']){
+					$imgdata['mini_url'] =  $imgdata['thumb_url'];
+				}
 				
 				$this->saveImageToDB($g, $imgdata);
 				
@@ -275,16 +283,15 @@ class BWBPS_Importer{
 			<td style='padding-top:4px;'>
 				<?php
 					echo $postDDL;
-				?>
+				?> &nbsp;
+				<input type="submit" name="showModerationImages" class="button-primary" value="<?php 
+					_e('Fetch Images', 'bwbPS') ?>" /> 
 				
 			</td>
 		</tr>
 		<tr>
 			<td style='padding-top:10px;' colspan="2">
 				<input type="submit" name="save_bwbPSImages" class="button-primary" value="<?php _e('Add Images', 'bwbPS') ?>" /> 
-				&nbsp; 
-				<input type="submit" name="showModerationImages" value="<?php 
-					_e('Fetch Images', 'bwbPS') ?>" /> 
 				&nbsp; <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(true);'>Select all</a> | <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(false);'>Deselect</a> &nbsp; &nbsp;<span class='ps-hint'>(Click images to select)</span>
 			</td>
 

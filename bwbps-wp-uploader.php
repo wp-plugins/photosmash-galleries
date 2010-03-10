@@ -285,13 +285,18 @@ class BWBPS_Uploader{
 		$this->json['image_url'] = $relpath . $basename;
 		$this->json['image_name'.$this->imageNumber] = $basename;
 		
-		// Create Thumbnail & Medium sizes
+		// Create Mini & Thumbnail & Medium sizes
 		
+		//Create THumb size
 		$this->createResized($g, 'thumb', $file, $uploads, $relpath );
 		
 		//Set thumb_fullurl for JSON in callback back on the page
 		$this->json['thumb_fullurl'] = $uploads['baseurl'] . '/'. $this->json['thumb_url'];
 		
+		//Create Mini Size
+		$this->createResized($g, 'mini', $file, $uploads, $relpath );
+		
+		//Create Medium Size
 		$this->createResized($g, 'medium', $file, $uploads, $relpath );
 		
 		$this->createResized($g, 'image', $file, $uploads, $relpath );
@@ -354,6 +359,20 @@ class BWBPS_Uploader{
 				$this->exitUpload("No file uploaded.");
 			}
 			return false;
+		}
+		
+		//Deal with File Size too Large
+		if((int)$this->psOptions['max_file_size'] > 0 && 
+			(int)$this->psOptions['max_file_size'] < (int)$upload['size']){
+			
+			$maxfilesize = (int)$this->psOptions['max_file_size']/1000;
+			$uploadedsize = (int)$upload['size']/1000;
+		
+			$this->exitUpload(" ***  File too Large  *** 
+				Maximum allowed file size is: " 
+				. round($maxfilesize,1) . "kB --- Uploaded file size: "
+				.round($uploadedsize,1) . "kB");
+		
 		}
 		
 		// Handle the uploaded file
@@ -520,6 +539,7 @@ class BWBPS_Uploader{
 		$data['file_url'] = $this->json['file_url'];
 		
 		// Add the 3 image URLs
+		$data['mini_url'] = $this->json['mini_url'];
 		$data['thumb_url'] = $this->json['thumb_url'];
 		$data['medium_url'] = $this->json['medium_url'];
 		$data['image_url'] = $this->json['image_url'];
@@ -875,192 +895,7 @@ class BWBPS_Uploader{
 		}
 		return $val;
 	}
-	
-	/**
-	 * Process Main Image
-	 * 
-	 */
-	function processMainImage($g, $newname, $allowNoImg=false){
-	
-		//Verify User rights...and leave if not sufficient
-		$this->verifyUserRights($g);	//will exit if not enough rights.
-
-		if(get_option('bwbps-use777') == '1' && !SAFE_MODE){
-			chmod(PSIMAGESPATH2, 0777);
-			chmod(PSTHUMBSPATH2, 0777);
-		}
 		
-		if(!$this->handle->file_is_image){
-			
-			if($allowNoImg){
-				$this->json['succeed'] = "true";
-			} else {
-				$this->json['succeed'] = "false";
-				$this->json['message'] = "File was not a valid image.";
-			}
-			
-			$this->json['img'.$this->imageNumber] = "0";
-			return $allowNoImg;
-			
-		} 
-				
-		//change image name
-		//$this->handle->file_new_name_body = $newname;
-		
-		$this->handle->file_safe_name = true;
-		$this->handle->file_auto_rename = true;
-		
-		//image sizing
-		if($g['image_width'] || $g['image_height']){
-			if(!$g['image_width'] || $this->handle->image_src_x < $g['image_width']){
-				$g['image_width'] = $this->handle->image_src_x;
-			}
-			if(!$g['image_height'] || $this->handle->image_src_y < $g['image_height']){
-				$g['image_height'] = $this->handle->image_src_y;
-			}
-			
-			//Figure out whether aspect is to be kept or cropped
-			$this->handle->image_resize = true;
-			if($g['image_aspect'] == 1){
-				$this->handle->image_ratio = true;
-			} else {
-				$this->handle->image_ratio_crop = true;	
-			}
-			
-			if($g['image_width']){
-				$this->handle->image_x = $g['image_width'];
-			}
-			
-			if($g['image_height']){
-				$this->handle->image_y = $g['image_height'];
-			}
-			
-		}
-		
-		//process and save full sized image
-		$this->handle->process(PSUPLOADPATH."/bwbps/");
-		
-		if($this->handle->processed){
-			$this->json['succeed'] = "true";
-			
-			//Moved this here for uploading with natural name
-			$newname = $this->handle->file_dst_name_body;
-
-			$this->json['img'.$this->imageNumber] = $newname.".".$this->handle->file_src_name_ext;
-			
-		} else {
-			$this->json['succeed'] = "false";
-			$this->json['message'] = "Image processing failed.";
-		}
-
-		$this->json['error'] = strip_tags($this->handle->error);
-		return $this->handle->processed;
-	}
-	
-	/**
-	 * Process Thumbnail
-	 * 
-	 */
-	function processThumbnail($g, $newname, $allowNoImg=false){
-		$this->verifyUserRights($g);	//will exit if not enough rights.
-		
-		if(!$this->handle->file_is_image){
-			$this->json['succeed'] = "true";
-			$this->json['img'.$this->imageNumber] = "0";
-			return $allowNoImg;
-		}
-				
-		//$this->handle->file_new_name_body = $newname;
-		
-		$this->handle->file_safe_name = true;
-		$this->handle->file_auto_rename = true;
-		
-
-		//image sizing
-		if($g['thumb_width'] || $g['thumb_height']){
-			if(!$g['thumb_width'] || $this->handle->image_src_x < $g['thumb_width']){
-				$g['thumb_width'] = $this->handle->image_src_x;
-			}
-			if(!$g['thumb_height'] || $this->handle->image_src_y < $g['thumb_height']){
-				$g['thumb_height'] = $this->handle->image_src_y;
-			}
-			
-			//Figure out whether aspect is to be kept or cropped
-			$this->handle->image_resize = true;
-			if($g['thumb_aspect'] == 1){
-				$this->handle->image_ratio = true;
-			} else {
-				$this->handle->image_ratio_crop = true;	
-			}
-			
-			if($g['thumb_width']){
-				$this->handle->image_x = $g['thumb_width'];
-			}
-			if($g['thumb_height']){
-				$this->handle->image_y = $g['thumb_height'];
-			}
-		}
-		
-		//process the file
-		$this->handle->process(PSUPLOADPATH."/bwbps/thumbs/");
-
-		if($this->handle->processed){
-			$this->json['succeed'] = "true";
-			
-			//Moved this here for uploading with natural name
-			$newname = $this->handle->file_dst_name_body;
-
-			$this->json['img'.$this->imageNumber] = $newname.".".$this->handle->file_src_name_ext;
-		} else {
-			$this->json['succeed'] = "false";
-			$this->json['message'] = "Image processing failed.";
-		}
-
-		$this->json['error'] = strip_tags($this->handle->error);
-		return $this->handle->processed;
-	}
-	
-	/**
-	 * Process Document - non-image document uploads
-	 * 
-	 */
-	function processDocument($g, $newname, $allowNoImg=false){
-		$this->verifyUserRights($g);	//will exit if not enough rights.
-		
-		if(!$this->handle->file_is_image){
-			$this->json['succeed'] = "true";
-			$this->json['img'.$this->imageNumber] = "0";
-			return $allowNoImg;
-		}
-				
-		//$this->handle->file_new_name_body = $newname;
-		
-		$this->handle->file_safe_name = true;
-		$this->handle->file_auto_rename = true;
-		
-		$newname = $this->handle->file_dst_name_body;
-		
-		if(!$this->json['img'.$this->imageNumber]){
-			$this->json['img'.$this->imageNumber] = $newname.".".$this->handle->file_src_name_ext;
-		}
-		
-		//process the file
-		$this->handle->process(PSUPLOADPATH."/bwbps/thumbs/");
-
-		if($this->handle->processed){
-			$this->json['succeed'] = "true";
-		} else {
-			$this->json['succeed'] = "false";
-			$this->json['message'] = "Image processing failed.";
-		}
-
-		$this->json['error'] = strip_tags($this->handle->error);
-		return $this->handle->processed;
-
-	
-	}
-
-	
 	
 	function saveCustomFields($image_id){
 		//If USE_CUSTOMFIELDS is set in PS Options, then Save Custom Field data
@@ -1258,8 +1093,6 @@ class BWBPS_Uploader{
 		if($echojson){
 			$this->echoJSON();
 		}
-		$this->destroyHandle();
-		$this->resetCHMOD();
 	}
 	
 	function echoJSON(){
@@ -1290,20 +1123,7 @@ class BWBPS_Uploader{
 		return $newarr;
 	}
 
-	function destroyHandle(){
-		if($this->handle->processed){
-			$this->handle->clean();
-		}
-		unset($this->handle);
-	}
-	
-	function resetCHMOD(){
-		if(get_option('bwbps-use777') == '1' && !SAFE_MODE){
-			chmod(PSIMAGESPATH2, 0755);
-			chmod(PSTHUMBSPATH2, 0755);
-		}
-	}
-	
+		
 	function getFilterArrays(){
 	
 		//Allowable tag arrays for use with wp_kses

@@ -86,13 +86,6 @@ class BWBPS_AJAXUpload{
 				
 				break;
 			
-			case ( $ftype == 4 || $ftype == 7 || $ftype == 10) : // Video file
-				
-				$ret = $this->psUploader->processDocument($this->psUploader->g
-					, $psNewImageName, $this->allowNoImg);
-				
-				break;
-			
 			default :
 				
 				break;

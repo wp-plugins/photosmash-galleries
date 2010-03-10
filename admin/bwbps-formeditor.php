@@ -310,6 +310,7 @@ class BWBPS_FormEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[loading] - <span style='font-size: 9px;'>'loading' image</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[message] - <span style='font-size: 9px;'>display ajax messages</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[preview_post] - <span style='font-size: 9px;'>display Preview Post links (PhotoSmash Extend only)</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[category_name] - <span style='font-size: 9px;'>display name of current category</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[category_link] - <span style='font-size: 9px;'>displays current category link - use in href tag to make a link</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[category_id] - <span style='font-size: 9px;'>displays category id</span></li>

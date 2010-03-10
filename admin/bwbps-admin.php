@@ -273,6 +273,12 @@ class BWBPS_Admin{
 			$ps['add_to_wp_media_library'] = isset($_POST['ps_add_to_wp_media_library']) ? 1 : 0;
 
 			$ps['exclude_piclens_js'] = isset($_POST['ps_exclude_piclens_js']) ? 1 : 0;
+			
+			$ps['max_file_size'] = (int)$_POST['ps_max_file_size'];
+			
+			$ps['mini_aspect'] = (int)$_POST['ps_mini_aspect'];
+			$ps['mini_width'] = (int)$_POST['ps_mini_width'];
+			$ps['mini_height'] = (int)$_POST['ps_mini_height'];
 
 			$ps['thumb_aspect'] = (int)$_POST['ps_thumb_aspect'];
 			$ps['thumb_width'] = (int)$_POST['ps_thumb_width'];
@@ -428,6 +434,11 @@ class BWBPS_Admin{
 			$d['gallery_type'] = (int)$_POST['gal_gallery_type'];
 			$d['img_perpage'] = (int)$_POST['gal_img_perpage'];
 			$d['img_perrow'] = (int)$_POST['gal_img_perrow'];
+			
+			$d['mini_aspect'] = (int)$_POST['gal_mini_aspect'];
+			$d['mini_width'] = (int)$_POST['gal_mini_width'];
+			$d['mini_height'] = (int)$_POST['gal_mini_height'];
+			
 			$d['thumb_aspect'] = (int)$_POST['gal_thumb_aspect'];
 			$d['thumb_width'] = (int)$_POST['gal_thumb_width'];
 			$d['thumb_height'] = (int)$_POST['gal_thumb_height'];
@@ -844,6 +855,28 @@ if($psOptions['use_advanced'] ==1){
 </div>
 <div id='bwbps_thumbnails'>
 	<table class="form-table">
+			
+			<tr>
+				<th>Mini image width (px):</th>
+				<td>
+					<input type='text' name="gal_mini_width" value='<?php echo (int)$galOptions['mini_width'];?>'/>
+				</td>
+			</tr>
+			<tr>
+				<th>Mini image height (px):</th>
+				<td>
+					<input type='text' name="gal_mini_height" value='<?php echo (int)$galOptions['mini_height'];?>'/>
+				</td>
+			</tr>
+			
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Mini image style:</th>
+				<td>
+					<input type="radio" name="gal_mini_aspect" value="0" <?php if(!(int)$galOptions['mini_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="gal_mini_aspect" value="1" <?php if((int)$galOptions['mini_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+				</td>
+			</tr>
+	
 						
 			<tr>
 				<th>Thumbnail width (px):</th>
@@ -1601,6 +1634,35 @@ if($psOptions['use_customform']){ ?>
 	</div>
 	<div id="bwbps_thumbnails">
 		<table class="form-table">
+		
+			<tr>
+				<th>Maximum image files size (bytes):</th>
+				<td>
+					<input type='text' name="ps_max_file_size" value='<?php echo (int)$psOptions['max_file_size'];?>'/> leave at 0 for unlimited - use this for Out of Memory problems - ex. 600000 for 600kB
+				</td>
+			</tr>
+		
+			<tr>
+				<th>Default mini image width (px):</th>
+				<td>
+					<input type='text' name="ps_mini_width" value='<?php echo (int)$psOptions['mini_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default mini image height (px):</th>
+				<td>
+					<input type='text' name="ps_mini_height" value='<?php echo (int)$psOptions['mini_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+				</td>
+			</tr>
+			
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Default mini image style:</th>
+				<td>
+					<input type="radio" name="ps_mini_aspect" value="0" <?php if((int)$psOptions['mini_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
+					<input type="radio" name="ps_mini_aspect" value="1" <?php if((int)$psOptions['mini_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+				</td>
+			</tr>
 			
 						
 			<tr>
@@ -1714,7 +1776,7 @@ if($psOptions['use_customform']){ ?>
 				<td>
 					<input type="text" style='width: 300px;' name="ps_alt_javascript" value="<?php echo $psOptions['alt_javascript']; ?>" /><br/>Enter the name of a javascript function that you must include into the page (probably through your own WP-Plugin) that will handle the returned results of an Ajax upload.  
 					
-					<p><b>IMPORTANT NOTE:</b><br/>Your function name should include any parameters that are to be passed.  Use parameter 'data' and 'statusText' for the JSON object and the upload status that are being returned by the server in the Ajax call.  These variables are passed into the function that will call your function. Your function can use them as follows...</p><p><b>Example:</b>  myFunction(data, statusText)</p><b>Leave Blank to not use this feature!</b>
+					<p><b>IMPORTANT NOTE:</b><br/>Your function name should include any parameters that are to be passed.  Use parameter 'data' and 'statusText' for the JSON object and the upload status that are being returned by the server in the Ajax call.  These variables are passed into the function that will call your function. Your function can use them as follows...</p><p><b>Example:</b>  myFunction(data, statusText, form_pfx)</p><b>Leave Blank to not use this feature!</b>
 					<br/><br/><b>WARNING: This too is a very advanced feature intended for developers.</b>
 				</td>
 			</tr>
@@ -1918,10 +1980,10 @@ if($psOptions['use_customform']){ ?>
 				?>' />
 		</div>
 		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'>
-			<a href='javascript: void(0);' onclick='jQuery(".ps-imagedata").toggle(); return false;'>Toggle Image Data</a> | 
-			<a href='javascript: void(0);' onclick='jQuery(".ps-customflds").toggle(); return false;'>Custom Fields</a> | 
-			<a href='javascript: void(0);' onclick='bwbpsTogglet(); return false;'>Toggle Video/File URL</a>
-			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='jQuery("#copymoveimages").toggle(); bwbpsActivateCopyMoveImages();  return false;'>Copy/Move Images</a> 
+			<a href='javascript: void(0);' onclick='jQuery(".ps-imagedata").toggle(); return false;'>Image Data</a> | 
+			<a href='javascript: void(0);' onclick='bwbpsToggleCustomData(); return false;'>Custom Fields</a> | 
+			<a href='javascript: void(0);' onclick='bwbpsToggleFileURL(); return false;'>Video/File URL</a>
+			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle(); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='jQuery("#copymoveimages").toggle(); bwbpsPrepareImageSelection("copymoveimages");  return false;'>Copy/Move Images</a> | <a  href='javascript: void(0);' onclick='jQuery("#resizeimages").toggle(); bwbpsPrepareImageSelection("resizeimages");  return false;'>Resize Images</a> 
 		</div>
 		</form>	
 		
@@ -1951,6 +2013,20 @@ if($psOptions['use_customform']){ ?>
 			</span>
 		</p>
 		</div>
+		
+		<div id='resizeimages' style='height: 90px; display: none; padding: 5px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<div style='float: right; background-color: #f0f0f0; padding: 8px; width: 300px; height: 75px;'>
+		<span id='resizestatusmsg'>Resizing status...</span>
+		<span><a class='ps-modbutton' style='display: none;' href='javascript: void(0);' onclick='bwbpsStopResizing = true; jQuery("#bwbpsStopResizing").hide(); return false;' id='bwbpsStopResizing'>&nbsp;Stop&nbsp;</a></span><br/><textarea style='font-size: 11px;' rows="3" cols="36" id='resizeresultmsg'></textarea></div>
+		<span style='font-size: 14px; font-weight: bold; margin:0; padding: 0 0 5px;'>Resize Selected Images:</span> &nbsp; <span>Click images to select.</span>
+		<p style="margin: 2px 0;">
+			<span><a href='javascript: void(0);' onclick='bwbpsCopyMoveSelect(true); return false;'>Select All</a> </span> | 
+			<span><a href='javascript: void(0);' onclick='bwbpsCopyMoveSelect(false); return false;'>Deselect All</a> </span> | 
+			<span><a class='ps-modbutton' href='javascript: void(0);' onclick='bwbpsResizeSelectedImages(); return false;'>&nbsp;Resize&nbsp;</a> 
+		</p>
+		
+		</div>
+		
 		<?php
 			
 			if($result){
@@ -2107,10 +2183,14 @@ if($psOptions['use_customform']){ ?>
 				$showfileurl = "display: none;";
 			}
 			
+			if(!(int)get_option('bwbps_show_customdata')){
+				$showcustomdata = "display: none;";
+			}
+			
 			$galDDL = $this->getGalleryDDL($image->gallery_id, "skipnew"
 				, "g".$image->image_id, "bwbps_set_imggal", 15, false);
 			
-			$galDDL .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Save to new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk_multiple.png' alt='Set gallery' /></a>";
+			$galDDL .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Save to new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Set gallery' /></a>";
 			
 			if((int)$image->post_id){
 				$galupdate = "Post: " . $image->post_id . "
@@ -2134,7 +2214,7 @@ if($psOptions['use_customform']){ ?>
 			<p style='margin-top: 7px;'>
 				<span class='ps-modmenu' id='psmod_".$image->image_id."'>"
 				.$modMenu."</span></p><p style='margin-top: 7px;' class='ps-imagedata'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", "
-				.$image->image_id.");' class='ps-modbutton'>delete</a></p><p style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a></p><p style='text-align: center;' class='ps-imagedata'>Status: " 
+				.$image->image_id.");' class='ps-modbutton'>delete</a></p><p style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a></p><p style='margin-top: 7px;'><a href='javascript: void(0);' onclick=\"bwbpsResizeImage('".$image->image_id."',true); return false;\" class='ps-modbutton'>resize</a></p><p style='text-align: center;' class='ps-imagedata'>Status: " 
 				. $image->status . "<br/>Alerted: " . $image->alerted . "</p>
 				";
 			
@@ -2275,7 +2355,7 @@ if($psOptions['use_customform']){ ?>
 					;
 			}
 			
-			$psTable .= "<table class='widefat fixed ps-customflds' cellspacing=0 id='ps-customflds-" . $image->image_id . "' style='display: none;'>
+			$psTable .= "<table class='widefat fixed ps-customflds' cellspacing=0 id='ps-customflds-" . $image->image_id . "' style='$showcustomdata'>
 				<thead><tr>
 					<th class='manage-column' style='width: 30%;'>LABEL</th>
 					<th class='manage-column' style='width: 70%;'>CUSTOM FIELDS</th>
@@ -2293,7 +2373,7 @@ if($psOptions['use_customform']){ ?>
 				$fileURLData = "<br/>File data: " . $image->file_url;
 			} else { $fileURLData = ""; }
 			
-			$psTable .= "<div class='ps-customflds' style='display: none;'><b>Details: </b>(image id: "
+			$psTable .= "<div class='ps-customflds' style='$showcustomdata'><b>Details: </b>(image id: "
 				. $image->image_id.")<br/>WP media id: " . $image->wp_attach_id."<br/>Gallery: <a href='admin.php?"
 				. "page=managePhotoSmashImages&amp;psget_gallery_id="
 				. $image->gallery_id."'>id(".$image->gallery_id.") "
