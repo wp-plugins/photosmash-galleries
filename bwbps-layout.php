@@ -68,6 +68,8 @@ class BWBPS_Layout{
 			, 'nav_gallery'
 			, 'submit'
 			, 'tags_has_all'
+			, 'favorite'
+			, 'favorite_cnt'
 		);
 	}
 	
@@ -150,15 +152,18 @@ class BWBPS_Layout{
 		
 		$uploads = wp_upload_dir();
 			
-		//Instantiate the Ratings class if needed
+		//Instantiate the Ratings class - used for ratings and favorites
+		if( !isset($this->ratings) ){
+				require_once('bwbps-rating.php');
+				$this->ratings = new BWBPS_Rating();
+		}
+		
+		//See if they're using a Rating on this Gallery
 		if($g['poll_id']){
 			
 			$rate = true;	//Boolean for quick reference to add ratings
 			
-			if( !isset($this->ratings) ){
-				require_once('bwbps-rating.php');
-				$this->ratings = new BWBPS_Rating();
-			}
+			
 			unset($rating);
 			
 			if(!$this->psOptions['rating_allow_anon'] && !is_user_logged_in()){
@@ -348,10 +353,27 @@ class BWBPS_Layout{
 			if($this->psOptions['img_targetnew']){
 				$g['url_attr']['imagetargblank'] = " target='_blank' ";
 			}
+			
+			//Get Ratings HTML
+			if(current_user_can('level_0') && ($this->psOptions['favorites'] || $layout)){
+				$g['ps_favorite_html'] = $this->ratings->getFavoritesHTML($layout, (int)$this->psOptions['favorites']);
+			
+			}
 					
 			foreach($images as $image){
-			
+						
 				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
+				
+				if($g['ps_favorite_html']){
+					$image['ps_fav_html'] = str_replace("{img}",$image['psimageID'], $g['ps_favorite_html']);
+					$image['ps_fav_html'] = str_replace("{gal}",$image['gallery_id'], $image['ps_fav_html']);
+					$image['ps_fav_html'] = str_replace("{favstate}",(int)$image['favorite_id'] ? 1 : 0, $image['ps_fav_html']);
+					$image['ps_fav_html'] = str_replace("{favcnt}",(int)$image['favorites_cnt'], $image['ps_fav_html']);
+					
+				} else {
+					$image['ps_fav_html'] = "";
+				}
+					
 				
 				$imgNum++;
 				//Pagination - not the most efficient, 
@@ -769,10 +791,11 @@ class BWBPS_Layout{
 		{
 			//Add Rating as an Overlay of Image if $g['rating_position'] == FALSE
 			if(!$g['rating_position'] ){
-				$ret .= $image['ps_rating'].$image['imgurl'] . $fileField . $image['imgurl_close'];
+				$ret .= $image['ps_fav_html'] . $image['ps_rating'].$image['imgurl'] . $fileField . $image['imgurl_close'];
 			} else {
-				$ret .= $image['imgurl'] . $fileField . $image['imgurl_close'];
+				$ret .= $image['ps_fav_html'] . $image['imgurl'] . $fileField . $image['imgurl_close'];
 			}
+	
 		}
 		
 		// Get Caption
@@ -853,6 +876,7 @@ class BWBPS_Layout{
 							$m = $atts['bwbps_match'];
 							
 							$ret = str_replace($m, $replace, $ret);	
+							
 							$m_num++;
 						}
 						
@@ -1110,6 +1134,14 @@ class BWBPS_Layout{
 			if( (int)$g['thumb_width'] ){
 				$thumbsize .= " width='" . (int)$g['thumb_width'] . "'";
 			}
+			
+			if((int)$g['mini_height'] ){
+				$minisize = " height='" . (int)$g['mini_height'] . "'";
+			}
+			if( (int)$g['mini_width'] ){
+				$minisize .= " width='" . (int)$g['mini_width'] . "'";
+			}
+			
 		}
 		
 		/* Set up image size */
@@ -1392,15 +1424,14 @@ class BWBPS_Layout{
 							}
 							$ret .= $more;
 						} else {
-							if($atts['more_text']){
-								$ret .= $atts['more_text'];
+							if($atts['more_text'] || $atts['more']){
+								$ret .= $atts['more_text'] ? $atts['more_text'] : $atts['more'];
 							}
 						}
 
 					}
 									
 				}
-				
 				break;
 			
 			case '[caption_escaped]' :
@@ -1478,8 +1509,25 @@ class BWBPS_Layout{
 				break;
 			
 			case '[user_name]' :
-				
+							
 				$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
+				
+				if( is_array($atts) && ((int)$atts['length'] 
+					|| ((int)$atts['nonpost_length'] && !is_single()) ) )
+				{
+				
+					if(((int)$atts['nonpost_length'] && !is_single())){
+						$len = (int)$atts['nonpost_length'] ? (int)$atts['nonpost_length'] :
+							(int)$atts['length'];
+					} else {
+						$len = (int)$atts['length'];
+					}
+					
+					if( strlen($ret) > $len) {
+					
+						$ret = substr($ret, 0, $len);
+					}
+				}
 				
 				break;
 				
@@ -1487,17 +1535,51 @@ class BWBPS_Layout{
 				
 				$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
 				
+				if( is_array($atts) && ((int)$atts['length'] 
+					|| ((int)$atts['nonpost_length'] && !is_single()) ) )
+				{
+				
+					if(((int)$atts['nonpost_length'] && !is_single())){
+						$len = (int)$atts['nonpost_length'] ? (int)$atts['nonpost_length'] :
+							(int)$atts['length'];
+					} else {
+						$len = (int)$atts['length'];
+					}
+					
+					if( strlen($ret) > $len) {
+					
+						$ret = substr($ret, 0, $len);
+					}
+				}
+				
 				break;
 						
 			case '[user_link]' :
-				$ret = "";
-				if($this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])){
+				$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
+				
+				if( is_array($atts) && ((int)$atts['length'] 
+					|| ((int)$atts['nonpost_length'] && !is_single()) ) )
+				{
+				
+					if(((int)$atts['nonpost_length'] && !is_single())){
+						$len = (int)$atts['nonpost_length'] ? (int)$atts['nonpost_length'] :
+							(int)$atts['length'];
+					} else {
+						$len = (int)$atts['length'];
+					}
+					
+					if( strlen($ret) > $len) {
+					
+						$ret = substr($ret, 0, $len);
+					}
+				}
+				
+				
+				if($ret){
 					if($image['user_url'] && $this->validURL($image['user_url'])){
 						$ret = "<a href='".$image['user_url']."' title=''>"
-							.$this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name'])."</a>";
-					} else {
-						$ret = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
-					}
+							. $ret ."</a>";
+					} 
 				} else {
 					$ret = "anonymous";
 				}
@@ -1588,7 +1670,7 @@ class BWBPS_Layout{
 					
 					if($ret){
 						$name = $this->calcUserName($image['user_login'], $image['user_nicename'], $image['display_name']);
-						$ret = "<a href='".$ret."' title='View all images by contributor'>".$name."</a";
+						$ret = "<a href='".$ret."' title='View all images by contributor'>".$name."</a>";
 					}
 				
 				} else {
@@ -1630,6 +1712,16 @@ class BWBPS_Layout{
 			case '[ps_rating]' :
 				
 				$ret = $image['ps_rating'];
+				break;
+				
+			case '[favorite]' :
+				
+				$ret = $image['ps_fav_html'];
+				break;
+				
+			case '[favorite_cnt]' :
+				
+				$ret = (int)$image['favorites_cnt'];
 				break;
 							
 			case '[tag_links]' :
@@ -1844,7 +1936,7 @@ class BWBPS_Layout{
 			switch ($g['show_imgcaption']){
 				case 0:	//no caption
 					$image['capurl'] = "";
-					$image['imgurl_close'] = "";
+					$image['capurl_close'] = "";
 					
 					break;
 				case 1: //caption - link to image
@@ -2384,6 +2476,9 @@ class BWBPS_Layout{
 	function getGalleryImages($g, $customFields=false){
 		global $wpdb;
 		global $user_ID;
+		global $current_user;
+		
+		$user_id = (int)$current_user->ID;
 				
 		//Set up SQL for Custom Fields
 		$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
@@ -2396,8 +2491,18 @@ class BWBPS_Layout{
 			. " ON ". PSIMAGESTABLE . ".gallery_id = "
 			. PSGALLERIESTABLE . ".gallery_id " . $custDataJoin;
 			
-		$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id, ". PSGALLERIESTABLE . ".poll_id ";
+		$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id, "
+			. PSGALLERIESTABLE . ".poll_id ";
 		
+		if(current_user_can('level_0') && $user_id){
+			$gallery_selections .= ", " . PSFAVORITESTABLE . ".favorite_id ";
+			
+			$favoriteDataJoin .= " LEFT OUTER JOIN ".PSFAVORITESTABLE
+				." ON ".PSIMAGESTABLE.".image_id = "
+				.PSFAVORITESTABLE.".image_id "
+				." AND " . PSFAVORITESTABLE . ".user_id = " . $user_id . " ";
+			
+		}
 		
 		
 		
@@ -2440,15 +2545,19 @@ class BWBPS_Layout{
 		}
 		
 		if(isset($_POST['bwbps_q']) ){
-			$sqlSpecialWhere = $this->getSearchSQL();
-			if($sqlSpecialWhere){
-				$g['gallery_type'] = 98;
+			if(!isset($_POST['bwbps_extnav_gal']) || 
+				((int)$_POST['bwbps_extnav_gal'] == $g['gallery_id']))
+			{
+				$sqlSpecialWhere .= $this->getSearchSQL();
+				if($sqlSpecialWhere){
+					$g['gallery_type'] = 98;
+				}
 			}
 		}
-		
+
 		switch ($g['gallery_type']){
 			
-			case 20:
+			case 20:	// Random
 				$sortby = 'RAND() ';
 				if(!(int)$g['limit_images']){
 					$g['limit_images'] = 8;
@@ -2458,7 +2567,7 @@ class BWBPS_Layout{
 			
 				break;
 			
-			case 30:
+			case 30:	// Recent
 				$sortby = PSIMAGESTABLE.'.created_date DESC ';
 				if(!(int)$g['limit_images']){
 					$g['limit_images'] = 8;
@@ -2535,6 +2644,37 @@ class BWBPS_Layout{
 					$sortby .= " LIMIT ". (int)$g['limit_images'];
 				
 				}
+				
+				break;
+			
+			case 70 : //Favorites - gets the favorited images for the logged in user
+				
+				$g['smart_gallery'] = true;
+				
+				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				$favoriteDataJoin = " INNER JOIN ".PSFAVORITESTABLE
+				." ON ".PSIMAGESTABLE.".image_id = "
+				.PSFAVORITESTABLE.".image_id "
+				." AND " . PSFAVORITESTABLE . ".user_id = " . $user_id . " ";
+				
+				break;
+				
+			case 71 : //Most Favorited - images with the most favorites
+			
+				if(!$g['smart_gallery']){
+					$g['smart_gallery'] = true;
+				}
+				
+				if(!(int)$g['limit_images']){
+					$g['limit_images'] = 8;
+				}
+				
+				$sqlSpecialWhere .= " AND " . PSIMAGESTABLE . ".favorites_cnt > 0 ";
+				
+				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				$sortby .= " LIMIT ". (int)$g['limit_images'];
 				
 				break;
 			
@@ -2616,7 +2756,7 @@ class BWBPS_Layout{
 				.$wpdb->users.'.user_url' . $gallery_selections
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
-				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin
+				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
 				. $sqlWhere . ' ORDER BY '.$sortby;	
 									
 			
@@ -2632,13 +2772,17 @@ class BWBPS_Layout{
 				.$wpdb->users.'.user_url' . $gallery_selections
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
-				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin
+				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
 				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
 				.$uid.')  ORDER BY '.$sortby;			
 				
 		}
 		
+		//if($g['gallery_type'] == 70)
+		//	echo $sql;
+
 		$images = $wpdb->get_results($sql, ARRAY_A);
+		
 						
 		return $images;
 	}
@@ -2687,6 +2831,10 @@ class BWBPS_Layout{
 				break;
 			case 4 :	// Rating  -  Bayesian Ranking
 				$sortby = 'bwbps_br_rating ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			
+			case 5 :	// Favorites Count
+				$sortby = PSIMAGESTABLE.'.favorites_cnt ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
 			
 			default :	// When Uploaded

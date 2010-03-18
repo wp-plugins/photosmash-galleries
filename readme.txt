@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.5.07
+Stable tag: 0.5.08
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -87,10 +87,22 @@ You can also exclude the standard css file and include your own through options 
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
+= 0.5.08 - 3/17/2010 =
+
+    * Added "Favorites" for Images - you can now turn on ability for your users to Favorite Images. There are 2 new Gallery Types: one for displaying the logged in user's favorites to them, and the other for displaying the most favorited images (need to set sorting to Descending). There is also a template tag for displaying a link to the page you set for displaying Favorites to users. That page must include a gallery with a shortcode something like: [ photosmash gallery_type='favorites'] (without the space). You can use all of the features of a normal gallery. It will not show an upload form or link. The template tag for displaying the link to your Favorites page is: photosmash_favlink($link_text, $before, $after); You have to set the Page that it will link to in PhotoSmash Settings, near the bottom of the first tab...choose the page from the Drop Down. $link_text, $before, $after are all optional arguments. The $link_text defaults to Favorite Images. Before and After default to empty, but they are useful if you want to enclose in an 'li' tag for placing it in your navigation.
+    * Added ability to customize the Page Slug and Page Title for the photo tag custom taxonomy - these can be set in PhotoSmash Settings on the first tab at bottom.  Settings are: "Photo tags Page Title" and "Photo tags URL Slug".  The url slug should be something useable in a URL.  The default is 'photo-tag'.
+    * Fixed Image Duplication in Lightbox/Shadowbox for "No Caption" caption styles - the Caption Style "No Caption" was missing the close '/a' (anchor tag) in its link.
+    * Fixed 'more' attribute in [caption] tag - this wasn't exactly broken...the attribute is actually 'more_text', but I added 'more'. 'more_link' actually creates a link to the post
+    * Added 'length' attribute to [contributor], [user_name], etc for Custom Layouts
+    * Fixed widget layout selection - selecting the Standard Layout in a widget was going back to < Default > instead of Standard Layout
+    * Fixed the link in PhotoSmash Extend version incompatibility warning - the version check between Extend and PhotoSmash had a bad link to the PhotoSmash Extend download page.
+    * Added 'action' attribute to Extended Navigation (PhotoSmash Extend) - this allows you to specify a Page or Post ID to be used as the Form action in the Extended Navigation form submission (searching images, filtering on tags, etc)
+    * Fixed 'View' post permalink in Photo Manager - was not displaying properly for blogs that aren't in root directory
+
 = 0.5.07 - 3/9/2010 =
 
     * Photo Manager enhancement - Resize Image - added ability to resize individual images or multiple images by selecting, creating new size files based on Gallery settings.
-Photo Manager enhancement - made toggling Custom Field data sticky.
+    * Photo Manager enhancement - made toggling Custom Field data sticky.
     * Added tag [preview_post] to Custom Form - for PhotoSmash Extend use to show a link to preview newly created post.
     * Changed bwbps-layout.php so that Caption Styles that link thumbs to Posts works - these particular settings are not ideal unless you use a different layout for posts, which can be accomplished by specifying a separate single_layout in the shortcode: so something like
 [ photosmash layout='main_pagelayout' single_layout='post_pagelayout' ]

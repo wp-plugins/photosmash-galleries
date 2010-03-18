@@ -69,6 +69,7 @@ class BWBPS_Init{
 				status TINYINT(1) NOT NULL,
 				alerted TINYINT(1) NOT NULL,
 				seq BIGINT(11) NOT NULL,
+				favorites_cnt BIGINT(11),
 				avg_rating FLOAT(8,4) NOT NULL,
 				rating_cnt BIGINT(11) NOT NULL,
 				votes_sum BIGINT(11),
@@ -228,6 +229,38 @@ class BWBPS_Init{
 				PRIMARY KEY  (rating_id),
 				INDEX (image_id),
 				INDEX gallery_poll (gallery_id, poll_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+			/* 
+			* Favorites
+			* Table for Collecting User Favorites
+			*/
+			
+			$table_name = $wpdb->prefix . "bwbps_favorites";			
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
+			
+				//Delete the old indices
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX image_id";
+				$wpdb->query($sql);
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX user_id";
+				$wpdb->query($sql);
+			
+			}
+			
+			//create the table
+			$sql = "CREATE TABLE " . $table_name . " (
+				favorite_id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				image_id BIGINT(20) NOT NULL,
+				user_id BIGINT(20) NOT NULL,
+				updated_date TIMESTAMP NOT NULL,
+				PRIMARY KEY  (favorite_id),
+				INDEX (image_id),
+				INDEX (user_id)
 				)  $charset_collate;";
 			dbDelta($sql);
 			

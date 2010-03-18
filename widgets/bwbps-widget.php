@@ -38,10 +38,6 @@ class PhotoSmash_Widget extends WP_Widget {
 				$title = "Images tagged '<a href=\"" . $url ."\">".$instance['tags'] . "</a>'";
 			}
 			
-			if($instance['gallery_type'] == "tags"){
-			
-			}
-			
 			$gallery_type = 'gallery_type='.$instance['gallery_type'];
 			
 		}
@@ -73,7 +69,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			
 			if(!$layout){$layout = 'Std_Widget'; }
 			
-			$sc = "[photosmash $gid $gallery_type images=$images where_gallery=$where_gallery layout='$layout' thumb_height=$thumb_height thumb_width=$thumb_width $tags no_form=true]";
+			$sc = "[photosmash $gid $gallery_type images=$images where_gallery=$where_gallery layout='$layout' any_height=$thumb_height any_width=$thumb_width $tags no_form=true]";
 			
 			echo do_shortcode($sc);
 		
@@ -132,6 +128,8 @@ class PhotoSmash_Widget extends WP_Widget {
 				<option <?php if ( 'ranked' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='ranked'>Highest Ranked</option>
 				<option <?php if ( 'tags' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='tags'>Tag</option>
 				<option <?php if ( 'random_tags' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='random_tags'>Random Tag</option>
+				<option <?php if ( 'most_favorited' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='most_favorited'>Most Favorited</option>
+				<option <?php if ( 'favorites' == $instance['gallery_type'] ) echo 'selected="selected"'; ?> value='favorites'>User's Favorites</option>
 				<option <?php if ( "0" === $instance['gallery_type'] ) echo 'selected="selected"'; ?> value=0>normal</option>
 				
 			</select>
@@ -199,7 +197,7 @@ class PhotoSmash_Widget extends WP_Widget {
 		$ret .= "<option value='std' ".$sel.">Standard display</option>";
 		
 		if(!$psDefault){
-			if($selected_layout == 0){$sel = "selected='selected'";}else{$sel = "";}
+			if($selected_layout === 0){$sel = "selected='selected'";}else{$sel = "";}
 			$ret .= "<option value='0' ".$sel.">&lt;Default layout&gt;</option>";
 		}
 		

@@ -24,6 +24,14 @@ class BWBPS_Admin{
 			$this->saveGeneralSettings($this->psOptions);
 			//Refresh options
 			$this->psOptions = $this->getPSOptions();
+			
+			$label = $this->psOptions['tag_label'] ? esc_attr($this->psOptions['tag_label']) : "Photo tags";
+		 	$slug = $this->psOptions['tag_slug'] ? $this->psOptions['tag_slug'] : "photo-tag";
+	 	
+		 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );
+			
+		 	global $wp_rewrite;
+			$wp_rewrite->flush_rules();
 		}
 		
 		//Reset PS General Settings to Default
@@ -316,6 +324,9 @@ class BWBPS_Admin{
 				$ps['show_imgcaption'] = 0;
 			}
 			
+			$ps['tag_label'] = esc_attr( $_POST['ps_tag_label'] );
+			$ps['tag_slug'] = sanitize_title( $_POST['ps_tag_slug'] );
+			
 			$ps['nofollow_caption'] = isset($_POST['ps_nofollow_caption']) ? 1 : 0;
 			
 			//Alert on All Uploads
@@ -394,6 +405,9 @@ class BWBPS_Admin{
 			$ps['poll_id'] = (int)$_POST['ps_poll_id'];
 			$ps['rating_position'] = (int)$_POST['ps_rating_position'];
 			$ps['rating_allow_anon'] = isset($_POST['ps_rating_allow_anon']) ? 1 : 0;
+			
+			$ps['favorites'] = (int)$_POST['ps_favorites'];
+			$ps['favorites_page'] = (int)$_POST['ps_favorites_page'];
 			
 			/* Contributor Gallery */
 			$ps['contrib_gal_on'] = isset($_POST['ps_contrib_gal_on']) ? 1 : 0;
@@ -669,6 +683,10 @@ if($psOptions['use_advanced'] ==1){
 						<option value="20" <?php if($galOptions['gallery_type'] == 20) echo 'selected=selected'; ?>>Random Images</option>
 						<option value="30" <?php if($galOptions['gallery_type'] == 30) echo 'selected=selected'; ?>>Recent Images</option>
 						<option value="40" <?php if($galOptions['gallery_type'] == 40) echo 'selected=selected'; ?>>Tags Gallery</option>
+						
+						<option value="70" <?php if($galOptions['gallery_type'] == 70) echo 'selected=selected'; ?>>User Favorites</option>
+						
+						<option value="71" <?php if($galOptions['gallery_type'] == 71) echo 'selected=selected'; ?>>Most Favorited</option>
 						
 						<option value="99" <?php if($galOptions['gallery_type'] == 99) echo 'selected=selected'; ?>>Highest Ranked</option>
 					</select>
@@ -1373,6 +1391,8 @@ if($psOptions['use_customform']){ ?>
 						?>
 						<option value="3" <?php if($psOptions['sort_field'] == 3) echo 'selected=selected'; ?>>User ID</option>
 						<option value="4" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating (Descending = high->low)</option>
+						
+						<option value="5" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Favorite Count (times favorited)</option>
 					</select>
 					 <a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_field' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 					
@@ -1469,6 +1489,34 @@ if($psOptions['use_customform']){ ?>
 			</tr>
 			
 			<tr>
+				<th>Favorites:</th>
+				<td>
+					<select name="ps_favorites">
+						<option value="0" <?php if(!$psOptions['favorites']) echo 'selected=selected'; ?>>none</option>
+						<option value="1" <?php if($psOptions['favorites'] ==1) echo 'selected=selected'; ?>>Top-left</option>
+						<option value="2" <?php if($psOptions['favorites'] ==2) echo 'selected=selected'; ?>>Top-right</option>
+						<option value="3" <?php if($psOptions['favorites'] ==3) echo 'selected=selected'; ?>>Bottom-left</option>
+						<option value="4" <?php if($psOptions['favorites'] ==4) echo 'selected=selected'; ?>>Bottom-right</option>
+						<option value="5" <?php if($psOptions['favorites'] ==5) echo 'selected=selected'; ?>>Left of Rating</option>
+					</select> Allow users to favorite images
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Favorites Page:</th>
+				<td>
+				<?php $args = array(
+    'selected'         => (int)$psOptions['favorites_page'],
+    'echo'             => 1,
+    'name'             => 'ps_favorites_page',
+    'show_option_none' => 'none' ); 
+    				wp_dropdown_pages( $args );
+    			?>
+				 Page to display logged in user's favorites. Use template tag photosmash_favlink({before}, {after}); to show link for logged in users.  Before and after are optional html.  Example: photosmash_favlink("&lt;li&gt;", "&lt;/li&gt;"); 
+				</td>
+			</tr>
+			
+			<tr>
 				<th>Default rating type:</th>
 				<td>
 					<select name="ps_poll_id">
@@ -1500,6 +1548,21 @@ if($psOptions['use_customform']){ ?>
 				</td>
 			</tr>
 			
+			<tr>
+				<th>Photo tags Page Title:</th>
+				<td>
+					<input type='text' name="ps_tag_label" value='<?php echo esc_attr($psOptions['tag_label']);?>'/>	will default to 'Photo tags'
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Photo tags URL Slug:</th>
+				<td>
+					<input type='text' name="ps_tag_slug" value='<?php echo esc_attr($psOptions['tag_slug']);?>'/>
+					will default to 'photo-tag'
+				</td>
+			</tr>		
+
 		</table>
 	</div>
 	<div id='bwbps_uploading'>
@@ -2197,8 +2260,8 @@ if($psOptions['use_customform']){ ?>
 				<a href='post.php?action=edit&post="
 				. $image->post_id 
 				. "' title='Edit related post.' class='ps-modbutton'>edit</a> &nbsp; 
-				<a href='/?p="
-				. $image->post_id
+				<a href='"
+				. get_permalink( $image->post_id )
 				. "' title='View related post.' class='ps-modbutton' target='_blank'>view</a>";
 				
 				if( $image->post_status == 'publish' ){

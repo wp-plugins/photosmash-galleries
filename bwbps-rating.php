@@ -323,6 +323,54 @@ class BWBPS_Rating{
 		return $ret;
 	
 	}
+	
+	
+	/*
+	 * GET Favorites HTML Block
+	 * Returns the favorites Block
+	 *
+	 * @params $o_rating - an array that includes entity, gallery, poll, etc
+	 * @params $status - is either the status of "already voted" or the Ratings Form
+	*/
+	function getFavoritesHTML($layout, $favpos) {
+		
+		global $bwbPS;
+		
+		$favlink = "<a class='bwbps-fav-{img} bwbps-fav-{favstate} bwbps-fav-link' href='javascript: void(0);' onclick='bwbpsSaveFavorite({img}, \"$this->rating_nonce\"); return false;' title='Click to favorite. {favcnt} favorites so far.'>fav</a>";
+		if($layout){
+			$f = $favlink;
+		} else {
+			switch ((int)$favpos){
+				
+					case 1 :
+						$favpos = "top-left";
+						break;
+					case 2 :
+						$favpos = "top-right";
+						break;
+					case 3 :
+						$favpos = "bottom-left";
+						break;
+						
+					case 4 :
+						$favpos = "bottom-right";
+						break;
+						
+					case 5 :
+						$favpos = "top-midright";
+						break;
+					default :
+						$favpos = "top-left";
+						break;
+			}
+			
+			
+			$f = "<div id='psfav_{gal}_{img}' class='bwbps-fav-container bwbps-$favpos'>$favlink</div>";
+		}
+		return $f;
+	}
+
+	
 
 }
 

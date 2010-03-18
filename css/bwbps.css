@@ -159,6 +159,70 @@ div.bwbps_pag_2{
 
 }
 
+.bwbps-top-left {
+	position: absolute;
+	left: 2px;
+	top: 2px;
+}
+
+.bwbps-top-right {
+	position: absolute;
+	right: 2px;
+	top: 2px;
+}
+
+.bwbps-top-midright {
+	position: absolute;
+	right: 94px;
+	top: 2px;
+}
+
+.bwbps-bottom-left {
+	position: absolute;
+	left: 2px;
+	bottom: 2px;
+}
+
+.bwbps-bottom-right {
+	position: absolute;
+	right: 2px;
+	bottom: 2px;
+}
+
+.bwbps-fav-container {
+	z-index: 50;
+	width: 18px;
+}
+
+a.bwbps-fav-link {
+	display:block;
+    height:22px;
+    text-indent: -9999px !important;
+    width:18px;
+    outline: none;
+}
+
+a.bwbps-fav-0 {
+	background:transparent url(images/star0.png) no-repeat;
+}
+
+a.bwbps-fav-0:hover {
+	background:transparent url(images/star1.png) no-repeat;
+}
+
+.bwbps-fav-1 {
+	background:transparent url(images/star1.png) no-repeat;
+}
+
+
+
+.bwbps-star, .bwbps-star a {
+-moz-background-clip:border;
+-moz-background-inline-policy:continuous;
+-moz-background-origin:padding;
+background:transparent url(images/ps_ratings.png) no-repeat scroll 0 0;
+}
+
 
 .ps-submit input, .ps-submit {
 	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;

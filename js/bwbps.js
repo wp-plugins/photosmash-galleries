@@ -509,6 +509,64 @@ function bwbpsResizeSuccess(data, image_id, multiimages){
 }
 
 
+// User Favorites Image
+function bwbpsSaveFavorite(image_id, fav_nonce){
+
+	var _data = {};
+	
+	_data['action'] = 'favoriteimage';
+	
+	_data['image_id'] = image_id;
+	
+	_data['_wpnonce'] = fav_nonce;
+		
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	if(jQuery(".bwbps-fav-" + image_id).hasClass('bwbps-fav-0'))
+	{
+		jQuery(".bwbps-fav-" + image_id).removeClass('bwbps-fav-0');
+		jQuery(".bwbps-fav-" + image_id).addClass('bwbps-fav-1');
+	} else {
+		jQuery(".bwbps-fav-" + image_id).removeClass('bwbps-fav-1');
+		jQuery(".bwbps-fav-" + image_id).addClass('bwbps-fav-0');
+	}
+	
+	$j.ajax({
+		type: 'POST',
+		url: bwbpsAjaxRateImage,
+		data : _data,
+		dataType: 'json',
+		success: function(data) {
+			bwbpsFavoriteSuccess(data, image_id);
+		}
+	});
+	
+	return false;
+
+}
+
+function bwbpsFavoriteSuccess(data, image_id){
+	if(data == -1){
+		alert('Security failed: nonce.');
+		return;
+	}
+	
+	if(data.status == 1)
+	{
+		if(jQuery(".bwbps-fav-" + image_id).hasClass('bwbps-fav-0')){
+			jQuery(".bwbps-fav-" + image_id).removeClass('bwbps-fav-0');
+			jQuery(".bwbps-fav-" + image_id).addClass('bwbps-fav-1');
+		}
+	} else {
+		if(jQuery(".bwbps-fav-" + image_id).hasClass('bwbps-fav-1')){
+			jQuery(".bwbps-fav-" + image_id).removeClass('bwbps-fav-1');
+			jQuery(".bwbps-fav-" + image_id).addClass('bwbps-fav-0');
+		}
+	}
+}
+
 
 // Upload Image by Ajax
 function bwbpsAjaxLoadImage(myForm){
@@ -649,7 +707,7 @@ function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 	bwbpsUploadStatus = true;
 	if (statusText == 'success') {
 		if(data == -1){
-				alert('nonce');
+				alert('security failure: nonce');
 			//The nonce	 check failed
 			$j('#' + form_pfx + 'bwbps_message').html("<span class='error'>Upload failed due to invalid authorization.  Please reload this page and try again.</span>");
 			

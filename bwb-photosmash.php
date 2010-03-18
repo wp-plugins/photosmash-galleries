@@ -3,13 +3,13 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.5.07
+Version: 0.5.08
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
  
 /** 
- * Copyright 2009-2010  Byron W Bennett (email: bwbnet@gmail.com)
+ * Copyright 2009  Byron W Bennett (email: bwbnet@gmail.com)
  *
  * LICENSE: GPL
  *
@@ -34,13 +34,13 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.5.07');
-define('PHOTOSMASHEXTVERSION', '0.2.01');
+define('PHOTOSMASHVERSION', '0.5.08');
+define('PHOTOSMASHEXTVERSION', '0.2.02');
 
 
 //Database Verifications
-define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_galleries');
-define('PHOTOSMASHVERIFYFIELD', 'mini_width');
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_favorites');
+define('PHOTOSMASHVERIFYFIELD', 'favorite_id');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -48,6 +48,7 @@ define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
 define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
 define("PSRATINGSTABLE", $wpdb->prefix."bwbps_imageratings");
 define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
+define("PSFAVORITESTABLE", $wpdb->prefix.'bwbps_favorites');
 define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
 define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
 
@@ -374,6 +375,7 @@ class BWB_PhotoSmash{
 				'contrib_gal_on' => 0,
 				'suppress_contrib_posts' => 0,
 				'poll_id' => 0,
+				'favorites' => 0,
 				'rating_position' => 0,
 				'rating_allow_anon' => 0,
 				'mod_send_msg' => 0,
@@ -761,6 +763,8 @@ function shortCodeGallery($atts, $content=null){
 			'images' => 0,
 			'thumb_height' => 0,
 			'thumb_width' => 0,
+			'any_height' => 0,
+			'any_width' => 0,
 			'no_signin_msg' => false,
 			'where_gallery' => false, // This is used with Random/Recent Galleries to limit selection to a single gallery
 			'create_post' => false,	// Give a Custom Layout name to turn on creating new posts with PExt
@@ -858,6 +862,33 @@ function shortCodeGallery($atts, $content=null){
 				$galparms['gallery_type'] = 40;	
 				
 				break;
+			
+			case 'favorites' :
+				$galparms['gallery_type'] = 70;	
+				$no_form = true;
+				
+				break;
+				
+			case 70 :
+				$galparms['gallery_type'] = 70;	
+				$no_form = true;
+				
+				break;
+				
+			case 'most_favorited' :
+				$galparms['gallery_type'] = 71;	
+				$galparms['sort_field'] = 5;
+				$galparms['sort_order'] = 1;
+				$no_form = true;
+													
+				break;
+			
+			case 71 :	
+				$galparms['sort_field'] = 5;
+				$galparms['sort_order'] = 1;
+				$no_form = true;
+													
+				break;
 				
 			default :
 			
@@ -927,6 +958,20 @@ function shortCodeGallery($atts, $content=null){
 		if($thumb_width){
 			$g['thumb_width'] = (int)$thumb_width;
 		}
+		
+		if($any_height){
+			$g['thumb_height'] = (int)$any_height;
+			$g['mini_height'] = (int)$any_height;
+			$g['medium_height'] = (int)$any_height;
+		}
+		
+		if($any_width){
+			$g['thumb_width'] = (int)$any_width;
+			$g['mini_width'] = (int)$any_width;
+			$g['medium_width'] = (int)$any_width;
+		}
+		
+		
 				
 		$g['use_thickbox'] = $thickbox;
 		$g['form_visible'] = $form_visible;
@@ -1192,6 +1237,58 @@ function getGallery($g){
 				
 				} else {
 					$gquery['gallery_type'] = 40;
+				}
+				
+				break;
+				
+			case 70 : // User Favorites
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 70",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 70 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'User Favorites';
+				
+				}
+				
+				break;
+				
+			case 71 : // User Favorites
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 71",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 71 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'Most Favorited';
+				
 				}
 				
 				break;
@@ -2303,7 +2400,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	 *
 	 */
 	 function createTaxonomy(){
-	 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __('Photo tags', 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => 'photo-tag' ) ) );	
+	 	$label = $this->psOptions['tag_label'] ? esc_attr($this->psOptions['tag_label']) : "Photo tags";
+	 	$slug = $this->psOptions['tag_slug'] ? $this->psOptions['tag_slug'] : "photo-tag";
+	 	
+	 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );	
 	 }
 	 
 	 /**
@@ -2454,6 +2554,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 
 $bwbPS = new BWB_PhotoSmash();
 
+//Template Tags
 function show_photosmash_gallery($gallery_params = false){
 	echo get_photosmash_gallery($gallery_params);
 }
@@ -2471,6 +2572,35 @@ function get_photosmash_gallery($gallery_params = false){
 	return $bwbPS->shortCodeGallery($atts);
 }
 
+// Used for displaying a link to the Favorites Page (set page in PhotoSmash Settings
+function photosmash_favlink($link_text='Favorite Images', $before='', $after=''){
+
+	echo get_photosmash_favlink($link_text, $before, $after);
+
+}
+
+function get_photosmash_favlink($link_text='Favorite Images', $before='', $after=''){
+	global $current_user;
+	global $bwbPS;
+		
+	$user_id = (int)$current_user->ID;
+				
+	if(current_user_can('level_0') && $user_id){
+		
+		if($bwbPS->psOptions['favorites_page']){
+			$permalink =  get_permalink( (int) $bwbPS->psOptions['favorites_page'] );
+			
+			if($permalink){
+				$ret = $before . "<a title='View your favorite images' href='". $permalink
+					. "'>$link_text</a>" . $after;
+			}
+		}
+		
+	}
+	return $ret;
+}
+
+//Set up the actions!
 add_action('admin_notices', array(&$bwbPS, 'verifyDatabase'));
 
 //Call the Function that will Add the Options Page
