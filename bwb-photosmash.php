@@ -9,7 +9,10 @@ Author URI: http://www.whypad.com/
 */
  
 /** 
- * Copyright 2009  Byron W Bennett (email: bwbnet@gmail.com)
+ * Copyright 2009-2010  Byron W Bennett (email: bwbnet@gmail.com)
+ *
+ * Icons from Silk icon set by http://famfamfam.com/lab/icons/silk/
+ * Help Icon from Crystal SVG at http://kde-look.org/content/show.php?content=8341
  *
  * LICENSE: GPL
  *
@@ -37,6 +40,7 @@ Author URI: http://www.whypad.com/
 define('PHOTOSMASHVERSION', '0.5.08');
 define('PHOTOSMASHEXTVERSION', '0.2.02');
 
+define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
 
 //Database Verifications
 define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_favorites');
@@ -239,9 +243,9 @@ class BWB_PhotoSmash{
 		
 		
 		
-		if($this->psOptions['use_customfields']){
+		//if($this->psOptions['use_customfields']){
 			$this->loadCustomFormOptions();
-		}
+		//}
 		
 		/*	Code for uploading without AJAX...doesn't work
 		*
@@ -262,6 +266,20 @@ class BWB_PhotoSmash{
 		add_filter('the_posts', array(&$this, 'displayTagGallery') );
 
 	}
+	
+	/**
+         * Adds Settings link to plugins panel grid
+    */
+    function add_settings_link($links, $file) {
+        static $this_plugin;
+        if (!$this_plugin) $this_plugin = plugin_basename(__FILE__);
+
+        if ($file == $this_plugin){
+            $settings_link = '<a href="admin.php?page=bwb-photosmash.php">'.__("Settings", "photosmash-galleries").'</a>';
+            array_unshift($links, $settings_link);
+        }
+        return $links;
+    }
 	
 	function loadCustomFormOptions(){
 		$this->stdFieldList = $this->getstdFieldList();
@@ -480,7 +498,7 @@ class BWB_PhotoSmash{
 			add_submenu_page(basename(__FILE__), __('Gallery Settings'), __('Gallery Settings'), 9,  
 			'editPSGallerySettings', array(&$bwbPS, 'loadGallerySettings'));
 			
-			add_submenu_page(basename(__FILE__), __('Database Viewer'), __('Photo Manager'), 9,  
+			add_submenu_page(basename(__FILE__), __('Photo Manager'), __('Photo Manager'), 9,  
 			'managePhotoSmashImages', array(&$bwbPS, 'loadPhotoManager'));
 			
 			add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 9,  
@@ -1659,7 +1677,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	
 	//Add JS libraris
-	function enqueueBWBPS(){		
+	function enqueueBWBPS(){
+	
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-form');
 		wp_enqueue_script('thickbox');
@@ -1673,14 +1692,14 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			, array('jquery'), '1.0');
 		wp_enqueue_script('jquery_starrating');
 		
-		if($this->psOptions['use_customfields']){
+		//if($this->psOptions['use_customfields']){
 			//enqueue jQuery DatePicker
 			wp_register_script('jquery_datepicker'
 				, WP_PLUGIN_URL . '/photosmash-galleries/js/ui.datepicker.js'
 				, array('jquery'), '1.0');
 			wp_enqueue_script('jquery_datepicker');
 		
-		}
+		//}
 	}
 	
 	//Add CSS
@@ -2629,6 +2648,8 @@ add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
 add_shortcode('photosmash', array(&$bwbPS, 'shortCodeGallery'));
 
 add_shortcode('psmash', array(&$bwbPS, 'shortCodes'));
+
+add_filter('plugin_action_links', array(&$bwbPS, 'add_settings_link'), 10, 2 );
 
 if( version_compare($wp_version,"2.8", ">=" ) ){
 	//Load the PhotoSmash Widget

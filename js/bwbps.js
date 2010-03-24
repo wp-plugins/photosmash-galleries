@@ -291,9 +291,9 @@ function bwbpsToggleFileURL(){
 
 function bwbpsToggleCustomData(){
 
-	jQuery(".ps-customflds").toggle();
+	jQuery(".bwbps-custfields").toggle();
 	
-	if( jQuery(".ps-customflds").is(":visible")){
+	if( jQuery(".bwbps-custfields").is(":visible")){
 		bwbpsSaveAdminOptions('togglecustomdata', 'adminoption', 1);
 	} else {
 		bwbpsSaveAdminOptions('togglecustomdata', 'adminoption', 0);
@@ -332,7 +332,7 @@ function bwbpsSaveAdminOptions(action, optname, optval){
 }
 
 //Admin Save Custom Fields
-function bwbpsSaveCustFldsAdmin(image_id){
+function bwbpsSaveCustFldsAdmin(image_id, save_all){
 
 	var i = 0;
 	var _data = {};
@@ -344,7 +344,7 @@ function bwbpsSaveCustFldsAdmin(image_id){
 	_data['image_id'] = image_id;
 	_data['action'] = 'savecustfields';
 	
-	if(!confirm('Do you want to save custom fields?')){ return false;}
+	if(!confirm('Do you want to save changes for image ' + image_id + '?')){ return false;}
 	
 	var _moderate_nonce = jQuery("#_moderate_nonce").val();
 	
@@ -360,31 +360,36 @@ function bwbpsSaveCustFldsAdmin(image_id){
 		data : _data,
 		dataType: 'json',
 		success: function(data) {
-			bwbpsSaveCustSuccess(data, image_id);
+			bwbpsSaveCustSuccess(data, image_id, save_all);
 		}
 	});
 	return false;
-
 }
 
-function bwbpsSaveCustSuccess(data, image_id){
+
+function bwbpsSaveCustSuccess(data, image_id, save_all){
+
+	if(image_id && save_all){
+		bwbpsModerateImage("saveall", image_id);
+		return;
+	}
 	
 	$j('#ps_savemsg').hide();
 	
 	if(data == -1){
 				alert('Failed due to security: invalid nonce');
 			//The nonce	 check failed
-			$j('#psmod_' + imgid).html("fail: security"); 
+			$j('#psmodmsg_' + imgid).html("fail: security"); 
 			return false;
 	 	}
 	 	
 		if( data.status == 'false' || data.status == 0){
 			//Failed for some reason
-			$j('#psmod_' + imgid).html("update: fail"); 
+			$j('#psmodmsg_' + imgid).html("update: fail"); 
 			return false;
 		} else {
 	
-			$j('#ps-customflds-' + image_id).bwbpsFade({start:'#ffff99',
+			$j('#bwbps-img-' + image_id).bwbpsFade({start:'#ffff99',
 				speed : 1000
 				});
 		}
@@ -581,6 +586,7 @@ function bwbpsAjaxLoadImage(myForm){
 	//Show the loader image
 	$j('#' + form_pfx + 'bwbps_result').html('');
 	$j('#' + form_pfx + 'bwbps_message').html('');
+	$j('#' + form_pfx + 'bwbps_previewpost').html('');
 	$j("#" + form_pfx + "bwbps_loading").show();
 	$j("#" + form_pfx + "bwbps_loading").ajaxComplete(function(){
 		$j(this).hide();
@@ -958,6 +964,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 	
 	var sendMsg = jQuery("#ps_mod_send_msg").attr('checked') ? 1 : 0;
 	var modMsg = '';
+	var confirmOn = true;
 	
 	switch (action) {
 		case 'publishpost' :
@@ -972,7 +979,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 		
 		case 'bury' :
 			myaction = 'delete';
-			actiontext = "delete this image (will DELETE Media Library images too...use Remove if you don't want to) ";
+			actiontext = "delete this image (Note: will only 'remove' if more than one record uses image. Will delete images from Media Gallery if 'delete' is used. Use 'remove' to leave Media Gallery images in tact.) ";
 			
 			if( sendMsg && !confirm('Is Rejection Moderation Message correct?\n\n ' + jQuery("#ps_mod_reject_msg").val() )){
 				return;
@@ -1007,13 +1014,21 @@ function bwbpsModerateImage(action, image_id, post_id)
 		case 'savecaption' :
 			myaction = action;
 			actiontext = "save image data ";
+			break;
+			
+		case 'saveall' :
+			myaction = 'savecaption';
+			actiontext = "save image data ";
+			confirmOn = false;
 			break;		
 	
 	}
 		
 	if(!myaction){ alert('Invalid action.'); return false;}
 	
-	if(!confirm('Do you want to ' + actiontext + img_id_text + ')?')){ return false;}
+	if(confirmOn){
+		if(!confirm('Do you want to ' + actiontext + img_id_text + ')?')){ return false;}
+	}
 	
 	var _moderate_nonce = $j("#_moderate_nonce").val();
 	
@@ -1022,7 +1037,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 	var image_tags = "";
 	var file_url = "";
 	var image_seq = "";
-	if(action == 'savecaption'){ 
+	if(myaction == 'savecaption'){ 
 		image_caption = $j('#imgcaption_' + imgid).val(); 
 		image_url = $j('#imgurl_' + imgid).val();
 		image_seq = $j('#imgseq_' + imgid).val();
@@ -1084,7 +1099,8 @@ function bwbpsModerateSuccess(data, imgid)  {
 					
 				default :
 					//this one passed
-					$j('#psmod_' + imgid).html( data.action); 
+					$j('#psmod_' + imgid).html(''); 
+					$j('#psmodmsg_' + imgid).html( data.action); 
 					if(data.deleted == 'deleted'){
 						$j('#psimage_' + imgid).html('');				
 					}

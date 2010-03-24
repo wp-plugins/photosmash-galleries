@@ -188,6 +188,7 @@ class BWBPS_Layout{
 		if(!$image){
 		
 			//Determine if we need to bring back Custom Fields
+			/*
 			if($this->psOptions['use_customfields'] || 
 				$this->psOptions['use_customform'] || $layoutName){
 				
@@ -200,6 +201,9 @@ class BWBPS_Layout{
 			}
 		
 			$images = $this->getGalleryImages($g, $usecustomfields);
+			*/
+			
+			$images = $this->getGalleryImages($g, true);
 			
 		}else{
 		
@@ -895,7 +899,7 @@ class BWBPS_Layout{
 		
 		//Replace Custom Fields with values
 		
-		if($this->psOptions['use_customfields']){
+		//if($this->psOptions['use_customfields']){
 		
 			// Optimizing 	- First go-around, we save matched fields in an array
 			//				- Next go-around, we only search fields that were found
@@ -971,7 +975,7 @@ class BWBPS_Layout{
 				}
 			  }
 		  }
-		}
+		//}
 		
 		return $ret;
 	}
@@ -1769,7 +1773,7 @@ class BWBPS_Layout{
 							if($t->slug == $selected){ $selattr = "selected=selected"; $selmarked=true;}
 							
 							$r .= "<option value='" . esc_attr($t->slug) . "' $selattr>"
-								. $t->name . "</option
+								. $t->name . "</option>
 								";
 							$selattr = "";
 						}

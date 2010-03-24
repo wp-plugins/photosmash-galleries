@@ -31,7 +31,7 @@ class BWBPS_Importer{
 		
 		if(!$this->gallery_id){
 		
-			$this->message = "No gallery selected.";
+			$this->message = "No gallery selected to import the images to.";
 			$this->msgclass = "error";
 			return;
 			
@@ -238,7 +238,7 @@ class BWBPS_Importer{
 		
 		$gal_id = (int)$this->gallery_id;
 		
-		$galleryDDL = $this->getGalleryDDL($gal_id, "Select");
+		$galleryDDL = $this->getGalleryDDL($gal_id, "Select Gallery to Import to");
 		
 		if($gal_id){
 			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$gal_id), ARRAY_A);
@@ -247,15 +247,23 @@ class BWBPS_Importer{
 		
 		$post_id = (int)$_POST['bwbps_post_id'];
 		
+		$start = 0;
+		$limit = 0;
+		if(isset($_POST['bwbpsStartImg'] )){$start = (int)$_POST['bwbpsStartImg'];}
+		if(isset($_POST['bwbpsLimitImg'] )){$limit = (int)$_POST['bwbpsLimitImg'];}
+		
+		if($start > 0){ $start--; }
+		if($limit < 1){ $limit = 50; }
+		
 		if(isset($_POST['showModerationImages']) || isset($_POST['save_bwbPSImages']))
 		{
-			$images = $this->getImages($uploads, $gal_id, $post_id);
+			$images = $this->getImages($uploads, $gal_id, $post_id, $start, $limit);
 		} else {
 			$post_id = -1;
 		}
 		
 		$postDDL = $this->getPostsDDL($post_id, 'bwbps_post_id'); 
-
+		$start++; //set it up for the form below
 		?>
 		
 	<div class=wrap>
@@ -272,33 +280,25 @@ class BWBPS_Importer{
 		<h3>Import Photos from WordPress Media Library</h3>
 		<?php if($this->psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
 		<hr/>
-		<table>
-		<tr><td>&nbsp; Gallery to import images to:</td><td>&nbsp; Filter images on post:</td></tr>
-		<tr >
-			<td style='padding-top:4px;'>
-			<?php 
-				echo $galleryDDL;
-			?>
-			</td>
-			<td style='padding-top:4px;'>
-				<?php
-					echo $postDDL;
-				?> &nbsp;
-				<input type="submit" name="showModerationImages" class="button-primary" value="<?php 
-					_e('Fetch Images', 'bwbPS') ?>" /> 
-				
-			</td>
-		</tr>
-		<tr>
-			<td style='padding-top:10px;' colspan="2">
-				<input type="submit" name="save_bwbPSImages" class="button-primary" value="<?php _e('Add Images', 'bwbPS') ?>" /> 
-				&nbsp; <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(true);'>Select all</a> | <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(false);'>Deselect</a> &nbsp; &nbsp;<span class='ps-hint'>(Click images to select)</span>
-			</td>
-
-		</tr>
-			
-		</table>
+		
+		<div class='tablenav'>
+		Fetch from: <?php echo $postDDL; ?> <input type="submit" name="showModerationImages" class="button-primary" value="<?php _e('Fetch Images', 'bwbPS') ?>" />
+		Show <input type='text' name='bwbpsLimitImg' size=4 value='<?php echo $limit;
+				?>' /> images. Starting at:
+				<input type='text' name='bwbpsStartImg' size=4 value='<?php  echo $start;
+				?>' />
+		</div>
 		<div style='width: 98%;'>
+		<table class='widefat fixed'>
+		<thead><tr><th>
+			<a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(true);'>Select all</a> | <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(false);'>Deselect</a> &nbsp; &nbsp;<span class='ps-hint'>(Click images to select)</span>
+		</th>
+		<th style='text-align: right;'>Gallery: 
+		<?php echo $galleryDDL; ?>
+		 <input type="submit" name="save_bwbPSImages" class="button-primary" value="<?php _e('Add Images', 'bwbPS') ?>" /> 
+		</th>
+		</tr></thead>
+		<tbody><tr><td colspan="2">
 		<?php
 			
 			if($images){
@@ -309,6 +309,8 @@ class BWBPS_Importer{
 			}
 			echo $images;
 	?>
+		</td></tr></tbody>
+		</table>
 		</div>
 	</form>
 
@@ -323,9 +325,9 @@ class BWBPS_Importer{
 <?php
 	}
 	
-	function getImages($uploads, $gal_id, $post_id){
+	function getImages($uploads, $gal_id, $post_id, $start,$limit){
 		
-		$images = $this->getMediaLibImages($gal_id, $post_id);
+		$images = $this->getMediaLibImages($gal_id, $post_id, '',$start,$limit);
 		
 		foreach($images as $img){
 			$i = $this->getImage($img,$uploads);
@@ -360,7 +362,8 @@ class BWBPS_Importer{
 			.PSIMAGESTABLE." ON ".PSIMAGESTABLE.".gallery_id = "
 			.PSGALLERIESTABLE.".gallery_id LEFT OUTER JOIN "
 			.$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = "
-			.$wpdb->prefix."posts.ID  GROUP BY "
+			.$wpdb->prefix."posts.ID WHERE ".PSGALLERIESTABLE
+			.".gallery_type < 10  GROUP BY "
 			.PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
 			.$wpdb->prefix."posts.post_title, ".PSIMAGESTABLE.".gallery_id,"
 			.PSGALLERIESTABLE.".status, "
@@ -431,7 +434,7 @@ class BWBPS_Importer{
 		if($selected_id === 0){
 			$sel = "selected='selected'";
 		}
-		$ret .= "<option value='0' $sel>&lt;Empty post&gt;</option>";
+		$ret .= "<option value='0' $sel>&lt;Unattached Images (no post)&gt;</option>";
 		
 		$posts = $this->getPostsList();
 		
@@ -559,7 +562,7 @@ class BWBPS_Importer{
 	 *	@param $post_id: the post ID to limit the image results to
 	 *	@param $gallery_id: the gallery ID to filter out existing images on
 	*/
-	function getMediaLibImages( $gallery_id=false, $post_id = false, $sql_attach_ids = "" ){
+	function getMediaLibImages( $gallery_id=false, $post_id = false, $sql_attach_ids = "", $start=0, $limit=50 ){
 		
 		global $wpdb;
 		
@@ -579,9 +582,16 @@ class BWBPS_Importer{
 		
 		}
 		
+		if($limit || $start){
+			$start = (int)$start;
+			if((int)$limit == 0){$limit = 50;}
+			
+			$limitsql = ' LIMIT ' . $start . ', ' . $limit;
+		}
+		
 		$sql = "SELECT a.*, b.post_parent, b.post_title FROM " .$wpdb->postmeta . " a LEFT OUTER JOIN " 
 			. $wpdb->posts . " b ON a.post_id = b.ID WHERE a.meta_key = '_wp_attachment_metadata'"
-			. $sql_post . $sql_med_ids . $sql_attach_ids;
+			. $sql_post . $sql_med_ids . $sql_attach_ids . $limitsql;
 			
 			
 		$ret = $wpdb->get_results($sql);

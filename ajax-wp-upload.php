@@ -100,7 +100,7 @@ class BWBPS_AJAXUpload{
 	 *				You should make any tweaks to database fields through the JSON variable before this
 	*/
 	function saveUploadToDBStep($saveCustomFields = true){
-			
+		$saveCustomFields = true;
 		$ret = $this->psUploader->saveImageToDB($this->psUploader->g, $saveCustomFields);
 		
 		return $ret;
@@ -127,7 +127,7 @@ class BWBPS_AJAXUpload{
 	*/
 	function processUpload($fileInputNumber="", $processThumbnail = true, $saveCustomFields = true)
 	{
-		
+		$saveCustomFields = true;
 		//Step 1 -3
 		$this->prepareUploadStep($fileInputNumber);
 		

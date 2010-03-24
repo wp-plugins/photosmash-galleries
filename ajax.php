@@ -536,17 +536,38 @@ class BWBPS_AJAX{
 					"SELECT file_name, thumb_url, medium_url, image_url, wp_attach_id FROM "
 					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid), ARRAY_A);
 				if($row){
-				
-					if( is_file( PSIMAGESPATH.$row['file_name'] )){
-						unlink(PSIMAGESPATH.$row['file_name']);
-					}
 					
-					if( is_file( PSTHUMBSPATH.$row['file_name'] )){
-						unlink(PSTHUMBSPATH.$row['file_name']);
-					}
+					//Check to see if this image exists in multiple records
+					//If so, do not delete the files...just remove this record
+					if($row['thumb_url']){
+						$sql = "SELECT count(thumb_url) FROM " .PSIMAGESTABLE. " WHERE thumb_url = %s ";
+						$imgcnt = $wpdb->get_var($wpdb->prepare( $sql, $row['thumb_url']));
+						
+						if($imgcnt > 1){ $delete_med_lib = false; }
+					} else {
+						$imgcnt = $wpdb->get_var($wpdb->prepare(
+							"SELECT count(file_name) FROM "
+							.PSIMAGESTABLE. " WHERE file_name = %s", $row['file_name']));
+						
+						if($imgcnt > 1){ $delete_med_lib = false; }
+						
+						
+					}	
 					
+					//Delete the image files							
 					if($delete_med_lib){
-					// PhotoSmash now uses the WordPress upload folder structure
+						//Delete the old style files
+						if( is_file( PSIMAGESPATH.$row['file_name'] )){
+							unlink(PSIMAGESPATH.$row['file_name']);
+						}
+						
+						if( is_file( PSTHUMBSPATH.$row['file_name'] )){
+							unlink(PSTHUMBSPATH.$row['file_name']);
+						}
+						
+						
+						//Delete the New Style files (media gallery)
+						//PhotoSmash now uses the WordPress upload folder structure
 						$uploads = wp_upload_dir();
 						
 						if( is_file($uploads['basedir'] . '/' . $row['thumb_url']) ){

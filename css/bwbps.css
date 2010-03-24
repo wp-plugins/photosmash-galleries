@@ -1,4 +1,19 @@
 /* Admin styles */
+
+.bwbps_admintable select, .bwbps_admintable input , .bwbps_admintable textarea{
+	width: 215px !important;
+}
+
+.bwbps_toggle_box{
+	clear:right;
+	cursor:default;
+	float:right;
+	height: 14px;
+	margin:1px 0 0;
+	padding:1px 0 0;
+	width: 14px;
+}
+
 .bwbps_imgbox{
 	float: left;
 	height:140px;

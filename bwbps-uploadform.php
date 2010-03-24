@@ -231,7 +231,7 @@ class BWBPS_UploadForm{
 		
 			$retForm .= '<tr><th>Image Attribution:</th>
 				<td align="left">
-					<input tabindex="50" type="text" name="bwbps_img_attribution" id="' . $g["pfx"] . 'bwbps_img_attribution" class="bwbps_reset" value="'.esc_attr($current_user->display_name).'"  /> Who took this image?';
+					<input tabindex="50" type="text" name="bwbps_img_attribution" id="' . $g["pfx"] . 'bwbps_img_attribution" class="" value="'.esc_attr($current_user->display_name).'"  /> Who took this image?';
 			
 			$retForm .='
 				</td>
@@ -612,7 +612,7 @@ class BWBPS_UploadForm{
 					$value = ' value="'. esc_attr($current_user->display_name) . '"';
 				}
 				$ret = "<input type='text' name='bwbps_img_attribution' tabindex='". $tab_index . "'" 
-					. " id='" . $g["pfx"] . "bwbps_img_attribution' class='bwbps_reset' ' . $value . ' />";
+					. " id='" . $g["pfx"] . "bwbps_img_attribution' class='' " . $value . " />";
 					
 				break;
 			
@@ -1415,7 +1415,7 @@ class BWBPS_UploadForm{
 		$ret .= "<option value='11' ".$sel[11].">BSD (not usually for images)</option>";
 		
 		
-		$ret ="<select tabindex='" . $tab_index . "' id='" . $g["pfx"] . "bwbps_img_license' class='bwbps_reset bwbps_ddl' name='bwbps_img_license'>".$ret."</select>";	
+		$ret ="<select tabindex='" . $tab_index . "' id='" . $g["pfx"] . "bwbps_img_license' class='bwbps_ddl' name='bwbps_img_license'>".$ret."</select>";	
 					
 					
 		return $ret;	

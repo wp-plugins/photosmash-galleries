@@ -900,7 +900,7 @@ class BWBPS_Uploader{
 	function saveCustomFields($image_id){
 		//If USE_CUSTOMFIELDS is set in PS Options, then Save Custom Field data
 		//if($image_id && $this->psOptions['use_customfields']){
-		if($this->psOptions['use_customfields']){
+		//if($this->psOptions['use_customfields']){
 			if(!isset($this->bwbpsCF)){
 				require_once("bwbps-savecustomfields.php");
 			}	
@@ -909,7 +909,7 @@ class BWBPS_Uploader{
 			if(is_array($this->customData) && is_array($this->imageData)){
 				$this->imageData = array_merge($this->imageData, $this->customData);
 			}
-		}	
+		//}	
 	}
 	
 	//Send email alerts for new images
@@ -1148,19 +1148,25 @@ class BWBPS_Uploader{
 			'a' => array( 
 				'href' => array(), 
 				'title' => array(), 
-				'rel' => array()
+				'rel' => array(),
+				'target' => array(),
+				'id'  => array(),
+				'class' => array()
 				),
 			'ul' => array(
 				'id' => array(),
-				'class' => array()
+				'class' => array(),
+				'style' => array()
 				), 
 			'ol' => array(
 				'id' => array(),
-				'class' => array()
+				'class' => array(),
+				'style' => array()
 				),
 			'li' => array(
 				'id' => array(),
-				'class' => array()
+				'class' => array(),
+				'style' => array()
 				), 
 			'abbr' => array(
 				'title' => array()
@@ -1174,11 +1180,17 @@ class BWBPS_Uploader{
 			'b' => array(),
 			'div' => array(
 				'id' => array(),
-				'class' => array()
+				'class' => array(),
+				'style' => array()
 			),
-			'p' => array(),
+			'p' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+				),
 			'br' => array(),
-			'hr' => array()			
+			'hr' => array()
+			
 		);
 		
 		$tags[3] = array();

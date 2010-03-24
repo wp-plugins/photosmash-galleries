@@ -136,11 +136,16 @@ class BWBPS_SaveCustomFields{
 			'a' => array( 
 				'href' => array(), 
 				'title' => array(), 
-				'rel' => array()
+				'rel' => array(),
+				'target' => array(),
+				'id'  => array(),
+				'class' => array(),
+				'style' => array()
 				),
 			'ul' => array(
 				'id' => array(),
-				'class' => array()
+				'class' => array(),
+				'style' => array()
 				), 
 			'ol' => array(
 				'id' => array(),
@@ -167,7 +172,11 @@ class BWBPS_SaveCustomFields{
 				'class' => array(),
 				'style' => array()
 			),
-			'p' => array(),
+			'p' => array(
+				'id' => array(),
+				'class' => array(),
+				'style' => array()
+				),
 			'br' => array(),
 			'hr' => array()
 			
