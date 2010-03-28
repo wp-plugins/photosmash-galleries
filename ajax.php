@@ -126,6 +126,10 @@ class BWBPS_AJAX{
 			case 'togglecustomdata' :
 				$this->toggleAdminOption('bwbps_show_customdata');
 				break;
+				
+			case 'toggleshowfields' :
+				$this->toggleAdminOption('bwbps_show_fields');
+				break;
 			
 			case 'resizeimage' :
 				$this->updateImageSizes();
@@ -539,11 +543,33 @@ class BWBPS_AJAX{
 					
 					//Check to see if this image exists in multiple records
 					//If so, do not delete the files...just remove this record
-					if($row['thumb_url']){
-						$sql = "SELECT count(thumb_url) FROM " .PSIMAGESTABLE. " WHERE thumb_url = %s ";
-						$imgcnt = $wpdb->get_var($wpdb->prepare( $sql, $row['thumb_url']));
+					if($row['thumb_url'] || $row['medium_url'] || $row['image_url'] || $row['mini_url']){
 						
-						if($imgcnt > 1){ $delete_med_lib = false; }
+						if($row['thumb_url']){ 
+							$sqlaa[] = "thumb_url = '" . esc_sql($row['thumb_url']) ."'"; 
+						}
+						
+						if($row['image_url']){ 
+							$sqlaa[] = "image_url = '" . esc_sql($row['image_url']) ."'"; 
+						}
+						
+						if($row['medium_url']){ 
+							$sqlaa[] = "medium_url = '" . esc_sql($row['medium_url']) ."'"; 
+						}
+						
+						if($row['mini_url']){ 
+							$sqlaa[] = "mini_url = '" . esc_sql($row['mini_url']) ."'"; 
+						}
+						
+						if( is_array($sqlaa)){
+							$sql = implode(" AND ", $sqlaa); 
+						
+						
+							$sql = "SELECT image_id FROM " .PSIMAGESTABLE. " WHERE image_id <> $imgid AND " . $sql ;
+							$imgcnt = $wpdb->get_results($wpdb->prepare( $sql, $row['thumb_url']));
+						}
+						
+						if($imgcnt){ $delete_med_lib = 0; }
 					} else {
 						$imgcnt = $wpdb->get_var($wpdb->prepare(
 							"SELECT count(file_name) FROM "
@@ -554,8 +580,11 @@ class BWBPS_AJAX{
 						
 					}	
 					
+					
+					
 					//Delete the image files							
 					if($delete_med_lib){
+						
 						//Delete the old style files
 						if( is_file( PSIMAGESPATH.$row['file_name'] )){
 							unlink(PSIMAGESPATH.$row['file_name']);

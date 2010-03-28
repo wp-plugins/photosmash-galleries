@@ -69,7 +69,7 @@ function bwbpsPrepareImageSelection(psAction){
 		}
 	}
 	
-	if( jQuery('#' + psAction).is(' :visible')){
+	if( !jQuery('#' + psAction).is(' :visible')){
 	
 		jQuery('.ps_clickmsg').show();
 		
@@ -98,8 +98,8 @@ function bwbpsPrepareImageSelection(psAction){
 
 function bwbpsUnPrepareImageSelection(){
 	jQuery('.ps_clickmsg').hide();
-	jQuery('.ps_copy').unbind('click');
 	jQuery('.bwbps-sel').removeClass('bwbps-sel');
+	jQuery('.ps_copy').unbind('click');
 	
 	return false;
 }
@@ -301,6 +301,17 @@ function bwbpsToggleCustomData(){
 
 }
 
+function bwbpsTogglePhotoMgrFields(){
+	jQuery(".bwbps-fields-container").toggle(); 
+	jQuery("#bwbps-fieldtoglinks").toggle();
+	
+	if( jQuery("#bwbps-fieldtoglinks").is(":visible")){
+		bwbpsSaveAdminOptions('toggleshowfields', 'adminoption', 1);
+	} else {
+		bwbpsSaveAdminOptions('toggleshowfields', 'adminoption', 0);
+	}
+}
+
 //Admin Save Admin Options
 function bwbpsSaveAdminOptions(action, optname, optval){
 
@@ -313,10 +324,12 @@ function bwbpsSaveAdminOptions(action, optname, optval){
 	var _moderate_nonce = jQuery("#_moderate_nonce").val();
 	
 	_data['_ajax_nonce'] = _moderate_nonce;
-		
+	
+	/*	
 	try{
 		$j('#ps_savemsg').show();
 	}catch(err){}
+	*/
 	
 	$j.ajax({
 		type: 'POST',
@@ -324,7 +337,7 @@ function bwbpsSaveAdminOptions(action, optname, optval){
 		data : _data,
 		dataType: 'json',
 		success: function() {
-			$j('#ps_savemsg').hide();
+			//$j('#ps_savemsg').hide();
 		}
 	});
 	return false;
@@ -1206,6 +1219,22 @@ function bwbpsMassUpdateGalleries(id){
 		
 			case "checkbox" :
 				val = $j("input[name='" + eleid + "']").attr('checked');
+				switch (eleid){
+					case 'ps_mini_aspect' :
+						if(val){
+							val = 0;
+						} else {
+							val = 1;
+						}
+					default :
+						if(val){
+							val = 1;
+						} else {
+							val = 0;
+						}
+						break;
+				}
+				
 				break;
 		
 			default :

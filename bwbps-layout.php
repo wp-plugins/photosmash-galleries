@@ -2818,6 +2818,7 @@ class BWBPS_Layout{
 	}
 	
 	function getSortbyField($g, $sortorder){
+		global $wpdb;
 		
 		switch ( (int)$g['sort_field'] ){
 				
@@ -2833,6 +2834,15 @@ class BWBPS_Layout{
 			case 3 :	// User IDs
 				$sortby = PSIMAGESTABLE.'.user_id ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
+			
+			case 6 :	// User Name
+				$sortby = $wpdb->users.'.user_nicename ' . $sortorder . ', ' . $wpdb->users.'.user_login ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			
+			case 7 :	// User Login
+				$sortby = $wpdb->users.'.user_login ' . $sortorder . ', ' . $wpdb->users.'.user_nicename ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			
 			case 4 :	// Rating  -  Bayesian Ranking
 				$sortby = 'bwbps_br_rating ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;

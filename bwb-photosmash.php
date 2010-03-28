@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.5.08
+Version: 0.6.00
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -225,7 +225,9 @@ class BWB_PhotoSmash{
 	
 	var $shortCoded;
 	var $stdFieldList;
-	var $cfList;
+	var $cfList;	//Object containing custom fields definitions
+	var $bExcludeDatePicker;	//We walk through the custom fields and if one has DateTime, we make this false
+								//bExcludeDatePicker excludes the jQuery Date Picker plugin
 	
 	var $galleries;
 	
@@ -242,10 +244,7 @@ class BWB_PhotoSmash{
 		$this->psOptions = $this->getPSOptions();
 		
 		
-		
-		//if($this->psOptions['use_customfields']){
-			$this->loadCustomFormOptions();
-		//}
+		$this->loadCustomFormOptions();
 		
 		/*	Code for uploading without AJAX...doesn't work
 		*
@@ -284,6 +283,17 @@ class BWB_PhotoSmash{
 	function loadCustomFormOptions(){
 		$this->stdFieldList = $this->getstdFieldList();
 		$this->cfList = $this->getCustomFields();
+		
+		//Figure out if there are any DateTime custom fields and don't exclude if there are
+		$this->bExcludeDatePicker = true;
+		if($this->cfList){
+			foreach($this->cfList as $cf){
+				if( $cf->type == 5){
+					$this->bExcludeDatePicker = false;
+				}
+			}	
+		}
+		
 	}
 	
 	//Called when plugin is activated
@@ -1692,14 +1702,14 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			, array('jquery'), '1.0');
 		wp_enqueue_script('jquery_starrating');
 		
-		//if($this->psOptions['use_customfields']){
+		if(!$this->bExcludeDatePicker){
 			//enqueue jQuery DatePicker
 			wp_register_script('jquery_datepicker'
 				, WP_PLUGIN_URL . '/photosmash-galleries/js/ui.datepicker.js'
 				, array('jquery'), '1.0');
 			wp_enqueue_script('jquery_datepicker');
 		
-		//}
+		}
 	}
 	
 	//Add CSS

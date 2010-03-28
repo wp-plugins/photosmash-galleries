@@ -41,6 +41,10 @@
 
 }
 
+.ps_clickmsg {
+	color: #ff7700;
+}
+
 ul.bwbps_gallery, ul.bwbps_gallery li
 {
 	list-style: none;

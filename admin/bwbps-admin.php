@@ -284,19 +284,19 @@ class BWBPS_Admin{
 			
 			$ps['max_file_size'] = (int)$_POST['ps_max_file_size'];
 			
-			$ps['mini_aspect'] = (int)$_POST['ps_mini_aspect'];
+			$ps['mini_aspect'] = isset($_POST['ps_mini_aspect']) ? 0 : 1;
 			$ps['mini_width'] = (int)$_POST['ps_mini_width'];
 			$ps['mini_height'] = (int)$_POST['ps_mini_height'];
 
-			$ps['thumb_aspect'] = (int)$_POST['ps_thumb_aspect'];
+			$ps['thumb_aspect'] = isset($_POST['ps_thumb_aspect']) ? 0 : 1;
 			$ps['thumb_width'] = (int)$_POST['ps_thumb_width'];
 			$ps['thumb_height'] = (int)$_POST['ps_thumb_height'];
 			
-			$ps['medium_aspect'] = (int)$_POST['ps_medium_aspect'];
+			$ps['medium_aspect'] = isset($_POST['ps_medium_aspect']) ? 0 : 1;
 			$ps['medium_width'] = (int)$_POST['ps_medium_width'];
 			$ps['medium_height'] = (int)$_POST['ps_medium_height'];
 			
-			$ps['image_aspect'] = (int)$_POST['ps_image_aspect'];
+			$ps['image_aspect'] = isset($_POST['ps_image_aspect']) ? 0 : 1;
 			$ps['image_width'] = (int)$_POST['ps_image_width'];
 			$ps['image_height'] = (int)$_POST['ps_image_height'];
 
@@ -449,19 +449,19 @@ class BWBPS_Admin{
 			$d['img_perpage'] = (int)$_POST['gal_img_perpage'];
 			$d['img_perrow'] = (int)$_POST['gal_img_perrow'];
 			
-			$d['mini_aspect'] = (int)$_POST['gal_mini_aspect'];
+			$d['mini_aspect'] = isset($_POST['gal_mini_aspect']) ? 0 : 1;
 			$d['mini_width'] = (int)$_POST['gal_mini_width'];
 			$d['mini_height'] = (int)$_POST['gal_mini_height'];
 			
-			$d['thumb_aspect'] = (int)$_POST['gal_thumb_aspect'];
+			$d['thumb_aspect'] = isset($_POST['gal_thumb_aspect']) ? 0 : 1;
 			$d['thumb_width'] = (int)$_POST['gal_thumb_width'];
 			$d['thumb_height'] = (int)$_POST['gal_thumb_height'];
 			
-			$d['medium_aspect'] = (int)$_POST['gal_medium_aspect'];
+			$d['medium_aspect'] = isset($_POST['gal_medium_aspect']) ? 0 : 1;
 			$d['medium_width'] = (int)$_POST['gal_medium_width'];
 			$d['medium_height'] = (int)$_POST['gal_medium_height'];
 			
-			$d['image_aspect'] = (int)$_POST['gal_image_aspect'];
+			$d['image_aspect'] = isset($_POST['gal_image_aspect']) ? 0 : 1;
 			$d['image_width'] = (int)$_POST['gal_image_width'];
 			$d['image_height'] = (int)$_POST['gal_image_height'];
 			
@@ -607,7 +607,7 @@ class BWBPS_Admin{
 
 			<li><a href="#bwbps_galleryoptions">Gallery Options</a></li>
 			<li><a href="#bwbps_uploading">Uploading</a></li>
-			<li><a href="#bwbps_thumbnails">Thumbs/Images</a></li>
+			<li><a href="#bwbps_thumbnails">Images</a></li>
 			
 			<?php
 if($psOptions['use_advanced'] ==1){
@@ -712,7 +712,9 @@ if($psOptions['use_advanced'] ==1){
 						*/
 						?>
 						<option value="3" <?php if($galOptions['sort_field'] == 3) echo 'selected=selected'; ?>>User ID</option>
-						<option value="4" <?php if($galOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating (Descending = high->low)</option>
+						<option value="6" <?php if($galOptions['sort_field'] == 6) echo 'selected=selected'; ?>>User Name</option>
+						<option value="7" <?php if($galOptions['sort_field'] == 7) echo 'selected=selected'; ?>>User Login</option>
+						<option value="4" <?php if($galOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating</option>
 					</select>
 					
 					<input type="radio" name="gal_sort_order" value="0" <?php if(!$galOptions['sort_order']) echo 'checked'; ?>>Ascending &nbsp;
@@ -873,47 +875,46 @@ if($psOptions['use_advanced'] ==1){
 </div>
 <div id='bwbps_thumbnails'>
 	<table class="form-table">
+			<tr>
+			<th></th>
+			<td><a style='color: #d54e21 !important; text-decoration: none !important;' href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/sizing-and-resizing-images/'  target='_blank' title='Video tutorial on sizing and resizing images.'>Get Help <img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video - Sizing and Resizing images' /></a> - video tutorial on image sizes.</td>
+			</tr>
 			
 			<tr>
-				<th>Mini image width (px):</th>
+				<th>Mini image size (px):</th>
 				<td>
-					<input type='text' name="gal_mini_width" value='<?php echo (int)$galOptions['mini_width'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Mini image height (px):</th>
-				<td>
-					<input type='text' name="gal_mini_height" value='<?php echo (int)$galOptions['mini_height'];?>'/>
+					<label>Width</label>
+					<input type='text' class='small-text' name="gal_mini_width" value='<?php echo (int)$galOptions['mini_width'];?>'/>
+					<label>Height</label>
+					<input type='text' class='small-text' name="gal_mini_height" value='<?php echo (int)$galOptions['mini_height'];?>'/>
+					
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
-				<th>Mini image style:</th>
+				<th>Mini cropping:</th>
 				<td>
-					<input type="radio" name="gal_mini_aspect" value="0" <?php if(!(int)$galOptions['mini_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_mini_aspect" value="1" <?php if((int)$galOptions['mini_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="checkbox" name="gal_mini_aspect" <?php if(!$galOptions['mini_aspect']) echo 'checked'; ?> /> Crop to exact dimensions
 				</td>
 			</tr>
 	
 						
 			<tr>
-				<th>Thumbnail width (px):</th>
+				<th>Thumbnail size (px):</th>
 				<td>
-					<input type='text' name="gal_thumb_width" value='<?php echo (int)$galOptions['thumb_width'];?>'/>
-				</td>
-			</tr>
-			<tr>
-				<th>Thumbnail height (px):</th>
-				<td>
-					<input type='text' name="gal_thumb_height" value='<?php echo (int)$galOptions['thumb_height'];?>'/>
+					<label>Width</label>
+					<input type='text' class='small-text' name="gal_thumb_width" value='<?php echo (int)$galOptions['thumb_width'];?>'/>
+
+					<label>Height</label>
+					<input type='text' class='small-text' name="gal_thumb_height" value='<?php echo (int)$galOptions['thumb_height'];?>'/>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
-				<th>Thumbnail style:</th>
+				<th>Thumbnail cropping:</th>
 				<td>
-					<input type="radio" name="gal_thumb_aspect" value="0" <?php if(!(int)$galOptions['thumb_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_thumb_aspect" value="1" <?php if((int)$galOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="checkbox" name="gal_thumb_aspect" <?php if(!$galOptions['thumb_aspect']) echo 'checked'; ?> /> Crop to exact dimensions
+					
 				</td>
 			</tr>
 
@@ -921,46 +922,38 @@ if($psOptions['use_advanced'] ==1){
 			
 			
 			<tr>
-				<th>Medium width (px):</th>
+				<th>Medium size (px):</th>
 				<td>
-					<input type='text' name="gal_medium_width" value='<?php echo (int)$galOptions['medium_width'];?>'/>
-				</td>
-			</tr>
-			
-			<tr>
-				<th>Medium height (px):</th>
-				<td>
-					<input type='text' name="gal_medium_height" value='<?php echo (int)$galOptions['medium_height'];?>'/>
+					<label>Width</label>
+					<input type='text' class='small-text' name="gal_medium_width" value='<?php echo (int)$galOptions['medium_width'];?>'/>
+					<label>Height</label>
+					<input type='text' class='small-text' name="gal_medium_height" value='<?php echo (int)$galOptions['medium_height'];?>'/>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
-				<th>Medium style:</th>
+				<th>Medium cropping:</th>
 				<td>
-					<input type="radio" name="gal_medium_aspect" value="0" <?php if(!(int)$galOptions['medium_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_medium_aspect" value="1" <?php if((int)$galOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="checkbox" name="gal_medium_aspect" <?php if(!$galOptions['medium_aspect']) echo 'checked'; ?> /> Crop to exact dimensions
 				</td>
 			</tr>
 			
 			
 			<tr>
-				<th>Max. image width (px):</th>
+				<th>Large size (px):</th>
 				<td>
-					<input type='text' name="gal_image_width" value='<?php echo (int)$galOptions['image_width'];?>'/> 0 will maintain original width
-				</td>
-			</tr>
-			<tr>
-				<th>Max. image height (px):</th>
-				<td>
-					<input type='text' name="gal_image_height" value='<?php echo (int)$galOptions['image_height'];?>'/> 0 will maintain original height
+					<label>Width</label>
+					<input type='text' class='small-text' name="gal_image_width" value='<?php echo (int)$galOptions['image_width'];?>'/> 
+					<label>Height</label>
+					<input type='text' class='small-text' name="gal_image_height" value='<?php echo (int)$galOptions['image_height'];?>'/>
+					<br/>Enter 0 to set no maximum width/height
 				</td>
 			</tr>
 			
 			<tr>
-				<th>Image style:</th>
+				<th>Large cropping:</th>
 				<td>
-					<input type="radio" name="gal_image_aspect" value="0" <?php if(!(int)$galOptions['image_aspect']) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="gal_image_aspect" value="1" <?php if((int)$galOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain aspect ratio
+					<input type="checkbox" name="gal_image_aspect" <?php if(!$galOptions['image_aspect']) echo 'checked'; ?> /> Crop to exact dimensions
 				</td>
 			</tr>
 	</table>
@@ -1384,15 +1377,19 @@ if($psOptions['use_customform']){ ?>
 				<td>
 					<select name="ps_sort_field">
 						<option value="0" <?php if(!$psOptions['sort_field']) echo 'selected=selected'; ?>>When uploaded</option>
-						<?php /*
+						
 						<option value="1" <?php if($psOptions['sort_field'] == 1) echo 'selected=selected'; ?>>Manual sort</option>
+						<?php /*
 						<option value="2" <?php if($psOptions['sort_field'] == 2) echo 'selected=selected'; ?>>Custom field</option>
 						*/
 						?>
 						<option value="3" <?php if($psOptions['sort_field'] == 3) echo 'selected=selected'; ?>>User ID</option>
-						<option value="4" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating (Descending = high->low)</option>
+						<option value="6" <?php if($psOptions['sort_field'] == 6) echo 'selected=selected'; ?>>User Name</option>
+						<option value="7" <?php if($psOptions['sort_field'] == 7) echo 'selected=selected'; ?>>User Login</option>
+						<option value="4" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating</option>
 						
 						<option value="5" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Favorite Count (times favorited)</option>
+						
 					</select>
 					 <a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_field' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 					
@@ -1590,7 +1587,8 @@ if($psOptions['use_customform']){ ?>
 						<option value="1" <?php if($psOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
 						<option value="10" <?php if($psOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
 					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_contrib_role' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
-					<br/>Authors/Contributors and Admins will not need moderation, even if selected below.
+					<br/>Authors and Admins will not need moderation, even if selected below.
+					<br/>Contributors, Subscribers, and "Anybody" will obey your moderation setting.
 				</td>
 			</tr>
 			<tr>
@@ -1598,7 +1596,7 @@ if($psOptions['use_customform']){ ?>
 				<td>
 					<select name="ps_img_status">
 						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Approved</option>
 					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_status' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
@@ -1698,99 +1696,88 @@ if($psOptions['use_customform']){ ?>
 	<div id="bwbps_thumbnails">
 		<table class="form-table">
 		
-			<tr>
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
 				<th>Maximum image files size (bytes):</th>
 				<td>
-					<input type='text' name="ps_max_file_size" value='<?php echo (int)$psOptions['max_file_size'];?>'/> leave at 0 for unlimited - use this for Out of Memory problems - ex. 600000 for 600kB
-				</td>
-			</tr>
-		
-			<tr>
-				<th>Default mini image width (px):</th>
-				<td>
-					<input type='text' name="ps_mini_width" value='<?php echo (int)$psOptions['mini_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' name="ps_max_file_size" value='<?php echo (int)$psOptions['max_file_size'];?>'/> (ex. 600000 for 600kB) leave at 0 for unlimited<br/>Use this for Out of Memory problems during upload/resize
 				</td>
 			</tr>
 			
 			<tr>
-				<th>Default mini image height (px):</th>
+			<th></th>
+			<td><a style='color: #d54e21 !important; text-decoration: none !important;' href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/sizing-and-resizing-images/'  target='_blank' title='Video tutorial on sizing and resizing images.'>Get Help <img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video - Sizing and Resizing images' /></a> - video tutorial on image sizes.</td>
+			</tr>
+			
+			<tr>
+				<th>Default Mini size (px):</th>
 				<td>
-					<input type='text' name="ps_mini_height" value='<?php echo (int)$psOptions['mini_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<label>Width</label>
+					<input type='text' class='small-text' name="ps_mini_width" value='<?php echo (int)$psOptions['mini_width'];?>'/>   <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<label>Height</label>
+					<input type='text' class='small-text' name="ps_mini_height" value='<?php echo (int)$psOptions['mini_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
-				<th>Default mini image style:</th>
+				<th>Mini cropping:</th>
 				<td>
-					<input type="radio" name="ps_mini_aspect" value="0" <?php if((int)$psOptions['mini_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_mini_aspect" value="1" <?php if((int)$psOptions['mini_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+					<input type="checkbox" name="ps_mini_aspect" <?php if(!$psOptions['mini_aspect']) echo 'checked'; ?> />  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
 				</td>
 			</tr>
-			
+	
 						
 			<tr>
-				<th>Default thumb width (px):</th>
+				<th>Default Thumbnail size (px):</th>
 				<td>
-					<input type='text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
-				</td>
-			</tr>
-			
-			<tr>
-				<th>Default thumb height (px):</th>
-				<td>
-					<input type='text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
-				</td>
-			</tr>
-			
-			<tr style='border-bottom: 1px solid #f0f0f0;'>
-				<th>Default thumb style:</th>
-				<td>
-					<input type="radio" name="ps_thumb_aspect" value="0" <?php if((int)$psOptions['thumb_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_thumb_aspect" value="1" <?php if((int)$psOptions['thumb_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
-				</td>
-			</tr>
-						
-			<tr>
-				<th>Default medium width (px):</th>
-				<td>
-					<input type='text' name="ps_medium_width" value='<?php echo (int)$psOptions['medium_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
-				</td>
-			</tr>
-			
-			<tr>
-				<th>Default medium height (px):</th>
-				<td>
-					<input type='text' name="ps_medium_height" value='<?php echo (int)$psOptions['medium_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<label>Width</label>
+					<input type='text' class='small-text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+
+					<label>Height</label>
+					<input type='text' class='small-text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
-				<th>Default medium style:</th>
+				<th>Thumbnail cropping:</th>
 				<td>
-					<input type="radio" name="ps_medium_aspect" value="0" <?php if((int)$psOptions['medium_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_medium_aspect" value="1" <?php if((int)$psOptions['medium_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+					<input type="checkbox" name="ps_thumb_aspect" <?php if(!$psOptions['thumb_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
+					
+				</td>
+			</tr>		
+			
+			<tr>
+				<th>Default Medium size (px):</th>
+				<td>
+					<label>Width</label>
+					<input type='text' class='small-text' name="ps_medium_width" value='<?php echo (int)$psOptions['medium_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<label>Height</label>
+					<input type='text' class='small-text' name="ps_medium_height" value='<?php echo (int)$psOptions['medium_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+				</td>
+			</tr>
+			
+			<tr style='border-bottom: 1px solid #f0f0f0;'>
+				<th>Medium cropping:</th>
+				<td>
+					<input type="checkbox" name="ps_medium_aspect" <?php if(!$psOptions['medium_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
+				</td>
+			</tr>
+			
+			
+			<tr>
+				<th>Default Large size (px):</th>
+				<td>
+					<label>Width</label>
+					<input type='text' class='small-text' name="ps_image_width" value='<?php echo (int)$psOptions['image_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<label>Height</label>
+					<input type='text' class='small-text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<br/>Enter 0 to set no maximum width/height
 				</td>
 			</tr>
 			
 			<tr>
-				<th>Default max image width (px):</th>
+				<th>Large cropping:</th>
 				<td>
-					<input type='text' name="ps_image_width" value='<?php echo (int)$psOptions['image_width'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 0 will maintain original width
-				</td>
-			</tr>
-			<tr>
-				<th>Default max image height (px):</th>
-				<td>
-					<input type='text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 0 will maintain original height
-				</td>
-			</tr>
-			
-			<tr>
-				<th>Default image style:</th>
-				<td>
-					<input type="radio" name="ps_image_aspect" value="0" <?php if((int)$psOptions['image_aspect'] == 0) echo 'checked'; ?>> Resize &amp; Crop<br/>
-					<input type="radio" name="ps_image_aspect" value="1" <?php if((int)$psOptions['image_aspect'] == 1) echo 'checked'; ?>> Resize &amp; Maintain Aspect
-					<br/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+					<input type="checkbox" name="ps_image_aspect" <?php if(!$psOptions['image_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
 				</td>
 			</tr>
 		</table>
@@ -2036,22 +2023,19 @@ if($psOptions['use_customform']){ ?>
 			&nbsp;<input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') 
 				?>" />	
 		
-		<div style='margin: 0; padding: 0;'>
-			Show <input type='text' name='bwbpsLimitImg' size=5 value='<?php echo $limit;
-				?>' /> images.  Starting at image:
-				<input type='text' name='bwbpsStartImg' size=5 value='<?php  echo $start;
+		
+			Show: <input type='text' name='bwbpsLimitImg' size=4 value='<?php echo $limit;
+				?>' /> |  Start: <input type='text' name='bwbpsStartImg' size=4 value='<?php  echo $start;
 				?>' />
-		</div>
-		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'> Toggle <a href='javascript: void(0);' onclick='jQuery(".bwbps-fields-container").toggle("slow"); return false;'>Fields</a>: 
-			<a href='javascript: void(0);' onclick='jQuery(".bwbps-stdfields").toggle(); return false;'>Standard</a>,
-			<a href='javascript: void(0);' onclick='bwbpsToggleCustomData(); return false;'>Custom</a>,
-			<a href='javascript: void(0);' onclick='jQuery(".bwbps-metafields").toggle(); return false;'>Meta</a> |  
+		
+		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'> 
 			<a href='javascript: void(0);' onclick='bwbpsToggleFileURL(); return false;'>Video/File URL</a>
-			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle("slow"); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='jQuery("#copymoveimages").toggle("slow"); bwbpsPrepareImageSelection("copymoveimages");  return false;'>Copy/Move Images</a> | <a  href='javascript: void(0);' onclick='jQuery("#resizeimages").toggle("slow"); bwbpsPrepareImageSelection("resizeimages");  return false;'>Resize Images</a> 
+			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle("slow"); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='bwbpsPrepareImageSelection("copymoveimages"); jQuery("#copymoveimages").toggle("slow"); return false;'>Copy/Move Images</a> | <a  href='javascript: void(0);' onclick=' bwbpsPrepareImageSelection("resizeimages"); jQuery("#resizeimages").toggle("slow"); return false;'>Resize Images</a> <a href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/sizing-and-resizing-images/'  target='_blank' title='Video tutorial on sizing and resizing images.'><img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video - Sizing and Resizing images' /></a>
 		</div>
 		</form>	
 		
-		<div id='moderationmessages' style='display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<div id='moderationmessages' style='position: relative; display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<span style='position: absolute; top: 2px; right: 20px;font-size: 10px;'><a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle("slow"); return false;'>hide</a></span>
 		<b>Send message?</b> <input id="ps_mod_send_msg" type="checkbox" name='ps_mod_send_msg' <?php if($psOptions['mod_send_msg'] == 1) echo 'checked'; ?>>
 		<br/>
 		<b>Approve message:</b><br/>
@@ -2061,7 +2045,8 @@ if($psOptions['use_customform']){ ?>
 		<textarea  id="ps_mod_reject_msg" name="ps_mod_reject_msg" cols="60" rows="4"><?php esc_html_e($psOptions['mod_reject_msg']);?></textarea>
 		</div>
 		
-		<div id='copymoveimages' style='display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<div id='copymoveimages' style='position: relative; display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<span style='position: absolute; top: 2px; right: 20px;font-size: 10px;'><a  href='javascript: void(0);' onclick=' bwbpsPrepareImageSelection("copymoveimages"); jQuery("#copymoveimages").toggle("slow"); return false;'>hide</a></span>
 		<span style='font-size: 14px; font-weight: bold; margin:0; padding: 0 0 5px;'>Copy/Move Images to new Gallery:</span> &nbsp; <span>Click images to select.</span>
 		<p style="margin: 2px 0;">
 			<span><a href='javascript: void(0);' onclick='bwbpsCopyMoveSelect(true); return false;'>Select All</a> </span> | 
@@ -2078,8 +2063,10 @@ if($psOptions['use_customform']){ ?>
 		</p>
 		</div>
 		
-		<div id='resizeimages' style='height: 90px; display: none; padding: 5px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<div id='resizeimages' style='position: relative; height: 90px; display: none; padding: 5px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
 		<div style='float: right; background-color: #f0f0f0; padding: 8px; width: 300px; height: 75px;'>
+		<span style='position: absolute; top: 2px; right: 20px;font-size: 10px;'>
+		<a  href='javascript: void(0);' onclick=' bwbpsPrepareImageSelection("resizeimages"); jQuery("#resizeimages").toggle("slow"); return false;'>hide</a></span>
 		<span id='resizestatusmsg'>Resizing status...</span>
 		<span><a class='ps-modbutton' style='display: none;' href='javascript: void(0);' onclick='bwbpsStopResizing = true; jQuery("#bwbpsStopResizing").hide(); return false;' id='bwbpsStopResizing'>&nbsp;Stop&nbsp;</a></span><br/><textarea style='font-size: 11px;' rows="3" cols="36" id='resizeresultmsg'></textarea></div>
 		<span style='font-size: 14px; font-weight: bold; margin:0; padding: 0 0 5px;'>Resize Selected Images:</span> &nbsp; <span>Click images to select.</span>
@@ -2186,6 +2173,18 @@ if($psOptions['use_customform']){ ?>
 		
 		}
 		}
+		
+		if(!(int)get_option('bwbps_show_fileurl')){
+			$showfileurl = "display: none;";
+		}
+			
+		if(!(int)get_option('bwbps_show_customdata')){
+			$showcustomdata = "display: none;";
+		}
+		
+		if(!(int)get_option('bwbps_show_fields')){
+			$showfields = "display: none;";
+		}
 			
 			if(is_array($cfArrayForJS)){
 				$jsfieldarray = implode(',', $cfArrayForJS);
@@ -2194,7 +2193,7 @@ if($psOptions['use_customform']){ ?>
 			if(is_array($cfNamesArrayForJS)){
 				$jsfieldnamearray = implode(',', $cfNamesArrayForJS);
 			}
-		
+					
 			$psTableWrap .= "
 			<script type='text/javascript'>var bwbpsCustomFields = {" . $jsfieldarray . "};
 			var bwbpsCustomFieldNames = [" . $jsfieldnamearray . "];
@@ -2205,7 +2204,10 @@ if($psOptions['use_customform']){ ?>
 			
 			<table class='widefat fixed' cellspacing='0'>
 			<thead><tr>
-				<th class='' scope='col' style='width: 380px;'>Images</th>
+				<th class='' scope='col' style='width: 380px;'>Toggle <a href='javascript: void(0);' onclick='bwbpsTogglePhotoMgrFields(); return false;'>Fields</a><span id='bwbps-fieldtoglinks' style='$showfields'>: &nbsp; 
+			<a href='javascript: void(0);' onclick='jQuery(\".bwbps-stdfields\").toggle(); return false;'>Standard</a>,
+			<a href='javascript: void(0);' onclick='bwbpsToggleCustomData(); return false;'>Custom</a>,
+			<a href='javascript: void(0);' onclick='jQuery(\".bwbps-metafields\").toggle(); return false;'>Meta</a></span> </th>
 				<th class='' scope='col' style='width: 380px;'>Images</th>
 				</tr>
 			</thead>
@@ -2216,13 +2218,8 @@ if($psOptions['use_customform']){ ?>
 			</tfoot>
 			";
 		
-		if(!(int)get_option('bwbps_show_fileurl')){
-			$showfileurl = "display: none;";
-		}
-			
-		if(!(int)get_option('bwbps_show_customdata')){
-			$showcustomdata = "display: none;";
-		}
+		
+		
 		$i=-1;
 		$ialt = 1;
 		foreach($images as $image){
@@ -2262,6 +2259,8 @@ if($psOptions['use_customform']){ ?>
 				// Add the Uploads base URL to the image urls.
 				// This way if the user ever moves the blog, everything might still work ;-) 
 				// set $uploads at top of function...only do it once
+				if(!$image->mini_url){ $image->mini_url = $image->thumb_url; }
+				$image->mini_url = $uploads['baseurl'] . '/' . $image->mini_url;
 				$image->thumb_url = $uploads['baseurl'] . '/' . $image->thumb_url;
 				$image->medium_url = $uploads['baseurl'] . '/' . $image->medium_url;
 				$image->image_url = $uploads['baseurl'] . '/' . $image->image_url;
@@ -2315,7 +2314,7 @@ if($psOptions['use_customform']){ ?>
 				<td class='ps_copy psgal_".$image->gallery_id."' id='psimg_"
 				. $image->image_id."' style='padding-top: 6px;'>
 				<span class='ps_clickmsg' style='display:none;'>Click to select</span>
-				<a class='thickbox' href='"
+				<a class='thickbox' rel='bwbps-mgr' href='"
 				. $image->image_url."' rel='"
 				. $g['img_rel']."' title='".str_replace("'","",$image->image_caption)
 				. "'>
@@ -2356,7 +2355,7 @@ if($psOptions['use_customform']){ ?>
 			} else { $terms = ''; }
 			
 			$psTable .= "
-			<div class='bwbps-fields-container'>								
+			<div class='bwbps-fields-container' style='$showfields'>								
 			<table class='widefat fixed bwbps_admintable' cellspacing=0>
 				<thead><tr>
 					<th class='manage-column' style='width: 30%;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' ><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Set gallery' /></a></th>
@@ -2483,6 +2482,14 @@ if($psOptions['use_customform']){ ?>
 				<tr><td>Image name: </td>
 					<td>"
 				. $image->image_name . "
+				</td></tr>
+				<tr><td>Image url: </td>
+					<td>"
+				. $image->image_url . "
+				</td></tr>
+				<tr><td>Thumb url: </td>
+					<td><a href='$image->mini_url' class='thickbox'>"
+				. $image->thumb_url . "</a>
 				</td></tr>
 				<tr><td>Uploaded by: </td>
 					<td>"

@@ -237,8 +237,8 @@ class BWBPS_Importer{
 		$uploads = wp_upload_dir();
 		
 		$gal_id = (int)$this->gallery_id;
-		
-		$galleryDDL = $this->getGalleryDDL($gal_id, "Select Gallery to Import to");
+
+		$galleryDDL = $this->getGalleryDDL($gal_id, "Select destination Gallery", "", "gal_gallery_id", 15);
 		
 		if($gal_id){
 			$galOptions = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.PSGALLERIESTABLE.' WHERE gallery_id = %d',$gal_id), ARRAY_A);
@@ -283,19 +283,22 @@ class BWBPS_Importer{
 		
 		<div class='tablenav'>
 		Fetch from: <?php echo $postDDL; ?> <input type="submit" name="showModerationImages" class="button-primary" value="<?php _e('Fetch Images', 'bwbPS') ?>" />
-		Show <input type='text' name='bwbpsLimitImg' size=4 value='<?php echo $limit;
-				?>' /> images. Starting at:
+		Show: <input type='text' name='bwbpsLimitImg' size=4 value='<?php echo $limit;
+				?>' /> | Start:
 				<input type='text' name='bwbpsStartImg' size=4 value='<?php  echo $start;
 				?>' />
 		</div>
 		<div style='width: 98%;'>
 		<table class='widefat fixed'>
 		<thead><tr><th>
-			<a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(true);'>Select all</a> | <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(false);'>Deselect</a> &nbsp; &nbsp;<span class='ps-hint'>(Click images to select)</span>
+		<span style='float: left;'>
+			<a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(true);'>Select all</a> | <a href='javascript: void(0);' onclick='bwbpsToggleAllImportImages(false);'>Deselect</a> &nbsp; &nbsp;<span class='ps-hint'>(Click to select)</span>
+		</span>
 		</th>
-		<th style='text-align: right;'>Gallery: 
-		<?php echo $galleryDDL; ?>
-		 <input type="submit" name="save_bwbPSImages" class="button-primary" value="<?php _e('Add Images', 'bwbPS') ?>" /> 
+		<th>
+			<?php echo $galleryDDL; ?>
+			 <input type="submit" name="save_bwbPSImages" class="button-primary" value="<?php _e('Add Images', 'bwbPS') ?>" /> 
+
 		</th>
 		</tr></thead>
 		<tbody><tr><td colspan="2">
@@ -404,8 +407,8 @@ class BWBPS_Importer{
 				$title = $row->post_title;
 			}
 			
-			if(strlen($title ) > 35){
-				$title = substr($title,0,35). "&#8230;";
+			if($length){
+				$title = substr($title,0,$length). "&#8230;";
 			}
 
 			
@@ -446,8 +449,8 @@ class BWBPS_Importer{
 						
 				}else{$sel = "";}
 				
-				if(strlen($row['post_title']) > 35){
-					$title = substr($row['post_title'],0,35). "&#8230;";
+				if(strlen($row['post_title']) > 30){
+					$title = substr($row['post_title'],0,30). "&#8230;";
 				} else {
 					$title = $row['post_title'];
 				}
