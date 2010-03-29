@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.5.08
+Stable tag: 0.6.00
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -87,6 +87,19 @@ You can also exclude the standard css file and include your own through options 
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
+0.6.00 - 3/28/2010
+
+    * Added sort options for User Name and User Login - in PhotoSmash Settings and Gallery Settings.
+    * Added allowable attributes to HTML filtering - in the HTML filtering in Custom Fields Editor, "Allow formatting & links & lists" now permits the following attributes in a href links: id, class, style, and target.
+    * Fixed closing > on option tag in bwbps-layout.php
+    * Major renovation of Photo Manager - new look, with options for hiding fields more effectively. Clicking images now opens in Thickbox and you can scroll through the images. More Meta fields being show.
+    * Save Buttons updated in Photo Manager - Save buttons now save both Standard and Custom Fields.
+    * Deleting images behavior changed - deleting an image will only remove the files if no other image record references any of the files. So, if you copy an image from one gallery to another, and then delete the image from one of the galleries, the files will not be deleted until the other image record is deleted.
+    * Changed Gallery Drop Downs to only show Appropriate galleries - virtual galleries are not shown in the drop downs for copy/move or importing or Photo Manager. They shouldn't have images saved to them, so they shouldn't be used in those cases.
+    * Changed the look of Image Size fields - in PhotoSmash Settings and Gallery Settings, the image size fields are now more like the Media image sizes in WordPress Settings / Media.
+    * Added a video for Sizing and Resizing images - links to the video are included in appropriate places in PhotoSmash admin pages. 
+    * Renovated "Import Photos" page - changed the look. Added image paging.
+
 = 0.5.08 - 3/17/2010 =
 
     * Added "Favorites" for Images - you can now turn on ability for your users to Favorite Images. There are 2 new Gallery Types: one for displaying the logged in user's favorites to them, and the other for displaying the most favorited images (need to set sorting to Descending). There is also a template tag for displaying a link to the page you set for displaying Favorites to users. That page must include a gallery with a shortcode something like: [ photosmash gallery_type='favorites'] (without the space). You can use all of the features of a normal gallery. It will not show an upload form or link. The template tag for displaying the link to your Favorites page is: photosmash_favlink($link_text, $before, $after); You have to set the Page that it will link to in PhotoSmash Settings, near the bottom of the first tab...choose the page from the Drop Down. $link_text, $before, $after are all optional arguments. The $link_text defaults to Favorite Images. Before and After default to empty, but they are useful if you want to enclose in an 'li' tag for placing it in your navigation.
@@ -104,9 +117,7 @@ Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "C
     * Photo Manager enhancement - Resize Image - added ability to resize individual images or multiple images by selecting, creating new size files based on Gallery settings.
     * Photo Manager enhancement - made toggling Custom Field data sticky.
     * Added tag [preview_post] to Custom Form - for PhotoSmash Extend use to show a link to preview newly created post.
-    * Changed bwbps-layout.php so that Caption Styles that link thumbs to Posts works - these particular settings are not ideal unless you use a different layout for posts, which can be accomplished by specifying a separate single_layout in the shortcode: so something like
-[ photosmash layout='main_pagelayout' single_layout='post_pagelayout' ]
-(without the space before photosmash.
+    * Changed bwbps-layout.php so that Caption Styles that link thumbs to Posts works - these particular settings are not ideal unless you use a different layout for posts, which can be accomplished by specifying a separate single_layout in the shortcode: so something like [ photosmash layout='main_pagelayout' single_layout='post_pagelayout' ] (without the space before photosmash.
     * Added Maximum Image Size - in PhotoSmash Settings, go to Images tab. You can set the maximum number of bytes an uploaded image is allowed. This will let you gracefully reject images that are so large that they would cause the Out of Memory error associated with resizing images that are too big. Example: Enter 500000 for a max of 500kB image upload size.
     * Added New Image Size...mini - now, in addition to thumb, medium, and image, you have a 4th image size called mini. Use this in your custom layouts with tags: [mini] for an full blown image tag or [mini_url] for just the URL so you can built your own links and image tags.
     * Added Search field to Extended Navigation for PhotoSmash Extend users - this allows you to add a search field that searches the Image Tags, Image Caption, Image URL, Image Contributor, and Image Attribution.
