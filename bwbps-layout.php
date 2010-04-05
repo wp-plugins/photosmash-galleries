@@ -1463,6 +1463,8 @@ class BWBPS_Layout{
 				break;
 			
 			case '[post_url]' :
+				$ret = '';
+
 				if((int)trim($image['post_id'])){
 					$ret = get_permalink((int)$image['post_id']);
 				} else {
@@ -1472,7 +1474,7 @@ class BWBPS_Layout{
 					
 						//Prevents defaulting the Image URL when no post URL is available.
 						if( !$atts['no_default'] ){
-							$ret = $image['imgurl'];
+							$ret = $image['image_url'];
 						}
 					}
 				}

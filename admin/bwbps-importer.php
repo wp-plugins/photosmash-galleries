@@ -195,6 +195,7 @@ class BWBPS_Importer{
 		$data['thumb_url'] = $imgdata['thumb_url'];
 		$data['medium_url'] = $imgdata['medium_url'];
 		$data['image_url'] = $imgdata['image_url'];
+		$data['mini_url'] = $imgdata['mini_url'];
 		
 		$data['wp_attach_id'] = $imgdata['wp_attach_id'];
 		

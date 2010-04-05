@@ -1050,12 +1050,14 @@ function bwbpsModerateImage(action, image_id, post_id)
 	var image_tags = "";
 	var file_url = "";
 	var image_seq = "";
+	var image_post_id = 0;
 	if(myaction == 'savecaption'){ 
 		image_caption = $j('#imgcaption_' + imgid).val(); 
 		image_url = $j('#imgurl_' + imgid).val();
 		image_seq = $j('#imgseq_' + imgid).val();
 		image_tags = $j('#imgtags_' + imgid).val(); 
 		file_url = $j('#fileurl_' + imgid).val(); 
+		image_post_id  = $j('#image_post_id_' + imgid).val(); 
 	}
 	
 	try{
@@ -1074,6 +1076,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 	   'file_url' : file_url,
 	   'seq' : image_seq,
        'post_id' : postid,
+       'image_post_id' : image_post_id,
 	   'mod_msg' : modMsg,
 	   'send_msg' : sendMsg
        },

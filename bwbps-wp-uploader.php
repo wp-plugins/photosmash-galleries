@@ -594,6 +594,11 @@ class BWBPS_Uploader{
 			$this->saveCustomFields($image_id);
 		}
 		
+		$this->imageData['user_login'] = $current_user->user_login;
+		$this->imageData['display_name'] = $current_user->display_name;
+		$this->imageData['user_nicename'] = $current_user->user_nicename;
+		$this->imageData['user_url'] = $current_user->user_url;
+		
 		//Trigger for up the Upload Alert Email
 		if($image_id){
 			if( $this->psOptions['img_alerts'] == -1 ) {

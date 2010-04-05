@@ -416,6 +416,15 @@ class BWBPS_AJAX{
 			$post_id = (int)$_POST['post_id'];
 			wp_publish_post($post_id);
 			
+			$post_date = get_post_field( 'post_date', $post_id );
+			
+			$post_date_gmt = get_gmt_from_date($post_date);
+			
+			$p['ID'] = $post_id;
+			$p['post_date_gmt'] = $post_date_gmt;
+			
+			wp_update_post($p);
+			
 			$json['action'] = 'published';
 		} else {
 			$json['action'] = 'failed';
@@ -458,14 +467,16 @@ class BWBPS_AJAX{
 		
 			$data['image_caption'] = stripslashes($_POST['image_caption']);
 			$data['url'] = esc_url_raw(stripslashes($_POST['image_url']));
-			$json['image_id'] = (int)$_POST['image_id'];
+			$data['post_id'] = (int)$_POST['image_post_id'];
 			$data['seq'] = (int)$_POST['seq'];
-			$json['seq'] = (int)$_POST['seq'];
-			
 			$data['file_url'] = esc_url_raw(stripslashes($_POST['file_url']));	
 			
+			$where['image_id'] = (int)$_POST['image_id'];
+			
+			$json = $data;
+			$json['image_id'] = $where['image_id'];
 			$json['status']	= $data['file_url'];
-			$where['image_id'] = $json['image_id'];
+			
 			
 			//update now
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where) + 1;
@@ -562,10 +573,11 @@ class BWBPS_AJAX{
 						}
 						
 						if( is_array($sqlaa)){
-							$sql = implode(" AND ", $sqlaa); 
+							$sql = implode(" OR ", $sqlaa); 
 						
 						
-							$sql = "SELECT image_id FROM " .PSIMAGESTABLE. " WHERE image_id <> $imgid AND " . $sql ;
+							$sql = "SELECT image_id FROM " .PSIMAGESTABLE. " WHERE image_id <> $imgid AND (" 
+								. $sql . ")";
 							$imgcnt = $wpdb->get_results($wpdb->prepare( $sql, $row['thumb_url']));
 						}
 						

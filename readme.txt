@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.6.00
+Stable tag: 0.7.00
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -87,7 +87,15 @@ You can also exclude the standard css file and include your own through options 
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
-0.6.00 - 3/28/2010
+= 0.7.00 - 4/4/2010 =
+
+    * Added Drop Down of Galleries to Media Uploader – when you’re adding an image to a Post or in the Add New in the Media Library, you get a drop down list of PhotoSmash Galleries that you can automatically add the images to.
+    * Added Uploading Photos from Photo Manager – uses the built-in WordPress Media Uploader.  So, it only took me until 32,000 downloads and version 0.7, but there you go!  Nicely integrated with WordPress Media Library.  Extends Media Library in ways I haven’t even told you about :P !
+    * Fixed Custom Photo Tag Slug – was defaulting back to the default slug when PhotoSmash was deactivated and reactivated (witnessed in upgrading!)
+    * Fixed the post_date_gmt - when creating new posts through Extend, you can publish them through Photo Manager. There is a bug in wp_publish_post() that does not update the post_date_gmt field, which is used in Feeds.  Added code to update this field in ajax.php when publish posts through Photo Manager.
+
+
+= 0.6.00 - 3/28/2010 =
 
     * Added sort options for User Name and User Login - in PhotoSmash Settings and Gallery Settings.
     * Added allowable attributes to HTML filtering - in the HTML filtering in Custom Fields Editor, "Allow formatting & links & lists" now permits the following attributes in a href links: id, class, style, and target.

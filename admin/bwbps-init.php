@@ -9,12 +9,17 @@ class BWBPS_Init{
 	function BWBPS_Init(){
 		//Create the PhotoSmash Tables if not exists
 		
-		register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __('Photo tags', 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => 'photo-tag' ) ) );	
-	 	
-	 	global $wp_rewrite;
-		$wp_rewrite->flush_rules();
+		$psOptions = get_option($this->adminOptionsName);
 		
-		global $wpdb;
+		$label = $psOptions['tag_label'] ? esc_attr($psOptions['tag_label']) : "Photo tags";
+		 $slug = $psOptions['tag_slug'] ? $psOptions['tag_slug'] : "photo-tag";
+	 	
+		 register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );	
+	 	
+		 	global $wp_rewrite;
+			$wp_rewrite->flush_rules();
+		
+			global $wpdb;
 					
 			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 			

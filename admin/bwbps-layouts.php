@@ -300,6 +300,12 @@ class BWBPS_LayoutsEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[file_name] - <span style='font-size: 9px;'>image's file name</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[favorite] - <span style='font-size: 9px;'>The star for allowing users to favorite an image</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[favorite_cnt] - <span style='font-size: 9px;'>How many times an image has been favorited</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[ps_rating] - <span style='font-size: 9px;'>Show's the rating stars (make sure you've got configured in your gallery)</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_id] - <span style='font-size: 9px;'>image id in database</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[wp_attachment_link] - <span style='font-size: 9px;'>WP attachment page link - from std. WP gallery functionality</span></li>

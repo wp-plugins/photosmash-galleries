@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.6.00
+Version: 0.7.00
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -216,6 +216,7 @@ class BWB_PhotoSmash{
 	
 	var $psAdmin;  //Admin object
 	var $psImporter;	//Importer object
+	var $psImageFunctions; //Image Functions class
 	
 		
 	var $psOptions;
@@ -235,6 +236,7 @@ class BWB_PhotoSmash{
 	
 	var $footerJS = ""; // Load this up with Javascript...PS uses wp_footer hook to put Javascript in footer
 	var $footerReady = "";
+	var $count = 0;
 	
 	//Constructor
 	function BWB_PhotoSmash(){
@@ -1898,6 +1900,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 
 		//Image
 		if($image){
+					
 			if(is_array($this->images)){
 				if(!array_key_exists($image, $this->images)){
 					$this->images[$image] = $this->getImage($image);
@@ -1907,9 +1910,34 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			}
 			
 			$img = $this->images[$image];
+			
 			if($img){
-				$imgtitle = str_replace("'","",$img['image_caption']);
-				$ret = "<img src='".PSIMAGESURL.$img['file_name']."'".$img['imgclass']
+			
+				if( !$img['thumb_url'] ){
+				
+					if( $img['file_name'] ){
+						$img['mini_url'] = PSTHUMBSURL.$img['file_name'];
+						$img['thumb_url'] = PSTHUMBSURL.$img['file_name'];
+						$img['medium_url'] = PSTHUMBSURL.$img['file_name'];
+						$img['image_url'] = PSIMAGESURL.$img['file_name'];
+					}
+				
+				} else {
+					$uploads = wp_upload_dir();
+					// Add the Uploads base URL to the image urls.
+					// This way if the user ever moves the blog, everything might still work ;-) 
+					// set $uploads at top of function...only do it once
+					if(!$img['mini_url']){ $img['mini_url'] = $img['thumb_url']; }
+					$img['mini_url'] = $uploads['baseurl'] . '/' . $img['mini_url'];
+					$img['thumb_url'] = $uploads['baseurl'] . '/' . $img['thumb_url'];
+					$img['medium_url'] = $uploads['baseurl'] . '/' . $img['medium_url'];
+					$img['image_url'] = $uploads['baseurl'] . '/' . $img['image_url'];
+				
+				}
+				
+			
+				$imgtitle = esc_attr($img['image_caption']);
+				$ret = "<img src='".$img['image_url']."' ".$img['imgclass']
 					." alt='".$imgtitle."' />";
 			}
 		}
@@ -1927,18 +1955,43 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			$img = $this->images[$thumbnail];
 			
 			if($img){
+			
+				
+				if( !$img['thumb_url'] ){
+					
+						if( $img['file_name'] ){
+							$img['mini_url'] = PSTHUMBSURL.$img['file_name'];
+							$img['thumb_url'] = PSTHUMBSURL.$img['file_name'];
+							$img['medium_url'] = PSTHUMBSURL.$img['file_name'];
+							$img['image_url'] = PSIMAGESURL.$img['file_name'];
+						}
+					
+				} else {
+					$uploads = wp_upload_dir();
+						// Add the Uploads base URL to the image urls.
+						// This way if the user ever moves the blog, everything might still work ;-) 
+						// set $uploads at top of function...only do it once
+						if(!$img['mini_url']){ $img['mini_url'] = $img['thumb_url']; }
+						$img['mini_url'] = $uploads['baseurl'] . '/' . $img['mini_url'];
+						$img['thumb_url'] = $uploads['baseurl'] . '/' . $img['thumb_url'];
+						$img['medium_url'] = $uploads['baseurl'] . '/' . $img['medium_url'];
+						$img['image_url'] = $uploads['baseurl'] . '/' . $img['image_url'];
+					
+				}
+
+			
 				if($this->psOptions['img_targetnew']){
 					$imagetargblank = " target='_blank' ";
 				}
-				$imgtitle = str_replace("'","",$img['image_caption']);
+				$imgtitle = esc_attr($img['image_caption']);
 				
 				if($img['img_rel']){$imgrel = " rel='".$img['img_rel']."'";} else {$imgrel="";}
 				
-				$imgurl = "<a href='".PSIMAGESURL.$img['file_name']."'"
+				$imgurl = "<a href='".$img['image_url']."'"
 						.$imgrel." title='".$imgtitle."' ".$imagetargblank.">";
 				
 				$ret = $imgurl."
-					<img src='".PSTHUMBSURL.$img['file_name']."'".$img['imgclass']
+					<img src='".$img['thumb_url']."'".$img['imgclass']
 					." alt='".$imgtitle."' /></a>";
 					
 			}
@@ -1958,8 +2011,19 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
 			." ON ".PSIMAGESTABLE.".image_id = "
 			.PSCUSTOMDATATABLE.".image_id ";
-		
+			
 		$custdata = ", ".PSCUSTOMDATATABLE.".* ";
+			
+		if(current_user_can('level_0') && $user_id){
+			$custdata .= ", " . PSFAVORITESTABLE . ".favorite_id ";
+			
+			$favoriteDataJoin = " LEFT OUTER JOIN ".PSFAVORITESTABLE
+				." ON ".PSIMAGESTABLE.".image_id = "
+				.PSFAVORITESTABLE.".image_id "
+				." AND " . PSFAVORITESTABLE . ".user_id = " . $user_id . " ";
+			
+		}
+		
 		
 		//Admins can see all images
 		if(current_user_can('level_10')){
@@ -1975,7 +2039,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 					." LEFT OUTER JOIN ".PSGALLERIESTABLE." ON "
 					.  PSGALLERIESTABLE.".gallery_id = ".PSIMAGESTABLE
 					.".gallery_id ".$custDataJoin. " LEFT OUTER JOIN ".$wpdb->users." ON "
-				.$wpdb->users.".ID = ". PSIMAGESTABLE.".user_id WHERE ".PSIMAGESTABLE
+				.$wpdb->users.".ID = ". PSIMAGESTABLE.".user_id $favoriteDataJoin WHERE ".PSIMAGESTABLE
 					.".image_id = %d", $image_id);
 			
 		} else {
@@ -1992,7 +2056,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 					." LEFT OUTER JOIN ".PSGALLERIESTABLE." ON "
 					.PSGALLERIESTABLE.".gallery_id = ".PSIMAGESTABLE
 					.".gallery_id ". $custDataJoin ." LEFT OUTER JOIN ".$wpdb->users." ON "
-				.$wpdb->users.".ID = ". PSIMAGESTABLE.".user_id WHERE ".PSIMAGESTABLE
+				.$wpdb->users.".ID = ". PSIMAGESTABLE.".user_id $favoriteDataJoin WHERE ".PSIMAGESTABLE
 					.".image_id = %d AND (".PSIMAGESTABLE
 					.".status > 0 OR ".PSIMAGESTABLE
 					.".user_id = '"
@@ -2001,6 +2065,8 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		}
 				
 		$image = $wpdb->get_row($sql, ARRAY_A);
+		
+		if($image && is_array($image)){ $image['image_id'] = $image['psimageID']; }
 				
 		return $image;
 	}
@@ -2454,7 +2520,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	 }
 	 
 	 /*
-	  * Get 
+	  * Filter Media RSS Attributes from Array
 	  */
 	 
 	 function filterMRSSAttsFromArray($atts, $apostrophe=""){
@@ -2573,6 +2639,211 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		return $ret;	
 	}
 	
+	
+	/*		SECTION:  Media Uploader Integration
+	 * 		Media Uploader Integration for Admin -> Photo Manager uploading images
+	 *
+	*/	
+	function mediaUAddGalleryFieldToMediaUploader(){
+		if(isset($_REQUEST['bwbps_galid']) && (int)$_REQUEST['bwbps_galid']){
+		
+			echo "<input type='hidden' id='bwbps_mediau_galid' name='bwbps_mediau_galid' value='" . (int)$_REQUEST['bwbps_galid'] . "' />
+			<input type='hidden' id='bwbps_galid' name='bwbps_galid' value='" . (int)$_REQUEST['bwbps_galid'] . "' />
+			<input type='hidden' name='bwbps_galname' value='" . $_REQUEST['bwbps_galname'] . "' />
+			<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Adding to PhotoSmash: " . $_REQUEST['bwbps_galname'] . "</div>
+			";
+		
+		} else {
+		
+			$gid = isset($_REQUEST['bwbps_mediau_galid']) ? (int)$_REQUEST['bwbps_mediau_galid'] : 0;
+		
+			$galleryDDL = $this->getGalleryDDL($gid, "select gallery", "", "bwbps_mediau_galid", 30, true, true);
+			echo "<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Add image to PhotoSmash Gallery: $galleryDDL</div>";
+		}
+	}
+	
+	function mediaUAddGalleryFieldToFlashUploader(){
+		
+			?>
+			<script type="text/javascript">
+				jQuery(window).load( function() {
+					swfu.settings.upload_start_handler = function(){
+						bwbpsAddGalleryToFlashUploader();
+					}
+				});
+				
+				function bwbpsAddGalleryToFlashUploader(){
+					jQuery('#bwbps_uploaded_images', top.document).show().append('<h4>Flash upload...preview not available.</h4>');
+					var gid = jQuery("#bwbps_mediau_galid_flash").val() + "";
+					if( gid ){
+						swfu.addPostParam('bwbps_mediau_galid', gid);
+						<?php
+						if(isset($_REQUEST['bwbps_galid']) ){
+						?>
+						swfu.addPostParam('bwbps_galid', gid);
+						<?php 
+						}
+						?>
+					}	
+				}
+				
+			</script>
+			<?php
+	
+		if(isset($_REQUEST['bwbps_galid']) && (int)$_REQUEST['bwbps_galid']){
+			
+			$this->count++;
+			
+			echo "
+			<script type='text/javascript'>
+				jQuery(window).load( function() {
+				//Hide the other Media Tabs
+					jQuery('#tab-type_url').hide();
+					jQuery('#tab-library').hide();";
+			
+			//Add Image Preview if available.
+			if(is_array($this->psImageFunctions->added_images)){
+				if($this->psImageFunctions->added_images[0]['notimage'] == true){
+					echo "
+						jQuery('#bwbps_uploaded_images', top.document).show().append('<h4>Upload not an image: " . $this->psImageFunctions->added_images[0]['file_name'] . "</h4>');
+				";	
+				} else {
+					echo "
+						jQuery('#bwbps_uploaded_images', top.document).show().append('<img height=\"80\" width=\"80\"  src=\"" 
+						. $this->psImageFunctions->added_images[0]['thumb_full_url'] 
+						. "\" />');
+						";
+				}
+			}
+			echo "
+				});
+			</script>
+				<input type='hidden' id='bwbps_mediau_galid_flash' name='bwbps_mediau_galid' value='" . (int)$_REQUEST['bwbps_galid'] . "' />
+				<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Adding to PhotoSmash: " . $_REQUEST['bwbps_galname'] . "</div>
+			";
+		
+		} else {
+			$gid = isset($_REQUEST['bwbps_mediau_galid']) ? (int)$_REQUEST['bwbps_mediau_galid'] : 0;
+			$galleryDDL = $this->getGalleryDDL($gid, "select gallery", "", "bwbps_mediau_galid", 30, true, true, "bwbps_mediau_galid_flash");
+			echo "<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Add image(s) to PhotoSmash Gallery: $galleryDDL</div>";
+		}
+	}
+		
+	function mediaUImportAttachmentToGallery($attach){
+	
+		if(isset($_REQUEST['bwbps_mediau_galid']) && (int)$_REQUEST['bwbps_mediau_galid'])		{
+			if(!isset($this->$psImageFunctions)){
+				require_once('admin/image-functions.php');
+				$this->psImageFunctions = new BWBPS_ImageFunc();
+			}
+			
+			$gallery_id = (int)$_REQUEST['bwbps_mediau_galid'];
+			
+			if($gallery_id && (int)$attach){
+				$json = $this->psImageFunctions->addAttachmentToGallery($gallery_id, (int)$attach);
+			}			
+		}
+		return;
+	}
+	
+	
+	function mediaUGetAddedImages(){
+		
+		if(!isset($this->psImageFunctions)){ return ""; }
+		
+		if(is_array($this->psImageFunctions->added_images)){
+			foreach($this->psImageFunctions->added_images as $img){
+				$ret .= '
+					jQuery("#bwbps_uploaded_images", top.document).append("<div style=\'float: left;\'><img src="' 
+						. $img["thumb_full_url"] . '" height="80" width="80" /></div>); 
+					';						
+			}
+		}
+		return $ret;
+	}
+	
+	
+	
+	
+	//Returns markup for a DropDown List of existing Galleries
+	function getGalleryDDL($selectedGallery = 0, $newtag = "New", $idPfx = "", $ddlName= "gal_gallery_id", $length = 0, $showImgCount = true, $exclude_virtual = false, $ddlID=false)
+ 	{
+ 		global $wpdb;
+ 		 
+ 		if($newtag <> 'skipnew' ){
+			$ret = "<option value='0'>&lt;$newtag&gt;</option>";
+		}
+		
+		$query = $this->getGalleriesQuery($exclude_virtual);
+				
+		if(is_array($query)){
+		foreach($query as $row){
+			if($selectedGallery == $row->gallery_id){$sel = "selected='selected'";}else{$sel = "";}
+			
+			if(trim($row->gallery_name) <> ""){$title = $row->gallery_name;} else {
+				$title = $row->post_title;
+			}
+			
+			if($length){
+				$title = substr($title,0,$length). "&#8230;";
+			}
+			
+			if($showImgCount){
+				$title .=  " (".$row->img_cnt." imgs)";
+			}
+			
+			if( !$row->status ){
+				$title .= " - inactive";
+			}
+			
+			$ret .= "<option value='".$row->gallery_id."' ".$sel.">ID: ".$row->gallery_id."-".$title."</option>";
+		}
+		}
+		
+		if( !$ddlID ){ $ddlID = $idPfx . "bwbpsGalleryDDL"; }
+		$ret ="<select id='" . $ddlID . "' name='$ddlName'>".$ret."</select>";		
+		
+		return $ret;
+	}
+	
+	function getGalleriesQuery($exclude = false){
+		global $wpdb;
+		
+		if($exclude){
+			$excludesql = " WHERE ".PSGALLERIESTABLE.".gallery_type < 10 ";
+		}
+		
+		$sql = "SELECT ".PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
+			.$wpdb->prefix."posts.post_title, COUNT("
+			.PSIMAGESTABLE.".image_id) as img_cnt, ".PSGALLERIESTABLE.".status FROM "
+			.PSGALLERIESTABLE." LEFT OUTER JOIN "
+			.PSIMAGESTABLE." ON ".PSIMAGESTABLE.".gallery_id = "
+			.PSGALLERIESTABLE.".gallery_id LEFT OUTER JOIN "
+			.$wpdb->prefix."posts ON ".PSGALLERIESTABLE.".post_id = "
+			.$wpdb->prefix."posts.ID $excludesql GROUP BY "
+			.PSGALLERIESTABLE.".gallery_id, ".PSGALLERIESTABLE.".gallery_name, "
+			.$wpdb->prefix."posts.post_title, ".PSIMAGESTABLE.".gallery_id,"
+			.PSGALLERIESTABLE.".status, "
+			.$wpdb->prefix."posts.ID, ".PSGALLERIESTABLE.".post_id";
+			
+		
+		$exclude = $exclude ? 1 : 0;
+		
+		if(!$this->galleryQuery[$exclude]){
+		
+			$query = $wpdb->get_results($sql);
+			$this->galleryQuery[$exclude] = $query;
+		
+		} else {
+		
+			$query = $this->galleryQuery[$exclude];
+			
+		}
+	
+		return $query;
+	}
+
+	
 } //End of BWB_PhotoSmash Class
 
 
@@ -2637,8 +2908,8 @@ add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));
 
 //Inject Admin Javascript & Styles
 
-add_action('admin_print_scripts', array(&$bwbPS, 'injectAdminJS') );
-add_action('admin_print_styles', array(&$bwbPS, 'injectAdminStyles') );
+add_action('admin_print_scripts', array( &$bwbPS, 'injectAdminJS') );
+add_action('admin_print_styles', array( &$bwbPS, 'injectAdminStyles') );
 
 //Call the INIT function whenever the Plugin is activated
 add_action('activate_photosmash-galleries/bwb-photosmash.php',
@@ -2652,6 +2923,11 @@ add_action( 'init', array(&$bwbPS, 'createTaxonomy'), 0 );
 add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
 
 add_action('wp_footer', array(&$bwbPS, 'injectFooterJavascript'), 100);
+
+//Media Uploader Integration
+add_action('post-html-upload-ui', array(&$bwbPS, 'mediaUAddGalleryFieldToMediaUploader'), 10);
+add_action('post-flash-upload-ui', array(&$bwbPS, 'mediaUAddGalleryFieldToFlashUploader'), 10);
+add_action('add_attachment',array(&$bwbPS, 'mediaUImportAttachmentToGallery'), 100 );
 
 add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
 

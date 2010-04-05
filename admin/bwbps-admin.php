@@ -608,12 +608,6 @@ class BWBPS_Admin{
 			<li><a href="#bwbps_galleryoptions">Gallery Options</a></li>
 			<li><a href="#bwbps_uploading">Uploading</a></li>
 			<li><a href="#bwbps_thumbnails">Images</a></li>
-			
-			<?php
-if($psOptions['use_advanced'] ==1){
-?>
-			<li><a href="#bwbps_advanced">Advanced</a></li>
-<?php } ?>
 
 </ul>
 
@@ -817,6 +811,10 @@ if($psOptions['use_advanced'] ==1){
 </div>
 <div id='bwbps_uploading'>
 	<table class="form-table">
+			<tr>
+				<th>Custom form name:</th>
+				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
+			</tr>
 				<tr>
 				<th>Minimum role to upload photos:</th>
 				<td>
@@ -959,40 +957,7 @@ if($psOptions['use_advanced'] ==1){
 	</table>
 </div>
 
-<?php
-if($psOptions['use_advanced'] ==1){
-?>
-<div id="bwbps_advanced">
-		<table class="form-table">
-			
-			<tr>
-				<th>Custom form name:</th>
-				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
-			</tr>
 
-<?php 
-/*  Not implemented at gallery level
-
-<?php
-if($psOptions['use_customform']){ ?>
-			<tr>
-				<th>Use Custom Form:</th>
-				<td>
-					<input type="checkbox" name="gal_use_customform" <?php if($galOptions['use_customform'] == 1) echo 'checked'; ?>> Enable use of Custom Form in this gallery.
-				</td>
-			</tr>
-<?php } ?>
-			<tr>
-				<th>Use Custom Fields:</th>
-				<td>
-					<input type="checkbox" name="gal_use_customfields" <?php if($galOptions['use_customfields'] == 1) echo 'checked'; ?>> Enables custom fields in the standard form for this gallery.
-				</td>
-			</tr>
-*/
-?>
-		</table>
-</div>
-<?php } ?>
 
 </div>
 <p class="submit">
@@ -1576,6 +1541,15 @@ if($psOptions['use_customform']){ ?>
 					<p><b>Benefits?</b><ol><li>Fixes folder issues some people have had</li><li>Adds images to the WP Media Library...so you can edit them through WP functionality.</li></ol></p>
 				</td>
 			</tr>
+			
+			<tr>
+				<th>Default Form for new Galleries:</th>
+				<td>
+					<?php 
+						echo $this->getCFDDL($psOptions['custom_formid'], "ps_custom_formid");
+					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_custom_formid' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default upload form.  See custom form below
+				</td>
+			</tr>
 		
 		
 			<tr>
@@ -1790,14 +1764,7 @@ if($psOptions['use_customform']){ ?>
 					<input type="checkbox" name="ps_use_advanced" <?php if($psOptions['use_advanced'] == 1) echo 'checked'; ?>> Display advanced features menu items. See advanced features below
 				</td>
 			</tr>
-			<tr>
-				<th>Default Form for new Galleries:</th>
-				<td>
-					<?php 
-						echo $this->getCFDDL($psOptions['custom_formid'], "ps_custom_formid");
-					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_custom_formid' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default upload form.  See custom form below
-				</td>
-			</tr>
+			
 			<tr>
 				<th>Show Custom Fields in Default Form:</th>
 				<td>
@@ -2028,7 +1995,18 @@ if($psOptions['use_customform']){ ?>
 				?>' /> |  Start: <input type='text' name='bwbpsStartImg' size=4 value='<?php  echo $start;
 				?>' />
 		
-		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'> 
+		<div style='margin: 5px 0; padding: 3px 0; background-color: #fff; border-bottom: 2px solid #c0c0c0;'>
+		<?php 
+		
+		if((int)$galleryID){
+		?>		
+		<a title='Upload Images' href='media-upload.php?type=image&bwbps_galid=<?php 
+			echo $galleryID . "&bwbps_galname=" . urlencode($galOptions['gallery_name']);
+		?>&TB_iframe=true&width=640&height=310' class='thickbox' onclick='return false;'><img src='<?php echo BWBPSPLUGINURL; ?>images/add.png' alt='[add icon]' />Add Images</a> | 
+		<?php
+		}
+		
+		?>		
 			<a href='javascript: void(0);' onclick='bwbpsToggleFileURL(); return false;'>Video/File URL</a>
 			| <a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle("slow"); return false;'>Moderation Msgs</a> | <a  href='javascript: void(0);' onclick='bwbpsPrepareImageSelection("copymoveimages"); jQuery("#copymoveimages").toggle("slow"); return false;'>Copy/Move Images</a> | <a  href='javascript: void(0);' onclick=' bwbpsPrepareImageSelection("resizeimages"); jQuery("#resizeimages").toggle("slow"); return false;'>Resize Images</a> <a href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/sizing-and-resizing-images/'  target='_blank' title='Video tutorial on sizing and resizing images.'><img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video - Sizing and Resizing images' /></a>
 		</div>
@@ -2063,8 +2041,8 @@ if($psOptions['use_customform']){ ?>
 		</p>
 		</div>
 		
-		<div id='resizeimages' style='position: relative; height: 90px; display: none; padding: 5px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
-		<div style='float: right; background-color: #f0f0f0; padding: 8px; width: 300px; height: 75px;'>
+		<div id='resizeimages' style='position: relative; height: 100px; display: none; padding: 5px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
+		<div style='float: right; background-color: #f0f0f0; padding: 8px; width: 300px; height: 85px;'>
 		<span style='position: absolute; top: 2px; right: 20px;font-size: 10px;'>
 		<a  href='javascript: void(0);' onclick=' bwbpsPrepareImageSelection("resizeimages"); jQuery("#resizeimages").toggle("slow"); return false;'>hide</a></span>
 		<span id='resizestatusmsg'>Resizing status...</span>
@@ -2078,8 +2056,14 @@ if($psOptions['use_customform']){ ?>
 		
 		</div>
 		
+		<div id='bwbps_uploaded_images' style='display: none; border: 2px solid #cc0000;padding: 5px;'>
+		<h4>Newly Uploaded Images (<a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php
+			echo $galleryID;
+		?>'>refresh</a> page to edit) (Previews don't show for Flash Uploader)</h4>
+		
+		</div>
+		
 		<?php
-			
 			if($result){
 				$nonce = wp_create_nonce( 'bwbps_moderate_images' );
 				echo '
@@ -2274,8 +2258,18 @@ if($psOptions['use_customform']){ ?>
 			
 			$galDDL .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Save to new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Set gallery' /></a>";
 			
+			
+			$galupdate = "<input type='text' id='image_post_id_" 
+						. $image->image_id."' name='image_post_id"
+						. $image->image_id."' value='" . $image->post_id . "' size='4' style='width: 45px !important;' />"; 
+			
 			if((int)$image->post_id){
-				$galupdate = "Post: " . $image->post_id . "
+				
+				$post_link = "<a href='"
+				. get_permalink( $image->post_id )
+				. "' title='View related post.' class='' target='_blank'>post</a> | ";
+				
+				$galupdate .= "
 				<a href='post.php?action=edit&post="
 				. $image->post_id 
 				. "' title='Edit related post.' class='ps-modbutton'>edit</a> &nbsp; 
@@ -2296,7 +2290,7 @@ if($psOptions['use_customform']){ ?>
 				<span class='ps-modmenu' id='psmod_".$image->image_id."'>"
 				.$mod['menu']."</span><span class='ps-modmenu' id='psmodmsg_".$image->image_id."'></span><br/>
 				
-				ID: " . $image->image_id . " | Status: " . ($image->status > 0 ? 'live' : 'mod') . " | Alerted: " . ($image->alerted > 0 ? 'yes' : 'no') . " | Seq: <input type='text' id='imgseq_" 
+				ID: " . $image->image_id . " | By: <em>" . $image->user_login . "</em> | $post_link Seq: <input type='text' id='imgseq_" 
 						. (int)$image->image_id."' name='imgseq"
 						. (int)$image->image_id."' value='"
 						. (int)$image->seq . "' style='width: 45px !important;' /><div class='row-actions'>
@@ -2374,7 +2368,7 @@ if($psOptions['use_customform']){ ?>
 				
 				<tr valign='top'>
 					<td>
-						<span>Related post:</span>
+						<span>Post ID:</span>
 					</td>
 					<td>" .$galupdate. "</td>
 				</tr>
@@ -2988,7 +2982,7 @@ if($psOptions['use_customform']){ ?>
 					. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
 					. ' WHERE '. PSIMAGESTABLE
 					. '.status = -1 OR '. PSIMAGESTABLE
-					. '.alerted IN (-1, 0) ORDER BY '. PSIMAGESTABLE. '.seq ' . $desc . ', '
+					. '.alerted IN (-1, 0) ORDER BY '
 					. PSIMAGESTABLE. '.image_id' . $desc . $limitsql);
 					break;
 					
@@ -3011,7 +3005,7 @@ if($psOptions['use_customform']){ ?>
 					. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
 					. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
 					. ' WHERE '. PSIMAGESTABLE
-					. '.gallery_id = %d ORDER BY '. PSIMAGESTABLE. '.seq ' . $desc . ', '
+					. '.gallery_id = %d ORDER BY '
 					. PSIMAGESTABLE. '.image_id ' . $desc . $limitsql, $gallery_id);			
 			}
 			
