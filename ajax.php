@@ -46,6 +46,7 @@ define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
 define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
 define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
 
+require_once('admin/image-functions.php');
 
 class BWBPS_AJAX{
 	
@@ -53,8 +54,13 @@ class BWBPS_AJAX{
 	var $allowNoImg = false;
 	var $psOptions;
 	
+	var $psImageFunctions; // Image Functions class
+	
 	function BWBPS_AJAX(){
 		$this->psOptions = $this->getPSOptions();
+		
+		$this->psImageFunctions = new BWBPS_ImageFunc();
+		
 		if(isset($_POST['action']) && $_POST['action']){
 			$action = $_POST['action'];
 		} else {
@@ -65,6 +71,11 @@ class BWBPS_AJAX{
 		switch ($action){
 			case 'getmediagalvideos' :
 				$this->getMediaGalleryVideos();
+				break;
+				
+				
+			case 'fetchmeta' :
+				$this->fetchMeta();
 				break;
 				
 			case 'savecustfields' :
@@ -140,6 +151,41 @@ class BWBPS_AJAX{
 		}
 	}
 	
+	function fetchMeta(){
+	
+		if(!current_user_can('level_10')){
+			$json['status'] = 0;
+			$json['message'] = "security failed";
+			echo json_encode($json);
+			return;
+		}
+		
+		$attach_id = (int)$_POST['attach_id'];
+		
+		if(!$attach_id){
+			$json['status'] = 0;
+			$json['message'] = "invalid attachment ID";
+			echo json_encode($json);
+			return;
+		}
+		
+		$json['status'] = 1;
+		$meta = wp_get_attachment_metadata($attach_id);
+		$json['meta'] = serialize($meta['image_meta']);
+		
+		$data['meta_data'] = $json['meta'];
+		
+		if($data['meta_data'] && (int)$_POST['image_id']){
+			$where['image_id'] = (int)$_POST['image_id'];
+			global $wpdb;
+			$wpdb->update(PSIMAGESTABLE, $data, $where);
+		}
+		
+		echo json_encode($json);
+		return;
+	
+	}
+		
 	//Toggle whether the file URL field is visible in Photo Manager
 	function toggleAdminOption($optionname){
 	
@@ -470,6 +516,7 @@ class BWBPS_AJAX{
 			$data['post_id'] = (int)$_POST['image_post_id'];
 			$data['seq'] = (int)$_POST['seq'];
 			$data['file_url'] = esc_url_raw(stripslashes($_POST['file_url']));	
+			$data['meta_data'] = stripslashes($_POST['meta_data']);
 			
 			$where['image_id'] = (int)$_POST['image_id'];
 			
@@ -499,7 +546,8 @@ class BWBPS_AJAX{
 
 	function approveImage(){
 		global $wpdb;
-		if(current_user_can('level_10')){
+
+		if(current_user_can('level_10') && (int)$_POST['image_id']){
 			
 			$json['image_id'] = (int)$_POST['image_id'];
 			
@@ -513,6 +561,8 @@ class BWBPS_AJAX{
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 			$json['action'] = 'approved';
 			$json['deleted'] = '';
+			
+			$this->psImageFunctions->updateGalleryImageCount(0, $json['image_id']);
 								
 			echo json_encode($json);
 			return;
@@ -548,9 +598,12 @@ class BWBPS_AJAX{
 			if($imgid){
 				
 				$row = $wpdb->get_row($wpdb->prepare(
-					"SELECT file_name, thumb_url, medium_url, image_url, wp_attach_id FROM "
+					"SELECT gallery_id, file_name, thumb_url, medium_url, image_url, wp_attach_id FROM "
 					.PSIMAGESTABLE. " WHERE image_id = %d", $imgid), ARRAY_A);
 				if($row){
+					
+					//Get Gallery ID for Image Count Calculation
+					$gallery_id = (int)$row['gallery_id'];
 					
 					//Check to see if this image exists in multiple records
 					//If so, do not delete the files...just remove this record
@@ -676,6 +729,10 @@ class BWBPS_AJAX{
 				$wpdb->query($wpdb->prepare('DELETE FROM '. PSCATEGORIESTABLE
 					.' WHERE image_id = %d', $imgid));
 					
+				
+				$this->psImageFunctions->updateGalleryImageCount($gallery_id);
+					
+					
 				if((int)$row['wp_attach_id'] && $delete_med_lib ){
 				
 					wp_delete_post((int)$row['wp_attach_id']);
@@ -762,6 +819,8 @@ class BWBPS_AJAX{
 				if( !$filename ){ $filename = ""; } else { $filename = " - ".$filename; }
 				$json['action'] = 'deleted'.$filename;
 				$json['deleted'] = 'deleted';
+				
+				$this->psImageFunctions->updateGalleryImageCount(0, $json['image_id']);
 				
 			} else {$json['status'] = 0;}
 		} else {
@@ -952,10 +1011,8 @@ class BWBPS_AJAX{
 			$image_id = (int)$_POST['image_id'];
 			
 			if($image_id){
-			
-				require_once('admin/image-functions.php');
-				
-				$imgFunc = new BWBPS_ImageFunc();
+							
+				$imgFunc = $this->psImageFunctions;
 				
 				$json = $imgFunc->resizeImage($image_id);
 				

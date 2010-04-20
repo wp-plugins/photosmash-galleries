@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.7.00
+Stable tag: 0.7.01
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -69,7 +69,7 @@ Yes...if you assign the minimum role for uploading to 'Anyone'
 
 = How can I upload images to a gallery before adding to a Post? =
 
-You can't.  You can, however, add to an unpublished post and upload images in the Post Preview without having the post published.
+Create your gallery in Gallery Settings. Go to Photo Manager, select and view your gallery.  There will be an Add Images button.
 
 = How do I change the appearance of my galleries? =
 
@@ -86,6 +86,12 @@ You can also exclude the standard css file and include your own through options 
 == Changelog ==
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
+
+= 0.7.01 - 4/19/2010 =
+
+    * Added Update Tag Counts - to Plugin Info page, there is now a button that will update your Photo Tag counts if you start seeing tags that don't have proper counts (they're too big or too small in the tag cloud)
+    * Added Gallery Viewer - in PhotoSmash Settings, you set which page you'd like the Gallery Viewer to show on (first setting under the Defaults tab). You can tweak the look and feel of the Gallery Viewer by adjusting Custom Layout "gallery_viewer" or by copying the code from that layout and creating your own, in which case you'll need to specify your layout by using this shortcode in the Page you want your viewer to appear in: [ photosmash gallery_viewer=true layout='my_custom_layout' image_layout='image_view_layout'] The image_layout there is used for displaying images when they are called by the Photosmash image permalinks. Gallery Viewer doubles as index for your galleries...it only shows galleries that contain images, and it doesn't show virtual galleries. It randomly selects an image from the gallery as the Cover image. You can change this in Gallery Settings. When you click on a gallery from the Gallery Viewer, it will display that gallery on the same page. You can control which layout is used to show the galleries on that page by using the shortcode and adding this attribute: gallery_view_layout='my_custom_layout' When that attribute is present, all galleries displayed on the gallery viewer page will use the layout you specify.
+    * Added Exif Support - pulls in the Exif data from the WordPress attachment record if you're allowing PhotoSmash to add your images to the media library. You can show Exif data in your custom layouts by using tags: [image_meta field='aperture'] The field can be any valid Exif field available in the WP attachment. You can also show a table of Exif data in your custom layouts with the tag: [exif_table] If you want to include blank fields, do: [exif_table show_blank=true] To control what shows on exif_table if no exif data exists, add the attribute: no_exif_msg='No EXIF data available' Or whatever you want the message to say. There is a button beside the Exif field in Photo Manager that will fetch and save the related attachment's Exif.
 
 = 0.7.00 - 4/4/2010 =
 

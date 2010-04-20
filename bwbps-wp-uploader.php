@@ -32,6 +32,8 @@ define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
 define("PSTABLEPREFIX", $wpdb->prefix."bwbps_");
 define("PSTEMPPATH",PSUPLOADPATH."/bwbpstemp/");
 
+require_once('admin/image-functions.php');
+
 class BWBPS_Uploader{
 	var $bwbpsCF;	//var to hold Save Custom Fields Class
 	var $psOptions;	//var for Standard PS Options
@@ -46,6 +48,8 @@ class BWBPS_Uploader{
 	
 	var $file;
 	
+	var $psImageFunctions; // Image Functions class
+	
 	/* 
 	 * Constructor
 	 *
@@ -53,6 +57,8 @@ class BWBPS_Uploader{
 	function BWBPS_Uploader($psOptions, $gallery_id=false){
 		
 		$this->psOptions = $psOptions;
+		
+		$this->psImageFunctions = new BWBPS_ImageFunc();
 		
 		if(!$gallery_id === false){
 			$this->json['gallery_id'] = (int)$gallery_id;
@@ -562,6 +568,12 @@ class BWBPS_Uploader{
 		}
 		$data['updated_by'] = $current_user->ID;
 		$data['created_date'] = date( 'Y-m-d H:i:s');
+		
+		//Meta/Exif
+		$data['meta_data'] = '';
+		$data['geolong'] = 0;
+		$data['geolat'] = 0;
+		
 		$data['seq'] = -1;
 		$data['avg_rating'] = 0;
 		$data['rating_cnt'] = 0;
@@ -607,6 +619,8 @@ class BWBPS_Uploader{
 				update_option('BWBPhotosmashNeedAlert', 1);
 			}
 		}
+		
+		$this->psImageFunctions->updateGalleryImageCount($data['gallery_id']);
 		
 		return $image_id;
 	}
@@ -690,8 +704,11 @@ class BWBPS_Uploader{
 			$attach_data = wp_generate_attachment_metadata( $attach_id, $this->file['file'] );
 			wp_update_attachment_metadata( $attach_id,  $attach_data );
 			
+						
 			// Add the Attachment ID to the PS Image record
-			$data = array( 'wp_attach_id' => $attach_id );
+			$meta = wp_get_attachment_metadata($attach_id);		//Get the Exif data
+			
+			$data = array( 'wp_attach_id' => $attach_id, 'meta_data' => serialize($meta['image_meta']) );
 			$where = array( 'image_id' => $this->json['image_id'] );
 						
 			$wpdb->update( PSIMAGESTABLE, $data, $where );

@@ -52,6 +52,8 @@ class BWBPS_Layout{
 			, 'author'
 			, 'contributor'
 			, 'date_added'
+			, 'meta_data'
+			, 'exif_table'
 			, 'eval'
 			, 'post_id'
 			, 'post_name'
@@ -70,6 +72,12 @@ class BWBPS_Layout{
 			, 'tags_has_all'
 			, 'favorite'
 			, 'favorite_cnt'
+			, 'image_gallery_name'
+			, 'gallery_caption'
+			, 'gallery_caption_escaped'
+			, 'gallery_url'
+			, 'gallery_post_url'
+			, 'gallery_image_count'
 		);
 	}
 	
@@ -874,9 +882,10 @@ class BWBPS_Layout{
 					
 					if( is_array($matches) ){
 						foreach ($matches as $atts){
+							
 							$atts['match_num'] = $m_num;												
 							$replace = $this->getCFFieldHTML("[".$fld."]", $image, $g, $atts);
-								
+									
 							$m = $atts['bwbps_match'];
 							
 							$ret = str_replace($m, $replace, $ret);	
@@ -1394,6 +1403,47 @@ class BWBPS_Layout{
 				$ret = $g['gallery_name'];
 				break;
 				
+			case '[image_gallery_name]' :
+				$ret = esc_attr($image['image_gallery_name']);
+				
+				$len = (int)$atts['length'];
+				if( $len && strlen($ret) > $len) {
+					$ret = substr($ret, 0, $len) . "&#8230;";
+				}
+				
+				break;
+				
+			case '[gallery_caption]' :
+				$ret = $image['gallery_caption'];
+				
+				$len = (int)$atts['length'];
+				if( $len && strlen($ret) > $len) {
+					$ret = substr($ret, 0, $len) . "&#8230;";
+				}
+				
+				break;
+			
+			case '[gallery_caption_escaped]' :
+				$ret = esc_attr($image['gallery_caption']);
+				break;
+				
+			case '[gallery_url]' :
+				$ret = $this->getGalleryURL( (int)$image['gallery_id'] );
+				break;
+			
+			case '[gallery_post_url]' :
+				
+				if((int)$image['gallery_post_id']){
+					$ret = get_permalink( (int)$image['gallery_post_id'] );
+				} else {
+					$ret = $this->getGalleryURL( (int)$image['gallery_id'] );
+				}
+				break;
+			
+			case '[gallery_image_count]' :
+				$ret = (int)$image['gallery_image_count'] ;
+				break;	
+				
 			case '[piclens]' :
 				$ret = $this->getPicLensLink($g, $atts);
 				break;
@@ -1407,35 +1457,42 @@ class BWBPS_Layout{
 				}
 				
 				$ret = $image['image_caption'];
-								
-				if( is_array($atts) && ((int)$atts['length'] || ((int)$atts['nonpost_length'] && !is_single()) ) ){
-					$len = (int)$atts['nonpost_length'] ? (int)$atts['nonpost_length'] :
-						(int)$atts['length'];
-					
-					if( strlen($ret) > $len) {
-					
-						$ret = substr($ret, 0, $len);
-						if($atts['more_link']){
-							$more = $atts['more_link'];
-							if((int)$image['post_id']){
-								$post_perma = get_permalink((int)$image['post_id']);
-							} else {
-								$post_perma = get_permalink((int)$g['post_id']);
-							}
-							if($post_perma){
-								$more = "<a href='".$post_perma."' title='View post'>"
-									.$more."</a>";
-							}
-							$ret .= $more;
-						} else {
-							if($atts['more_text'] || $atts['more']){
-								$ret .= $atts['more_text'] ? $atts['more_text'] : $atts['more'];
-							}
-						}
-
+				
+				//Adjust length if Length is given
+				$len = (int)$atts['length'];
+				if( $len && strlen($ret) > $len) {
+					$ret = substr($ret, 0, $len) . "&#8230;";
+					$blengthadjusted = true;
+				} else {
+					//Adjust length if Non-Post Length is given and this isn't a Post
+					$len = (int)$atts['nonpost_length'];
+					if( $len && strlen($ret) > $len && !is_single() && !is_page() ) {
+						$ret = substr($ret, 0, $len) . "&#8230;";
+						$blengthadjusted = true;
 					}
-									
 				}
+				
+				//Add More Text
+				if($blengthadjusted){
+					if($atts['more_link']){
+						$more = $atts['more_link'];
+						if((int)$image['post_id']){
+							$post_perma = get_permalink((int)$image['post_id']);
+						} else {
+							$post_perma = get_permalink((int)$g['post_id']);
+						}
+						if($post_perma){
+							$more = "<a href='".$post_perma."' title='View post'>"
+								.$more."</a>";
+						}
+						$ret .= $more;
+					} else {
+						if($atts['more_text'] || $atts['more']){
+							$ret .= $atts['more_text'] ? $atts['more_text'] : $atts['more'];
+						}
+					}
+				}
+				
 				break;
 			
 			case '[caption_escaped]' :
@@ -1594,8 +1651,102 @@ class BWBPS_Layout{
 			case '[user_url]' :
 				$ret = "";
 				if($image['user_url'] && $this->validURL($image['user_url'])){
-					$ret =  $image['user_url'];
+					$ret =  esc_url($image['user_url']);
 				}
+				
+				break;
+				
+			case '[meta_data]' :
+				$ret = "";
+				
+				if( $image['meta_data'] && $atts['field']){
+					$meta = unserialize($image['meta_data']);
+				
+					$ret =  stripslashes($meta[$atts['field']]);
+					
+					if($atts['field'] == 'created_timestamp'){
+					
+						$ret = date($this->getDateFormat(4)
+						,$ret);
+					
+					}
+				}
+				
+				break;
+				
+			case '[exif_table]' :	// returns a table of the Exif data...include att show_blank=true if you want to show empty fields
+				$ret = "";
+				
+				if($atts['show_blank']) {
+					if(strtolower($atts['show_blank']) == 'false' || strtolower($atts['show_blank']) == 'no'){
+						$blank = false;
+					} else { 
+						$blank = true;
+					} 
+				}				
+				
+				if( $image['meta_data']){
+					$meta = unserialize($image['meta_data']);
+					
+					if(is_array($meta)){
+					
+						foreach($meta as $key => $val){
+						
+							if($val || $blank){
+							
+								switch($key) {
+									case 'focal_length' :
+										$val .= " mm";
+										break;
+									case 'shutter_speed' :
+										if(floatval($val) >= 1){
+											if(floatval($val) == 1){ $s = ' second'; } else {
+												$s = " seconds"; 
+											}
+											$val .= $s;
+										} else {
+										
+											$v = 1 / (floatval($val));
+											$val = "1/" . $v . " second";
+										
+										}
+										
+										break;
+										
+									case 'created_timestamp' :
+										$val = date('r' ,$val);
+										break;
+									
+									case 'aperture' :
+										$val = "f/" . $val;
+										break;
+									
+									default :
+										break;
+								}
+								
+								$key = str_replace("_", " ", $key);
+							
+								$ret .= "<tr><th>" . ucwords($key) . ": </th><td>" . $val . "</td></tr>";
+							
+							}
+						
+						}
+					
+					
+					}
+				}
+					
+					if($ret){
+						$ret = "<table class='bwbps-meta-table' style='margin: 10px auto !important; text-align: left;'>" . $ret . "</table>";
+					} else {
+					
+						if($atts['no_exif_msg']){
+							$ret = $atts['no_exif_msg'];
+						}
+					
+					}
+				
 				
 				break;
 				
@@ -1603,7 +1754,7 @@ class BWBPS_Layout{
 				$ret = "";
 				
 				if( $image['img_attribution'] ){
-					$ret =  $image['img_attribution'];
+					$ret =  stripslashes($image['img_attribution']);
 				}
 				
 				break;
@@ -1847,6 +1998,14 @@ class BWBPS_Layout{
 		if( !$ret ) { $ret = $atts['if_blank']; }
 		
 		return $ret;
+	}
+	
+	function getGalleryURL( $gallery_id ){
+		
+		$args = array("psmash-gallery" => (int)$gallery_id );
+		
+		return add_query_arg($args);
+	
 	}
 	
 	function getTermObjects($qtags, $select_msg = ""){
@@ -2336,16 +2495,24 @@ class BWBPS_Layout{
 		}
 		
 		$othergals = $this->getPagingForOtherGalleries($pagenum, (int)$g['gallery_id']);
-		
-		if($othergals){ $othergals = "&amp;".$othergals; }
-		
+				
 		$page_numstop = $total_pages;
-		
 		$page_numstart = 1;
+		
+		//TODO Use add_query_arg(array()) to build the links instead!
+		
+		if( (int)$_REQUEST['psmash-gallery'] ){
+			$viewerargs = array( "psmash-gallery" => (int)$_REQUEST['psmash-gallery']);
+		} else {
+			$viewerargs = array();
+		}
 		
 		//Build PREVIOUS link
 		if($page > 3 && $total_pages > 5){
-			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=1".$othergals."'>first</a>";
+			
+			$ptemp = 1;
+			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);
+			$nav[] = "<a href='$urltemp'>first</a>";
 			$frontellip = "&#8230;";
 			
 			
@@ -2373,7 +2540,10 @@ class BWBPS_Layout{
 		}
 		
 		if($page > 1){
-			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($page-1).$othergals."'>&#9668;</a>";
+			
+			$ptemp = $page-1;
+			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
+			$nav[] = "<a href='$urltemp'>&#9668;</a>";
 			
 		}
 		
@@ -2386,10 +2556,11 @@ class BWBPS_Layout{
 				if($page == $page_num){ 
 					$nav[] = "<span>".$page."</span>";
 				}else{
-					$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".$page_num.$othergals."'>".$page_num."</a>";
+					$ptemp = $page_num;
+					$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
+					$nav[] = "<a href='$urltemp'>".$page_num."</a>";
 				}
 			}
-			
 		}
 		
 		if($backellip){
@@ -2398,11 +2569,15 @@ class BWBPS_Layout{
 		
 		//Build NEXT LINK
 		if($page < $total_pages){
-			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($page+1).$othergals."'>&#9658;</a>";
+			$ptemp = $page+1;
+			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
+			$nav[] = "<a href='$urltemp'>&#9658;</a>";
 		}
 		
 		if($total_pages > 5 && $page < ($total_pages - 2)){
-			$nav[] = "<a href='".$url."bwbps_page_".$g['gallery_id']."=".($total_pages).$othergals."'>last</a>";
+			$ptemp = $total_pages;
+			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
+			$nav[] = "<a href='$urltemp'>last</a>";
 		}
 		
 		$snav = "";
@@ -2422,23 +2597,27 @@ class BWBPS_Layout{
 		
 	}
 	
+	function getPagingURLArgs($gallery_id, $page, $viewerargs, $othergals){
+		$urlargs["bwbps_page_".$gallery_id ] = (int)$page;
+		$urlargs = array_merge($viewerargs, $urlargs, $othergals );
+			
+		return add_query_arg($urlargs, $url);
+	}
+	
+	//Get the paging arguments for other galleries on the page
 	function getPagingForOtherGalleries($pagenum, $this_gal_id){
 	
 		if(is_array($pagenum)){
 			foreach( $pagenum as $gal_id => $page ){
-			
 				if( $gal_id <> $this_gal_id ){
-					$gal_pages[] = 'bwbps_page_'.(int)$gal_id.'='.(int)$page;
+					$gal_pages['bwbps_page_'.(int)$gal_id] = (int)$page;
 				}
-			
 			}
 		}
-		
-		if(is_array($gal_pages)){
-			$gp = implode("&amp;",$gal_pages);
+		if(!is_array($gal_pages)){
+			$gal_pages = array();
 		}
-		return $gp;
-	
+		return $gal_pages;
 	}
 	
 	/**
@@ -2498,7 +2677,12 @@ class BWBPS_Layout{
 			. PSGALLERIESTABLE . ".gallery_id " . $custDataJoin;
 			
 		$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id, "
-			. PSGALLERIESTABLE . ".poll_id ";
+			. PSGALLERIESTABLE . ".poll_id, "
+			. PSGALLERIESTABLE 
+			. ".gallery_name AS image_gallery_name, "
+			. PSGALLERIESTABLE . ".caption AS gallery_caption, " 
+			. PSGALLERIESTABLE . ".post_id AS gallery_post_id, " 
+			. PSGALLERIESTABLE . ".img_count AS gallery_image_count ";
 		
 		if(current_user_can('level_0') && $user_id){
 			$gallery_selections .= ", " . PSFAVORITESTABLE . ".favorite_id ";
@@ -2717,6 +2901,23 @@ class BWBPS_Layout{
 				$sortby .= " LIMIT ". (int)$g['limit_images'];
 				
 				break;
+				
+			case 100 : // Gallery Viewer
+				if(!$g['smart_gallery']){
+					$g['smart_gallery'] = true;
+				}
+				
+				$imgids = $this->getGalleryViewerImageIDs($g['gallery_ids'], $g['exclude_galleries']);
+				
+				$sqlSpecialWhere .= " AND " . PSIMAGESTABLE . ".image_id IN (" . $imgids . ") ";
+				
+				$sortby = $this->getSortbyField($g, $sortorder);
+				
+				if((int)$g['limit_images']){
+					$sortby .= " LIMIT ". (int)$g['limit_images'];
+				}
+				
+				break;
 			
 			default :
 			
@@ -2860,6 +3061,91 @@ class BWBPS_Layout{
 		}
 		
 		return $sortby;
+	
+	}
+	
+	/**
+	 * Gallery Viewer - Get the Image IDs for the Gallery Viewer Galleries
+	 *
+	 */
+	function getGalleryViewerImageIDs($galIDs = '', $galExclude = ''){
+		global $wpdb;
+		
+		//Get SQL for WHERE IN gallery IDs
+		if($galIDs){
+			$ag = split(",", $galIDs);
+			if(is_array($ag)){
+				foreach($ag as $gal){
+					if((int)trim($gal)){
+						$gal_a[] = trim($gal);
+					}
+				}
+				if(is_array($gal_a)){
+					$galIDWhere = " AND gallery_id IN (" . implode(",", $gal_a) . ") ";
+				}
+			}
+		}
+		// Get SQL for exlcuded Gallery IDs
+		if($galExclude){
+			unset($ag);
+			unset($gal);
+			unset($gal_a);
+			
+			$ag = split(",", $galIDs);
+			if(is_array($ag)){
+				foreach($ag as $gal){
+					if((int)trim($gal)){
+						$gal_a[] = trim($gal);
+					}
+				}
+				if(is_array($gal_a)){
+					$galExcludeWhere = " AND gallery_id NOT IN (" . implode(",", $gal_a) . ") ";
+				}
+			}
+		}
+		
+		$sql = "SELECT gallery_id, cover_imageid FROM " . PSGALLERIESTABLE . " WHERE img_count > 0 AND status = 1 AND "
+			. " gallery_type < 10 $galIDWhere $galExcludeWhere ";
+			
+		$res = $wpdb->get_results($sql);
+		
+		if($res){
+		
+			foreach($res as $row){
+			
+				if(!(int)$row->cover_imageid){
+					$imgid = $this->pickGalleryCoverImage($row->gallery_id, true);
+					if($imgid){
+						$r[] = $imgid;						
+					}
+				} else {
+					$r[] = $row->cover_imageid;
+				}
+			}
+			
+			if(is_array($r)){
+				$ret = implode(",", $r);
+			}
+		}
+		return $ret;
+	}
+	
+	function pickGalleryCoverImage($gal_id, $update = false){
+	
+		global $wpdb;
+		
+		$sql = "SELECT image_id FROM " . PSIMAGESTABLE 
+			. " WHERE gallery_id = " . (int)$gal_id 
+			. " AND status = 1 AND thumb_url <> '' ORDER BY RAND() LIMIT 1;";
+			
+		$ret = $wpdb->get_var($sql);
+		
+		if($update && $ret){
+			$sql = "UPDATE " . PSGALLERIESTABLE . " SET cover_imageid = $ret WHERE gallery_id = " . (int)$gal_id;
+			$wpdb->query($sql);
+		}
+		
+		return $ret;
 	
 	}
 	

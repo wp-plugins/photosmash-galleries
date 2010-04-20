@@ -271,9 +271,12 @@ class BWBPS_Admin{
 		global $wpdb;
 		
 		//This section Saves the overall PhotoSmash defaults
+		
+			$ps['gallery_viewer'] = (int)$_POST['ps_gallery_viewer'];
+			
 			if(isset($_POST['ps_auto_add'])){
 				$ps['auto_add'] = (int)$_POST['ps_auto_add'];
-			}
+			}	
 			
 			$ps['version'] = PHOTOSMASHVERSION;
 					
@@ -438,13 +441,36 @@ class BWBPS_Admin{
 		}
 	}
 	
+	function pickGalleryCoverImage($gal_id){
+	
+		global $wpdb;
+		
+		$sql = "SELECT image_id FROM " . PSIMAGESTABLE 
+			. " WHERE gallery_id = " . (int)$gal_id 
+			. " AND status = 1 AND thumb_url <> '' ORDER BY RAND() LIMIT 1;";
+		
+		return $wpdb->get_var($sql);
+	
+	}
+	
 	function saveGallerySettings()
 	{
 		global $wpdb;
+		// GLOBAL for $bwbPS is added in Cover Image row...move back here if you need elsewhere
 		//This section saves Gallery specific settings
 			$gallery_id = (int)$this->gallery_id;
 			$d['status'] = isset($_POST['gal_status']) ? 1 : 0;
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
+			
+			if(!(int)$_POST['gal_cover_imageid'] && $gallery_id){
+				$coverimg = $this->pickGalleryCoverImage($gallery_id);
+			} else {
+				$coverimg = (int)$_POST['gal_cover_imageid'];
+			}
+			
+			$d['cover_imageid'] = $coverimg;
+			
+			
 			$d['gallery_type'] = (int)$_POST['gal_gallery_type'];
 			$d['img_perpage'] = (int)$_POST['gal_img_perpage'];
 			$d['img_perrow'] = (int)$_POST['gal_img_perrow'];
@@ -589,15 +615,12 @@ class BWBPS_Admin{
 		<?php bwbps_nonce_field('delete-gallery'); ?>
 <h3>Gallery Settings</h3>
 <?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
-<table class="form-table">
-<tr>
-<th style='width: 92px; '>Select gallery:</th><td><?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
+<p>
+Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
 <input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" /> 
 
 <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
-
-</td></tr>
-</table>
+</p>
 </form>
 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
 	<input type="hidden" id="bwbps_gallery_id" name="gal_gallery_id" value="<?php echo $galleryID;?>" />
@@ -646,6 +669,25 @@ class BWBPS_Admin{
 				</td>
 	</tr>
 	
+	
+	<tr>
+				<th>Gallery Image ID:</th>
+				<td>
+					<input type='text' name="gal_cover_imageid" value='<?php echo $galOptions['cover_imageid'];?>' size="10"/> (Blank for a Random image. Visit <a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galOptions['gallery_id']; ?>' title='Photo Manager' target='_blank'>Photo Manager</a> to find an image ID.)
+					<?php
+					
+					if((int)$galOptions['cover_imageid']){
+						global $bwbPS;
+						$img = $bwbPS->getImage((int)$galOptions['cover_imageid']);
+						$uploads = wp_upload_dir();
+						echo "<br/><img src='" . $uploads['baseurl'] . '/' . $img['thumb_url'] . "' height='80' width='80' />
+						";
+					
+					}					
+					?>
+				</td>
+	</tr>
+	
 	<tr>
 				<th>Gallery type:</th>
 				<td>
@@ -683,6 +725,7 @@ class BWBPS_Admin{
 						<option value="71" <?php if($galOptions['gallery_type'] == 71) echo 'selected=selected'; ?>>Most Favorited</option>
 						
 						<option value="99" <?php if($galOptions['gallery_type'] == 99) echo 'selected=selected'; ?>>Highest Ranked</option>
+						<option value="100" <?php if($galOptions['gallery_type'] == 100) echo 'selected=selected'; ?>>Gallery Viewer</option>
 					</select>
 				</td>
 	</tr>
@@ -1313,6 +1356,35 @@ class BWBPS_Admin{
 	</ul>
 	<div id='bwbps_galleryoptions'>
 		<table class="form-table">
+		
+			<tr>
+				<th>Gallery Viewer Page:</th>
+				<td class='<?php if(!$psOptions['gallery_viewer']) echo 'message error'; ?>'>
+					<?php 
+	$args = array(
+	    'name' => 'ps_gallery_viewer',
+		'selected' => (int)$psOptions['gallery_viewer'],
+		'show_option_none' => 'select page',
+		'echo' => 0
+		);
+		$ddl_pages = wp_dropdown_pages( $args ); 
+		if((int)$psOptions['gallery_viewer'] == -1){
+			$galviewsel = " selected='selected' ";
+		}
+		
+		$ddl_pages = str_replace('<select name="ps_gallery_viewer" id="ps_gallery_viewer">
+	<option value="">select page</option>',
+			'<select name="ps_gallery_viewer" id="ps_gallery_viewer"><option value="">select page</option>
+			<option class="level-0" value="-1" '
+			. $galviewsel . '>-- no gallery viewer --</option>', $ddl_pages);
+			
+		echo $ddl_pages;
+		
+		?>
+		Set Page you want to have a gallery/image viewer on
+				</td>
+			</tr>
+			
 			<tr>
 				<th>Auto-add gallery to posts:</th>
 				<td>
@@ -1912,6 +1984,7 @@ class BWBPS_Admin{
 	{
 	
 		global $wpdb;
+		global $bwbPS;
 		$psOptions = $this->psOptions;
 		
 		if(isset($_POST['showModerationImages'])){
@@ -1941,6 +2014,7 @@ class BWBPS_Admin{
 				$ddlID = $galleryID;
 				
 				$imgcount = $this->getGalleryImageCount($galleryID);
+				$bwbPS->psImageFunctions->updateGalleryImageCount((int)$galleryID,0, $imgcount);
 			}
 		}
 		
@@ -2352,7 +2426,7 @@ class BWBPS_Admin{
 			<div class='bwbps-fields-container' style='$showfields'>								
 			<table class='widefat fixed bwbps_admintable' cellspacing=0>
 				<thead><tr>
-					<th class='manage-column' style='width: 30%;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' ><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Set gallery' /></a></th>
+					<th class='manage-column' style='width: 30%;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' ><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Save fields' class='bwbps_save_flds_".$image->image_id."' /></a></th>
 					<th class='manage-column' style='width: 70%;' ><div class='bwbps_toggle_box'>
 						<a onclick='jQuery(\".bwbps-stdfields-" .
 						(int)$image->image_id . "\").toggle(); return false;' href='javascript: void(0);' title='toggle'>
@@ -2399,6 +2473,20 @@ class BWBPS_Admin{
 						". $termlist ."
 					</td>
 				</tr>
+				<tr>
+					<td>Meta Data (exif):</td>
+					<td><input disabled='true' type='text' id='imgmeta_" 
+						. $image->image_id."' name='imgmeta"
+						. $image->image_id."' value='"
+						. $image->meta_data . "' style='' />
+						<a href='javascript: void(0);' title='Fetch and Save image meta from WP Media Library Attachment record' onclick='bwbpsFetchMeta(" . $image->image_id . ", " 
+							. $image->wp_attach_id . "); return false;'>
+							<img id='bwbps_fetch_img_"
+						. $image->image_id."' src='" 
+						. BWBPSPLUGINURL . "images/camera_add.png' alt='Fetch meta' />
+						</a>
+					</td>
+				</tr>
 				<tr class='ps-fileurl' style='$showfileurl'>
 					<td style='padding: 3px;'>Video/File URL:</td>
 					<td style='padding: 3px 2px 3px 7px;'>
@@ -2436,7 +2524,7 @@ class BWBPS_Admin{
 			$psTable .= "
 			<table class='widefat fixed ps-customflds bwbps_admintable' cellspacing=0 id='ps-customflds-" . $image->image_id . "' >
 				<thead><tr>
-					<th class='manage-column' style='width: 30%;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' ><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Set gallery' /></a></th>
+					<th class='manage-column' style='width: 30%;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' ><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Save fields' class='bwbps_save_flds_".$image->image_id."' /></a></th>
 					<th class='manage-column' style='width: 70%;' ><div class='bwbps_toggle_box'><a onclick='jQuery(\".bwbps-custfields-" .
 						(int)$image->image_id . "\").toggle(); return false;' href='javascript: void(0);' title='toggle'>
 							<img src='" . BWBPSPLUGINURL . "images/down.png' alt='expand' /></a></div>Custom Fields</th>
@@ -2574,335 +2662,6 @@ class BWBPS_Admin{
 	function getGalleryImagesMeta($g, $image){
 	
 		
-	
-	}
-
-	
-	/**
-	 * getGalleryImages()
-	 * 
-	 * @access public 
-	 * @param integer $gallery_id
-	 * @return a table of the images
-	 */
-	function getGalleryImagesOld($gallery_id, $sort_desc=false, $limit=0, $start=0)
-	{
-		global $wpdb;
-		global $bwbPS;
-		
-		if(!isset($this->psForm)){
-			require_once( WP_PLUGIN_DIR .'/photosmash-galleries/bwbps-uploadform.php');
-			
-			if(!$bwbPS->stdFieldList || !$bwbPS->cfList){
-				$bwbPS->loadCustomFormOptions();	
-			}
-			
-			$this->psForm = new BWBPS_UploadForm($bwbPS->psOptions, $bwbPS->cfList);
-		}
-		
-		
-		$images = $this->getImagesQuery($gallery_id, $sort_desc, $limit, $start);
-		$admin = current_user_can('level_10');
-		
-		$uploads = wp_upload_dir();
-		
-		$imgcnt =0;
-		if($images){
-		//Get image count
-		if(is_array($images)){
-			$imgcnt=count($images);
-		} 
-		
-		if(is_array($this->psForm->cfList)){
-		foreach( $this->psForm->cfList as $f ){
-			$cfNamesArrayForJS[] .= '"' . $f->field_name . '"';
-			$cfArrayForJS[] .= ' "' . $f->field_name . '" : "" ';
-		
-		}
-		}
-			
-			if(is_array($cfArrayForJS)){
-				$jsfieldarray = implode(',', $cfArrayForJS);
-			}
-			
-			if(is_array($cfNamesArrayForJS)){
-				$jsfieldnamearray = implode(',', $cfNamesArrayForJS);
-			}
-		
-			$psTable .= "
-			<script type='text/javascript'>var bwbpsCustomFields = {" . $jsfieldarray . "};
-			var bwbpsCustomFieldNames = [" . $jsfieldnamearray . "];
-			</script>
-			<div id='bwbpsGetMediaGalleryBox' style='display: none;'>
-			Get the Video links!
-			</div>
-			";
-		
-		
-		foreach($images as $image){
-			$mod['menu'] = "";
-			$mod['class'] = "";
-			switch ($image->status) {
-				case -1 :
-					$mod['class'] = "ps-moderate";
-					
-					if($admin){
-						$mod['menu'] = "<a href='javascript: void(0);' onclick='bwbpsModerateImage(\"approve\", ".$image->image_id.");' class='ps-modbutton'>approve</a>";
-					}
-					break;
-				case -2 :
-					break;
-				default :
-					if( $image->alerted == -1 || $image->alerted == 0 ){
-						$mod['class']= 'ps-newimage';
-						if($admin){
-							$mod['menu'] = "<a href='javascript: void(0);' onclick='bwbpsModerateImage(\"review\", ".$image->image_id.");' class='ps-modbutton'>mark reviewed</a>";
-						}
-					break;
-					} else {
-						$mod['class'] = '';
-					}
-					break;
-			}
-			
-			if ( !$image->thumb_url ){
-				
-				$image->thumb_url = PSTHUMBSURL.$image->file_name;
-				$image->image_url = PSIMAGESURL.$image->file_name;
-						
-			} else {
-			
-				// Add the Uploads base URL to the image urls.
-				// This way if the user ever moves the blog, everything might still work ;-) 
-				// set $uploads at top of function...only do it once
-				$image->thumb_url = $uploads['baseurl'] . '/' . $image->thumb_url;
-				$image->medium_url = $uploads['baseurl'] . '/' . $image->medium_url;
-				$image->image_url = $uploads['baseurl'] . '/' . $image->image_url;
-			
-			}
-			
-			if(!(int)get_option('bwbps_show_fileurl')){
-				$showfileurl = "display: none;";
-			}
-			
-			if(!(int)get_option('bwbps_show_customdata')){
-				$showcustomdata = "display: none;";
-			}
-			
-			$galDDL = $this->getGalleryDDL($image->gallery_id, "skipnew"
-				, "g".$image->image_id, "bwbps_set_imggal", 15, false, true);
-			
-			$galDDL .= "<a href='javascript: void(0);' onclick='bwbpsSetNewGallery(".$image->image_id."); return false;' id='save_ps_show_imgcaption' title='Save to new gallery.'><img src='" . BWBPSPLUGINURL. "images/disk.png' alt='Set gallery' /></a>";
-			
-			if((int)$image->post_id){
-				$galupdate = "Post: " . $image->post_id . "
-				<a href='post.php?action=edit&post="
-				. $image->post_id 
-				. "' title='Edit related post.' class='ps-modbutton'>edit</a> &nbsp; 
-				<a href='"
-				. get_permalink( $image->post_id )
-				. "' title='View related post.' class='ps-modbutton' target='_blank'>view</a>";
-				
-				if( $image->post_status == 'publish' ){
-					$galupdate .= " <span style='color: green; font-size: 9px;'>published</span>";
-				} else {
-				
-					$galupdate .= " <span id='psimg_pubpost" . $image->image_id . "'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"publishpost\", ".$image->image_id.", ". $image->post_id . ");' class='ps-modbutton'>publish</a> </span>";
-					
-				}
-			}
-			
-			$mod['menu'] = "
-				<span class='ps-modmenu' id='psmod_".$image->image_id."'>"
-				.$mod['menu']."</span> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"bury\", "
-				.$image->image_id.");' class='ps-modbutton'>delete</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", ".$image->image_id.");' class='ps-modbutton'>remove</a> | <a href='javascript: void(0);' onclick=\"bwbpsResizeImage('".$image->image_id."',true); return false;\" class='ps-modbutton'>resize</a> | Status: " 
-				. $image->status . "<br/>Alerted: " . $image->alerted . "
-				";
-			
-			//Image HTML
-			
-			$psTable .= "
-				<td class='ps_copy psgal_".$image->gallery_id."' id='psimg_"
-				. $image->image_id."' style='width: 72px;'>
-				<span class='ps_clickmsg' style='display:none;'>Click to select</span>
-				<a target='_blank' href='"
-				. $image->image_url."' rel='"
-				. $g['img_rel']."' title='".str_replace("'","",$image->image_caption)
-				. "'>
-				<span id='psimage_".$image->image_id."' class='"
-				. $mod['class'] . "'>
-					<img src='"
-				. $image->thumb_url ."' style='width: 70px; height: 70px;"
-				. $modStyle . "' />
-				</span>
-				</a>" 
-				. $mod['menu'] . "
-				</td>";
-			
-			
-			// IMAGE DETAILS
-			
-			$psCaption = htmlentities($image->image_caption, ENT_QUOTES);
-			
-			if($i==0){$border = " style='border-right: 1px solid #999;'";} else {$border = '';}
-			
-			$argsarray = array('name');
-			
-			$terms = wp_get_object_terms( $image->image_id, 'photosmash', $argsarray);
-			$termlist = "";
-			$termlist = get_the_term_list($image->image_id, 'photosmash', '', ', ');
-			
-			if(isset($_terms)){ unset($_terms); }
-					
-			if( is_array($terms) && count($terms) ){
-				
-				foreach ( $terms as $term ) {
-					$_terms[] = esc_attr($term->name);
-				}
-				
-				unset($terms);
-				$terms = implode(", ", $_terms);
-			
-			} else { $terms = ''; }
-			
-			$psTable .= "<td $border>
-									
-			<table class='widefat fixed bwbps_admintable' cellspacing=0>
-				<thead><tr>
-					<th class='manage-column' style='width: 30%;'>Label</th>
-					<th class='manage-column' style='width: 70%;'>Field</th>
-				</tr></thead>
-				<tr valign='top'>
-					<td>
-						<span>Gallery:</span>
-					</td>
-					<td>" .$galDDL. "</td>
-				</tr>
-				
-				<tr valign='top'>
-					<td>
-						<span>Related post:</span>
-					</td>
-					<td>" .$galupdate. "</td>
-				</tr>
-				<tr valign='top'>
-					<td>
-						<span>Caption:</span>
-					</td>
-					<td><input type='text' id='imgcaption_" 
-						. $image->image_id."' name='imgcaption"
-						. $image->image_id."' value='$psCaption' style='' />
-					</td>
-				</tr>
-				<tr>
-					<td>URL:</td>
-					<td><input type='text' id='imgurl_" 
-						. $image->image_id."' name='imgurl"
-						. $image->image_id."' value='"
-						. $image->url. "' style='' />
-					</td>
-				</tr>
-				
-				<tr>
-					<td>Tags:</td>
-					<td><input type='text' id='imgtags_" 
-						. $image->image_id."' name='imgtags"
-						. $image->image_id."' value='"
-						. $terms . "' style='' />
-						". $termlist ."
-					</td>
-				</tr>
-				<tr class='ps-fileurl' style='$showfileurl'>
-					<td style='padding: 3px;'>Video/File URL:</td>
-					<td style='padding: 3px 2px 3px 7px;'>
-						<input type='text' id='fileurl_" 
-						. $image->image_id."' name='fileurl"
-						. $image->image_id."' value='"
-						. $image->file_url . "' style='' />
-						<a href='" 
-						. BWBPSPLUGINURL 
-						. "ajax_medialoader.php?image_id=" . $image->image_id
-						. "&width=700&height=430' class='thickbox' title='Select Media' onclick='return false;'>
-							<img src='" 
-						. BWBPSPLUGINURL . "images/exp.png' alt='Find' />
-						</a>
-						
-					</td>
-				</tr>
-				
-				<tr>
-					<td>
-						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsModerateImage(\"savecaption\", "
-				.$image->image_id.");' class='ps-modbutton'>save</a></span>
-					</td><td>Sequence: <input type='text' id='imgseq_" 
-						. (int)$image->image_id."' name='imgseq"
-						. (int)$image->image_id."' value='"
-						. (int)$image->seq . "' style='width: 45px !important;' />
-					</td>
-				</tr>
-				
-			</table>
-			";
-			$cfTable = "";
-			
-			foreach( $this->psForm->cfList as $f ){
-				$gtemp['pfx'] = "img". $image->image_id . "_"; 
-				
-				$cfTable .= "<tr>
-					<td>" . $f->field_name . "
-					</td><td>"
-					.	$this->psForm->getField($gtemp, $f, false, $image->{$f->field_name}, true )
-					. "</td></tr>"
-					;
-			}
-			
-			$psTable .= "<table class='widefat fixed ps-customflds' cellspacing=0 id='ps-customflds-" . $image->image_id . "' style='$showcustomdata'>
-				<thead><tr>
-					<th class='manage-column' style='width: 30%;'>LABEL</th>
-					<th class='manage-column' style='width: 70%;'>CUSTOM FIELDS</th>
-				</tr></thead>"
-				. $cfTable 
-				. "<tr>
-					<td>
-						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", false);' class='ps-modbutton'>save</a>
-						</span>	
-						<span style='margin-top: 7px;'><a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' class='ps-modbutton'>save all</a>
-						</span>	
-					</td><td> &nbsp; </td>
-					</tr>"
-				. "</table>";
-			
-			if($image->file_url){
-				$fileURLData = "<br/>File data: " . $image->file_url;
-			} else { $fileURLData = ""; }
-			
-			$psTable .= "<div class='ps-customflds' style='$showcustomdata'><b>Details: </b>(image id: "
-				. $image->image_id.")<br/>WP media id: " . $image->wp_attach_id."<br/>Gallery: <a href='admin.php?"
-				. "page=managePhotoSmashImages&amp;psget_gallery_id="
-				. $image->gallery_id."'>id(".$image->gallery_id.") "
-				. $image->gallery_name."</a><br/>Image name: "
-				. $image->image_name . "<br/>Uploaded by: "
-				. $this->calcUserName($image->user_login, $image->user_nicename
-				, $image->display_name)."<br/>Date: ".$image->created_date
-				. $fileURLData . "</div>
-				</td>";
-			if($i == 1){
-				$psTable .= "</tr><tr>";
-				$i = 0;
-			} else {$i++;}
-		}
-		
-		$data['alerted'] = -1;
-		$where['alerted'] = 0;
-		if( (int)$gallery_id ){
-			$where['gallery_id'] = (int)$gallery_id;
-		}
-		$wpdb->update(PSIMAGESTABLE, $data, $where);
-		
-		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span><table class="widefat fixed" cellspacing="0">'.$psTable.'</table></div>';
-	} else {
-		return "<h3>No images in gallery yet...go to post page to load images.</h3>";
-	}
 	
 	}
 	

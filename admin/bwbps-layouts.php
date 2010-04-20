@@ -327,6 +327,15 @@ class BWBPS_LayoutsEditor{
 						
 					</ul>
 					
+						<h3>Gallery Viewer Fields</h3>
+						The Gallery Viewer is a special gallery that displays an image for each PhotoSmash Gallery that has images. To format the image blocks in this special gallery, you want to be able to get information about the Gallery that each image is pointing to.  This also has implications for other virtual galleries that show images from more than 1 gallery (random, recent, etc).
+						<ul style='padding: 6px; background-color: #fff; border: 1px solid #d8e9ec;'>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_gallery_name] - <span style='font-size: 9px;'>The gallery name of the image's Gallery.</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_url] - <span style='font-size: 9px;'>The Gallery Viewer URL for the image's Gallery</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_post_url] - <span style='font-size: 9px;'>URL for the related post of an image's Gallery</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_image_count] - <span style='font-size: 9px;'># of images for the image's Gallery</span></li>
+						</ul>
+					
 								<?php
 						
 						if( $psmashExtend->options['ext_nav'] ){

@@ -359,6 +359,8 @@ function bwbpsSaveCustFldsAdmin(image_id, save_all){
 	
 	if(!confirm('Do you want to save changes for image ' + image_id + '?')){ return false;}
 	
+	jQuery('.bwbps_save_flds_' + image_id).attr('src',bwbpsPhotoSmashURL + 'images/wait.gif');
+	
 	var _moderate_nonce = jQuery("#_moderate_nonce").val();
 	
 	_data['_ajax_nonce'] = _moderate_nonce;
@@ -386,6 +388,8 @@ function bwbpsSaveCustSuccess(data, image_id, save_all){
 		bwbpsModerateImage("saveall", image_id);
 		return;
 	}
+	
+	jQuery('.bwbps_save_flds_' + image_id).attr('src',bwbpsPhotoSmashURL + 'images/disk.png');
 	
 	$j('#ps_savemsg').hide();
 	
@@ -1048,6 +1052,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 	var image_caption = '';
 	var image_url = "";
 	var image_tags = "";
+	var meta_data = "";
 	var file_url = "";
 	var image_seq = "";
 	var image_post_id = 0;
@@ -1056,6 +1061,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 		image_url = $j('#imgurl_' + imgid).val();
 		image_seq = $j('#imgseq_' + imgid).val();
 		image_tags = $j('#imgtags_' + imgid).val(); 
+		meta_data = $j('#imgmeta_' + imgid).val(); 
 		file_url = $j('#fileurl_' + imgid).val(); 
 		image_post_id  = $j('#image_post_id_' + imgid).val(); 
 	}
@@ -1073,6 +1079,7 @@ function bwbpsModerateImage(action, image_id, post_id)
        'image_caption' : image_caption,
        'image_url' : image_url,
        'image_tags' : image_tags,
+       'meta_data' : meta_data,
 	   'file_url' : file_url,
 	   'seq' : image_seq,
        'post_id' : postid,
@@ -1090,6 +1097,9 @@ function bwbpsModerateImage(action, image_id, post_id)
 
 // Callback for successful Ajax image moderation
 function bwbpsModerateSuccess(data, imgid)  { 
+
+		jQuery('.bwbps_save_flds_' + imgid).attr('src',bwbpsPhotoSmashURL + 'images/disk.png');
+		
 		try{
 			$j('#ps_savemsg').hide();
 		}catch(err){}
@@ -1130,7 +1140,63 @@ function bwbpsModerateSuccess(data, imgid)  {
 		}
 }
 
+//Fetch Meta Data from Attachment
+function bwbpsFetchMeta(image_id, attach_id){
 
+	var imgid = parseInt('' + image_id);
+	
+	jQuery('#bwbps_fetch_img_' + imgid).attr('src',bwbpsPhotoSmashURL + 'images/wait.gif');
+	
+	var myaction = "fetchmeta";
+	
+	var _moderate_nonce = $j("#_moderate_nonce").val();
+	
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	$j.ajax({
+		type: 'POST',
+		url: bwbpsAjaxURL,
+		data: { 'action': myaction,
+       'image_id': imgid,
+       '_ajax_nonce' : _moderate_nonce,
+       'attach_id' : attach_id
+       },
+		dataType: 'json',
+		success: function(data) {
+			bwbpsFetchMetaSuccess(data, imgid);
+		}
+	});
+	return false;
+
+}
+
+function bwbpsFetchMetaSuccess(data, imgid){
+	
+	jQuery('#bwbps_fetch_img_' + imgid).attr('src',bwbpsPhotoSmashURL + 'images/camera_add.png');
+
+	try{
+			$j('#ps_savemsg').hide();
+		}catch(err){}
+		if(data == -1){
+				alert('Failed due to security: invalid nonce');
+			//The nonce	 check failed
+			$j('#psmod_' + imgid).html("fail: security"); 
+			return false;
+	 	}
+	 	
+		if( data.status == 'false' || data.status == 0){
+			//Failed for some reason
+			$j('#psmod_' + imgid).html("No meta data found..."); 
+			return false;
+		} else {
+							
+			jQuery("#imgmeta_" + imgid).val(data.meta);
+		
+		}
+
+}
 
 
 //Set a new Gallery from within Photo Manager

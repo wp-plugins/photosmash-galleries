@@ -3,11 +3,11 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.7.00
+Version: 0.7.01
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
- 
+
 /** 
  * Copyright 2009-2010  Byron W Bennett (email: bwbnet@gmail.com)
  *
@@ -43,8 +43,8 @@ define('PHOTOSMASHEXTVERSION', '0.2.02');
 define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
 
 //Database Verifications
-define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_favorites');
-define('PHOTOSMASHVERIFYFIELD', 'favorite_id');
+define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_images');
+define('PHOTOSMASHVERIFYFIELD', 'geolat');
 
 //Set Database Table Constants
 define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
@@ -238,6 +238,8 @@ class BWB_PhotoSmash{
 	var $footerReady = "";
 	var $count = 0;
 	
+	var $galViewerCount = 0;
+	
 	//Constructor
 	function BWB_PhotoSmash(){
 		
@@ -245,6 +247,8 @@ class BWB_PhotoSmash{
 				
 		$this->psOptions = $this->getPSOptions();
 		
+		require_once('admin/image-functions.php');
+		$this->psImageFunctions = new BWBPS_ImageFunc();		
 		
 		$this->loadCustomFormOptions();
 		
@@ -688,9 +692,18 @@ class BWB_PhotoSmash{
 	
 /*	****************************************  Gallery Code  *************************************** */
 //	AutoAdd Galleries
+//	Is fired after Shortcodes are Processed
 function autoAddGallery($content='')
 {
 	global $post;
+	
+	//Is fired after Shortcodes are Processed
+	if($this->psOptions['gallery_viewer'] && (int)$this->psOptions['gallery_viewer'] != -1 && is_page($this->psOptions['gallery_viewer'])){
+		if($this->galViewerCount){ return $content; }
+		$this->galViewerCount++;
+		$content .= do_shortcode("[photosmash gallery_viewer=true image_layout='image_view_layout']");
+		return $content;
+	}
 	
 	if(is_array($this->shortCoded) && in_array($post->ID, $this->shortCoded)){
 		return $content;
@@ -755,7 +768,7 @@ function checkEmailAlerts(){
 */
 function shortCodeGallery($atts, $content=null){
 		global $post;
-		
+				
 		$this->checkEmailAlerts();
 		
 		if(!is_array($atts)){
@@ -770,6 +783,11 @@ function shortCodeGallery($atts, $content=null){
 		}
 				
 		extract(shortcode_atts(array(
+			'gallery_viewer' => false,
+			'gallery_view_layout' => false,
+			'image_layout' => 'image_view_layout',	//For use with Gallery Viewer ?psmash-image=ID# (shows a single image
+			'before_gallery' => '',	//
+			'after_gallery' => '',	
 			'id' => false,
 			'form' => false,
 			'no_gallery_header' => false,
@@ -816,6 +834,10 @@ function shortCodeGallery($atts, $content=null){
 			'piclens_class' => ''	// Defaults to "alignright"
 		),$atts));
 		
+		//Special kind of gallery...the Gallery Viewer...Ooooo
+		if($gallery_viewer ){
+			$gallery_type = 100;
+		}
 				
 		//A beautiful little shortcode that lets you set a different layout for single Post and Page pages than the one on Main Page, Categories, and Archives
 		if($single_layout){
@@ -914,10 +936,50 @@ function shortCodeGallery($atts, $content=null){
 				break;
 			
 			case 71 :	
+				$galparms['gallery_type'] = 71;
 				$galparms['sort_field'] = 5;
 				$galparms['sort_order'] = 1;
 				$no_form = true;
 													
+				break;
+				
+			case 100 :	// Gallery Viewer gallery
+			
+				$galviewerurl = get_permalink($post->ID);
+				
+				if((int)$_REQUEST['psmash-image']){
+				
+					$ret = do_shortcode("[psmash id=" . (int)$_REQUEST['psmash-image']
+						. " layout='$image_layout']");
+						
+					return $ret;
+				
+				}
+				
+				if((int)$_REQUEST['psmash-gallery']){
+					
+					$before_gallery = "<h1 class='bwbps_h1 gallery_viewer_head'> <a href='" . $galviewerurl . "'>Back to " . get_bloginfo('name') . " - Gallery Viewer</a></h1>";
+					
+					$galparms['gallery_id'] = (int)$_REQUEST['psmash-gallery'];
+					
+					if($gallery_view_layout){
+						$layout = $gallery_view_layout;
+					} else {
+						$layout = 'gallery_view_layout';
+					}
+				
+				} else {
+					
+					$before_gallery = "<h1 class='bwbps_h1 gallery_viewer_head'>" .get_bloginfo('name') . " - <a href='" . $galviewerurl . "'>Gallery Viewer</a></h1>";
+					
+					$galparms['gallery_type'] = 100;
+					$no_form = true;
+					if(!$layout){ $layout = 'gallery_viewer'; }
+				
+				}
+				
+				$this->galViewerCount++;
+				
 				break;
 				
 			default :
@@ -1132,7 +1194,7 @@ function shortCodeGallery($atts, $content=null){
 		
 		unset($galparms);
 
-	return $ret;
+	return $before_gallery . $ret . $after_gallery;
 }
 
 // Retrieve the Gallery....Creates new Gallery record linked to Post if gallery ID is false
@@ -1353,7 +1415,31 @@ function getGallery($g){
 				
 				break;
 
-			
+			case 100 : // Gallery Viewer
+				$gquery = false;
+				if($g['gallery_id']){
+									
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_id = %d AND gallery_type = 100",$g['gallery_id']),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+				
+					$gquery = $wpdb->get_row(
+						$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+							." WHERE gallery_type = 100 AND status = 1 "),ARRAY_A);
+				
+				}
+				
+				if( !$gquery ){
+		
+					$g['gallery_name'] = 'PhotoSmash Gallery Viewer';
+				
+				}
+				
+				break;
 				
 			default :
 	
@@ -2145,6 +2231,22 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		return;
 	}
 	
+	function verifyGalleryViewerPage(){
+	
+		if(isset($_REQUEST['ps_gallery_viewer'])){
+			if(!(int)$_REQUEST['ps_gallery_viewer']){
+				$failed = true;
+			}
+		}else {
+			if(!$this->psOptions['gallery_viewer']){
+				$failed = true;
+			}
+		}
+		if($failed){
+			echo "<div class='message error'><p>Please set Gallery Viewer Page in <a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a>. The Gallery Viewer Page is an index to your PhotoSmash galleries.</p></div>";
+		}
+	}
+	
 	function displayTagGallery($theposts){
 			
 		
@@ -2658,7 +2760,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			$gid = isset($_REQUEST['bwbps_mediau_galid']) ? (int)$_REQUEST['bwbps_mediau_galid'] : 0;
 		
 			$galleryDDL = $this->getGalleryDDL($gid, "select gallery", "", "bwbps_mediau_galid", 30, true, true);
-			echo "<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Add image to PhotoSmash Gallery: $galleryDDL</div>";
+			echo "<div style='padding: 5px; margin: 3px; font-size: 14px; color: #333;'>Add to PhotoSmash: $galleryDDL</div>";
 		}
 	}
 	
@@ -2666,15 +2768,40 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		
 			?>
 			<script type="text/javascript">
+			
+			if (typeof flashStartUploadFunctions == 'undefined'){
+
+				var flashStartUploadFunctions = [];
+				function addFlashStartUploadFunction( funct_name ){
+					flashStartUploadFunctions.push( funct_name );
+					
+				}
+
+				function runFlashStartUploadFunctions(){
+					if( flashStartUploadFunctions.length > 0 ){
+						var bwbfunc;
+						for( bwbfunc in flashStartUploadFunctions){
+							
+								eval(flashStartUploadFunctions[ bwbfunc ]);
+							
+						}
+					}
+				}
+
+			}
+			
+			addFlashStartUploadFunction( 'bwbpsAddGalleryToFlashUploader();' );
+			
 				jQuery(window).load( function() {
 					swfu.settings.upload_start_handler = function(){
-						bwbpsAddGalleryToFlashUploader();
+						runFlashStartUploadFunctions();
 					}
 				});
 				
 				function bwbpsAddGalleryToFlashUploader(){
 					jQuery('#bwbps_uploaded_images', top.document).show().append('<h4>Flash upload...preview not available.</h4>');
 					var gid = jQuery("#bwbps_mediau_galid_flash").val() + "";
+
 					if( gid ){
 						swfu.addPostParam('bwbps_mediau_galid', gid);
 						<?php
@@ -2725,18 +2852,14 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		} else {
 			$gid = isset($_REQUEST['bwbps_mediau_galid']) ? (int)$_REQUEST['bwbps_mediau_galid'] : 0;
 			$galleryDDL = $this->getGalleryDDL($gid, "select gallery", "", "bwbps_mediau_galid", 30, true, true, "bwbps_mediau_galid_flash");
-			echo "<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Add image(s) to PhotoSmash Gallery: $galleryDDL</div>";
+			echo "<div style='padding: 5px; margin: 3px; font-size: 14px; color: #333;'>Add to PhotoSmash: $galleryDDL</div>";
 		}
 	}
 		
 	function mediaUImportAttachmentToGallery($attach){
 	
 		if(isset($_REQUEST['bwbps_mediau_galid']) && (int)$_REQUEST['bwbps_mediau_galid'])		{
-			if(!isset($this->$psImageFunctions)){
-				require_once('admin/image-functions.php');
-				$this->psImageFunctions = new BWBPS_ImageFunc();
-			}
-			
+						
 			$gallery_id = (int)$_REQUEST['bwbps_mediau_galid'];
 			
 			if($gallery_id && (int)$attach){
@@ -2902,6 +3025,7 @@ function get_photosmash_favlink($link_text='Favorite Images', $before='', $after
 
 //Set up the actions!
 add_action('admin_notices', array(&$bwbPS, 'verifyDatabase'));
+add_action('admin_notices', array(&$bwbPS, 'verifyGalleryViewerPage'));
 
 //Call the Function that will Add the Options Page
 add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));

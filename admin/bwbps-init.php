@@ -66,6 +66,9 @@ class BWBPS_Init{
 				wp_attach_id BIGINT(11),
 				url VARCHAR(250) NOT NULL,
 				custom_fields TEXT,
+				meta_data TEXT,
+				geolong float(10,6) NOT NULL,
+				geolat float(10,6) NOT NULL,
 				img_attribution TEXT,
 				img_license TINYINT(1),
 				updated_by BIGINT(20) NOT NULL,
@@ -131,6 +134,7 @@ class BWBPS_Init{
 				upload_form_caption VARCHAR(250),
 				contrib_role TINYINT(1) NOT NULL,
 				anchor_class VARCHAR(255),
+				img_count BIGINT(11),
 				img_rel VARCHAR(255),
 				img_class VARCHAR(255),
 				img_perrow TINYINT(1),
@@ -435,7 +439,127 @@ class BWBPS_Init{
 						
 			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
 					
-		}	
+		}
+		
+		unset($d);
+
+		//Preload the Gallery Viewer Layout
+		if(!$wpdb->get_var("SELECT layout_id FROM " 
+			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'gallery_viewer'")){
+		
+			$d['layout_name'] = 'gallery_viewer';
+			
+			$d['cells_perrow'] = 0;
+			$d['layout'] = "
+<div class='bwbps_galviewer'>
+	<div class='bwbps_galviewer_head'>
+		<a href='[gallery_url]' title='Gallery: 
+		[image_gallery_name]'>
+		[image_gallery_name length=16] ([gallery_image_count])</a>
+	</div>
+	<div class='bwbps_image'>
+		<a href='[gallery_url]' title='Gallery: 
+		[image_gallery_name]'>
+		[thumb_image]</a>
+	</div>
+</div>
+			";
+			$d['alt_layout'] = "";
+			$d['wrapper'] = "<h2>Galleries:</h2>";
+			$d['css'] = "";
+			
+			$d['pagination_class'] = "bwbps_pag_2";
+						
+			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
+					
+		}
+		
+		unset($d);
+		
+		//Preload the Gallery Layouts for gallery viewer
+		if(!$wpdb->get_var("SELECT layout_id FROM " 
+			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'gallery_view_layout'")){
+		
+			$d['layout_name'] = 'gallery_view_layout';
+			
+			$d['cells_perrow'] = 0;
+			$d['layout'] = "
+<li class='psgal_[gallery_id]'>
+	<div class='bwbps_image bwbps_relative'>
+		<a rel='lightbox[album_[gallery_id]]' href='[image_url]' title='[caption_escaped]'>[thumb_image]</a>
+[ps_rating]
+		<div class='bwbps_postlink_top_rt bwbps_postlink'>
+			<a href='[post_url]' title='Visit image page.'>
+				<img src='[plugin_url]/photosmash-galleries/images/post-out.png' />
+			</a>
+		</div>
+	</div>
+	<div style='clear: both;'>
+		<a rel='lightbox[caption_[gallery_id]]' href='[image_url]' title='[caption_escaped]'>
+			[caption length=20]
+		</a>
+	</div>
+</li>
+			";
+			$d['alt_layout'] = "";
+			$d['wrapper'] = "<span style='float:right;'>[piclens]</span><div class='clear'></div>
+<h3>Gallery: [gallery_name]</h3>
+<div class='bwbps_gallery_container0'>
+<ul class='bwbps_gallery'>
+[gallery]
+</ul>
+<div style='clear:both;'></div>
+</div>
+";
+			$d['css'] = "";
+			
+			$d['pagination_class'] = "bwbps_pag_2";
+						
+			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
+					
+		}
+		
+		unset($d);
+		
+		//Preload the Image Viewer Layout
+		if(!$wpdb->get_var("SELECT layout_id FROM " 
+			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'image_view_layout'")){
+		
+			$d['layout_name'] = 'image_view_layout';
+			
+			$d['cells_perrow'] = 0;
+			$d['layout'] = "
+<div class='bwbps_galviewer' style='width:100%; text-align: center;'>
+	<div class=''>
+		<a rel='lightbox[album_[gallery_id]]' href='[image_url]' title='[caption_escaped]'>[medium]</
+	</div>
+	<div style='clear: both;'>
+			[caption]
+	</div>
+	<h3 style='width: 100%; text-align: center;'>Meta Data</h3>
+	<table class='bwbps-meta-table' style='margin: 10px auto !important; text-align: left;'>
+		<tr><th>Contributor:</th><td>[author_link]</td></tr>
+		<tr><th>Date added:</th><td>[date_added]</td></tr>
+		<tr><th>Related Post:</th><td><a href='[post_url]'>[post_name]</a></td></tr>
+		<tr><th>Attribution:</th><td>[img_attribution]</td></tr>
+		<tr><th>License:</th><td>[img_license]</td></tr>
+	</table>
+	<h3 style='width: 100%; text-align: center;'>EXIF Data</h3>
+	[exif_table no_exif_msg='No EXIF data available' show_blank=false]
+</div>
+			";
+			$d['alt_layout'] = "";
+			$d['wrapper'] = "";
+			$d['css'] = "";
+			
+			$d['pagination_class'] = "bwbps_pag_2";
+						
+			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
+					
+		}
+		
+		unset($d);
+		
 	}
 	
 	//Returns an array of default options

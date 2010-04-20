@@ -66,6 +66,7 @@ class BWBPS_Importer{
 				
 				$post = get_post($attach_id);
 				
+				$imgdata['meta_data'] = serialize($img[0]['image_meta']);
 				$imgdata['image_caption'] = $post->post_title;
 				$imgdata['post_id'] = $post->post_parent;
 											
@@ -190,6 +191,7 @@ class BWBPS_Importer{
 		$data['file_type'] = 0;
 		
 		$data['file_url'] = $imgdata['file_url'];
+		$data['meta_data'] = $imgdata['meta_data']; 
 		
 		// Add the 3 image URLs
 		$data['thumb_url'] = $imgdata['thumb_url'];

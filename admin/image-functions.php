@@ -186,8 +186,12 @@ class BWBPS_ImageFunc{
 			
 		// get the WP attachment info
 		$attach_file = get_post_meta($attach_id, '_wp_attached_file');
+		
+		print_r($attach_file);
+		return;
 
 		$img[0]['file'] = $attach_file[0];
+		$imgdata['meta_data'] = serialize($attach_file[0]['image_meta']);
 		
 		
 		$post = get_post($attach_id);
@@ -333,7 +337,9 @@ class BWBPS_ImageFunc{
 		
 		$data['file_url'] = $imgdata['file_url'];
 		
-		// Add the 3 image URLs
+		$data['meta_data'] = $imgdata['meta_data'];
+		
+		// Add the 4 image URLs
 		$data['thumb_url'] = $imgdata['thumb_url'];
 		$data['medium_url'] = $imgdata['medium_url'];
 		$data['image_url'] = $imgdata['image_url'];
@@ -356,8 +362,39 @@ class BWBPS_ImageFunc{
 		$ret = (int)$wpdb->insert(PSIMAGESTABLE, $data);
 				
 		$image_id = $wpdb->insert_id;
+		
+		$this->updateGalleryImageCount((int)$g['gallery_id']);
 	
 		return $image_id;
+	}
+	
+	function updateGalleryImageCount($gallery_id=false, $image_id=false, $image_count=false){
+	
+		global $wpdb;
+		
+		if(!$gallery_id){
+			$ret = $this->getImage($image_id);
+			if($ret){
+				$gallery_id = $ret['gallery_id'];
+			}
+		}
+		
+		if(!(int)$gallery_id){ return; }
+		
+		if(!(int)$image_count){
+			$sql = "SELECT COUNT(image_id) FROM " . PSIMAGESTABLE
+				. " WHERE gallery_id = " . (int)$gallery_id 
+				. " AND status = 1 ";
+				
+			$cnt = $wpdb->get_var($sql);
+		} else {
+			$cnt = $image_count;
+		}
+		
+		$sql = "UPDATE " . PSGALLERIESTABLE . " SET img_count = " . $cnt
+			. " WHERE gallery_id = " . (int)$gallery_id;
+		$wpdb->query($sql);
+	
 	}
 	
 	

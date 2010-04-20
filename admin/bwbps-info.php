@@ -27,7 +27,50 @@ class BWBPS_Info{
 			delete_option('bwbps-use777');
 		}
 		
+		if(isset($_POST['bwbpsUpdateTermCounts'])){
+			$this->updateTagCounts();
+		}
+		
 		$this->printInfoPage();
+	}
+	
+	function updateTagCounts(){
+	
+		global $wpdb;
+		
+		$sql = "SELECT " . $wpdb->term_relationships . ".object_id FROM " 
+			. $wpdb->term_relationships . "  JOIN " . $wpdb->term_taxonomy 
+			. " ON " . $wpdb->term_relationships . ".term_taxonomy_id = " 
+			. $wpdb->term_taxonomy . ".term_taxonomy_id AND " 
+			. $wpdb->term_taxonomy . ".taxonomy = 'photosmash' LEFT OUTER JOIN " 
+			. $wpdb->prefix."bwbps_images ON " 
+			. $wpdb->prefix."bwbps_images.image_id = " 
+			. $wpdb->term_relationships . ".object_id WHERE " 
+			. $wpdb->prefix."bwbps_images.image_id IS NULL";
+			
+		$res = $wpdb->get_col($sql);
+				
+		if($res && is_array($res)){
+		
+			$sql = implode(", ", $res);
+			
+			$sql = "DELETE FROM " . $wpdb->term_relationships . " WHERE "
+				. $wpdb->term_relationships . ".object_id IN ( " . $sql . " )";
+			
+			$wpdb->query($sql);
+		
+		}
+		
+		$terms = get_terms("photosmash");
+		
+		foreach($terms as $term){
+		
+			$t[] = $term->term_taxonomy_id;
+		
+		}
+		
+		wp_update_term_count_now($t, 'photosmash');
+		
 	}
 	
 	function fixFilePerms(){
@@ -63,6 +106,11 @@ class BWBPS_Info{
 		<ul>
 			<?php echo $this->getPhotoSmashInfo(); ?>
 		</ul>
+		
+		<h3>Photo Tagging</h3>
+		
+		<input type='submit' name='bwbpsUpdateTermCounts' value='Update Tag Counts' /> - run this job to refresh tag counts if they are off.
+		
 
 		<h3>Database Info</h3>
 		<ul>
