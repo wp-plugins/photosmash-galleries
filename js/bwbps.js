@@ -402,6 +402,8 @@ function bwbpsSaveCustSuccess(data, image_id, save_all){
 	 	
 		if( data.status == 'false' || data.status == 0){
 			//Failed for some reason
+			if(data.message){ alert(data.message); }
+			if(data.msg){ alert(data.msg); }
 			$j('#psmodmsg_' + imgid).html("update: fail"); 
 			return false;
 		} else {

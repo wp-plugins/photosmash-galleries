@@ -510,12 +510,19 @@ class BWBPS_Importer{
 					$c = esc_attr($img->post_title);
 				}
 				
-				$info = "<div>Post id: ". $img->post_parent . "<br/>Attach id: ". $img->post_id
+				$info = "<div>Post id: ". $img->post_parent . " &nbsp; Gal id: " . $img->gallery_id 
+				. "<br/>Attach id: ". $img->post_id
 				."</div>";
 				
 				if( $sizeurl ){
 				
-					$f = "<div class='bwbps_theimage'><a id='bwbimg_" . $img->post_id. "' class='bwbps-notsel' href='javascript: void(0);'><img  src='" . $imgurl . "' title='$c' width='95px' height='95px'/></a>
+					if($img->gallery_id){
+						$imgborder = "#cc0000";
+					} else {
+						$imgborder = "#a0a0a0";
+					}
+				
+					$f = "<div class='bwbps_theimage'><a id='bwbimg_" . $img->post_id. "' class='bwbps-notsel' href='javascript: void(0);'><img style='border: 2px solid $imgborder;' src='" . $imgurl . "' title='$c' width='95px' height='95px'/></a>
 					<input class='bwbps-imagesforsel' type='hidden' name='bwbps_selectedimg[]' id='bwbimg_" 
 						. $img->post_id. "sel' value='' /> 
 					</div>";
@@ -595,8 +602,9 @@ class BWBPS_Importer{
 			$limitsql = ' LIMIT ' . $start . ', ' . $limit;
 		}
 		
-		$sql = "SELECT a.*, b.post_parent, b.post_title FROM " .$wpdb->postmeta . " a LEFT OUTER JOIN " 
-			. $wpdb->posts . " b ON a.post_id = b.ID WHERE a.meta_key = '_wp_attachment_metadata'"
+		$sql = "SELECT a.*, b.post_parent, b.post_title, c.gallery_id FROM " .$wpdb->postmeta . " a LEFT OUTER JOIN " 
+			. $wpdb->posts . " b ON a.post_id = b.ID LEFT OUTER JOIN " . PSIMAGESTABLE 
+			. " c ON c.wp_attach_id = a.post_id WHERE a.meta_key = '_wp_attachment_metadata'"
 			. $sql_post . $sql_med_ids . $sql_attach_ids . $limitsql;
 			
 			

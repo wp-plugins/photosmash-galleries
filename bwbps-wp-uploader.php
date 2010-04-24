@@ -1,38 +1,10 @@
 <?php
 /*  FUNCTIONS FOR UPLOADING AND SAVING IMAGES TO GALLERIES */
 
-if(!function_exists('json_encode')){
-	require("classes/JSON.php");
-}
-
-if(function_exists('check_ajax_referer') && !check_ajax_referer( "bwb_upload_photos" )){
-	$json['message']= "Invalid authorization...nonce field missing.";
-	$json['succeed'] = 'false'; 
-	echo json_encode($json);
-	exit();
-};
+if(preg_match('#' . basename(__FILE__) . '#', $_SERVER['PHP_SELF'])) { die('You are not allowed to call this page directly.'); }
 
 
-//Set Database Table Constants
-define("PSGALLERIESTABLE", $wpdb->prefix."bwbps_galleries");
-define("PSIMAGESTABLE", $wpdb->prefix."bwbps_images");
-define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
-define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
-define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
-define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
-
-//Set the Upload Path
-define('PSUPLOADPATH', WP_CONTENT_DIR .'/uploads');
-define('PSIMAGESPATH',PSUPLOADPATH."/bwbps/");
-define('PSIMAGESPATH2',PSUPLOADPATH."/bwbps");
-define('PSTHUMBSPATH',PSUPLOADPATH."/bwbps/thumbs/");
-define('PSTHUMBSPATH2',PSUPLOADPATH."/bwbps/thumbs");
-define('PSIMAGESURL',WP_CONTENT_URL."/uploads/bwbps/");
-define('PSTHUMBSURL',PSIMAGESURL."thumbs/");
-define("PSTABLEPREFIX", $wpdb->prefix."bwbps_");
 define("PSTEMPPATH",PSUPLOADPATH."/bwbpstemp/");
-
-require_once('admin/image-functions.php');
 
 class BWBPS_Uploader{
 	var $bwbpsCF;	//var to hold Save Custom Fields Class
@@ -54,11 +26,25 @@ class BWBPS_Uploader{
 	 * Constructor
 	 *
 	 */
-	function BWBPS_Uploader($psOptions, $gallery_id=false){
+	function BWBPS_Uploader($psOptions, $gallery_id=false, $no_referer=false){
+		
+		global $bwbPS;
+		
+		if(!function_exists('json_encode')){
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/classes/JSON.php");
+		}
+		
+		if( !$no_referer && function_exists('check_ajax_referer') && !check_ajax_referer( "bwb_upload_photos" ))
+		{
+			$json['message']= "Invalid authorization...nonce field missing.";
+			$json['succeed'] = 'false'; 
+			echo json_encode($json);
+			exit();
+		};
 		
 		$this->psOptions = $psOptions;
 		
-		$this->psImageFunctions = new BWBPS_ImageFunc();
+		$this->psImageFunctions = $bwbPS->psImageFunctions;
 		
 		if(!$gallery_id === false){
 			$this->json['gallery_id'] = (int)$gallery_id;
@@ -86,7 +72,7 @@ class BWBPS_Uploader{
 			$this->user_level = current_user_can('level_'
 				.$g['contrib_role']) || current_user_can('upload_to_photosmash') 
 				|| current_user_can('photosmash_'.$g['gallery_id']) ? true : false;
-			if(!user_level){
+			if(!$this->user_level){
 				if(current_user_can('upload_to_photosmash')){
 					$this->user_level = true;
 				}
@@ -99,7 +85,12 @@ class BWBPS_Uploader{
 			$this->echoJSON();
 			exit();
 		}
-		//Determine if user is author above...if so, no moderation
+		/*
+		 *	Determine if user is author above...if so, no moderation
+		 *	So...author's and above never get moderated.  In the Update to DB function
+		 *	we check to see if user_level == true...if so, no moderation.
+		 *	if not, then if default image_status is 1...no moderation...ELSE moderate
+		*/
 		$this->user_level = current_user_can('level_2');
 	}
 	
@@ -924,7 +915,7 @@ class BWBPS_Uploader{
 		//if($image_id && $this->psOptions['use_customfields']){
 		//if($this->psOptions['use_customfields']){
 			if(!isset($this->bwbpsCF)){
-				require_once("bwbps-savecustomfields.php");
+				require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-savecustomfields.php");
 			}	
 			$this->bwbpsCF = new BWBPS_SaveCustomFields();
 			$this->customData = $this->bwbpsCF->saveCustomFields($image_id);
@@ -1019,6 +1010,10 @@ class BWBPS_Uploader{
 			
 			$d['img_perpage'] = $data['img_perpage'] ? (int)$data['img_perpage'] : (int)$this->psOptions['img_perpage'];
 			$d['img_perrow'] = isset($data['img_perrow']) ? (int)$data['img_perrow'] : (int)$this->psOptions['img_perrow'];
+			
+			$d['mini_aspect'] = isset($data['mini_aspect']) ? (int)$data['mini_aspect'] : (int)$this->psOptions['mini_aspect'];
+			$d['mini_width'] = isset($data['mini_width']) ? (int)$data['mini_width'] : (int)$this->psOptions['mini_width'];
+			$d['mini_height'] =  isset($data['mini_height']) ? (int)$data['mini_height'] : (int)$this->psOptions['mini_height'];
 			
 			$d['thumb_aspect'] = isset($data['thumb_aspect']) ? (int)$data['thumb_aspect'] : (int)$this->psOptions['thumb_aspect'];
 			$d['thumb_width'] = isset($data['thumb_width']) ? (int)$data['thumb_width'] : (int)$this->psOptions['thumb_width'];

@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.7.01
+Version: 0.7.02
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -247,7 +247,8 @@ class BWB_PhotoSmash{
 				
 		$this->psOptions = $this->getPSOptions();
 		
-		require_once('admin/image-functions.php');
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/image-functions.php");
+		
 		$this->psImageFunctions = new BWBPS_ImageFunc();		
 		
 		$this->loadCustomFormOptions();
@@ -304,7 +305,8 @@ class BWB_PhotoSmash{
 	
 	//Called when plugin is activated
 	function init(){
-		require_once('admin/bwbps-init.php');
+		
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-init.php");
 		$bwbpsinit = new BWBPS_Init();					
 	}
 	
@@ -556,7 +558,7 @@ class BWB_PhotoSmash{
 	function loadAdminPage(){
 		
 		if(!$this->psAdmin){
-			require_once("admin/bwbps-admin.php");
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-admin.php");
 			$this->psAdmin = new BWBPS_Admin();
 		}
 		$this->psAdmin->printGeneralSettings();
@@ -565,7 +567,7 @@ class BWB_PhotoSmash{
 	function loadGallerySettings(){
 		
 		if(!$this->psAdmin){
-			require_once("admin/bwbps-admin.php");
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-admin.php");
 			$this->psAdmin = new BWBPS_Admin();
 		}
 		$this->psAdmin->printGallerySettings();
@@ -575,7 +577,7 @@ class BWB_PhotoSmash{
 	function loadPhotoManager(){
 	
 		if(!$this->psAdmin){
-			require_once("admin/bwbps-admin.php");
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-admin.php");
 			$this->psAdmin = new BWBPS_Admin();
 		}
 		$this->psAdmin->printManageImages();
@@ -586,7 +588,7 @@ class BWB_PhotoSmash{
 	function loadImageImporter(){
 	
 		if(!$this->psImporter){
-			require_once("admin/bwbps-importer.php");
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-importer.php");
 			$this->psImporter = new BWBPS_Importer($this->psOptions);
 		}
 		$this->psImporter->printImageImporter();
@@ -597,28 +599,28 @@ class BWB_PhotoSmash{
 	
 	function loadLayoutsEditor(){
 		
-		require_once("admin/bwbps-layouts.php");
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-layouts.php");
 		$layouts = new BWBPS_LayoutsEditor();		
 		return true;
 	}
 	
 	function loadFieldEditor(){
 		
-		require_once("admin/bwbps-fieldeditor.php");
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-fieldeditor.php");
 		$fieldEditor = new BWBPS_FieldEditor($this->psOptions);		
 		return true;
 	}
 	
 	function loadFormEditor(){
 		
-		require_once("admin/bwbps-formeditor.php");
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-formeditor.php");
 		$psform = new BWBPS_FormEditor($this->psOptions);		
 		return true;
 	}
 	
 	function loadPSInfo(){
 				
-		require_once("admin/bwbps-info.php");
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-info.php");
 		$ts = new BWBPS_Info();			
 		return true;
 	}
@@ -1537,6 +1539,10 @@ function getGallery($g){
 			$data['img_perrow'] = isset($g['img_perrow']) ? (int)$g['img_perrow'] : (int)$psoptions['img_perrow'];
 			$data['img_perpage'] = isset($g['img_perpage']) ? (int)$g['img_perpage'] : (int)$psoptions['img_perpage'];
 			
+			$data['mini_aspect'] = isset($g['mini_aspect']) ? (int)$g['mini_aspect'] : (int)$psoptions['mini_aspect'];
+			$data['mini_width'] = isset($g['mini_width']) ? (int)$g['mini_width'] : (int)$psoptions['mini_width'];
+			$data['mini_height'] =  isset($g['mini_height']) ? (int)$g['mini_height'] : (int)$psoptions['mini_height'];
+			
 			$data['thumb_aspect'] = isset($g['thumb_aspect']) ? (int)$g['thumb_aspect'] : (int)$psoptions['thumb_aspect'];
 			$data['thumb_width'] = isset($g['thumb_width']) ? (int)$g['thumb_width'] : (int)$psoptions['thumb_width'];
 			$data['thumb_height'] =  isset($g['thumb_height']) ? (int)$g['thumb_height'] : (int)$psoptions['thumb_height'];
@@ -1663,7 +1669,7 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 		
 	
 		if(!isset($this->psForm)){
-			require_once('bwbps-uploadform.php');
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-uploadform.php");
 			
 			if(!$this->stdFieldList || !$this->cfList){
 				$this->loadCustomFormOptions();	
@@ -1745,7 +1751,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	}
 	
 	if(!isset($this->psLayout)){
-		require_once('bwbps-layout.php');
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-layout.php");
 		$this->psLayout = new BWBPS_Layout($this->psOptions, $this->cfList);
 	}
 
@@ -1974,7 +1980,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 				if($layout){
 					
 					if(!isset($this->psLayout)){
-						require_once('bwbps-layout.php');
+						require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-layout.php");
 						$this->psLayout = new BWBPS_Layout($this->psOptions, $this->cfList);
 					}
 					$g = array('gallery_id' => $this->images[$img_key]['gallery_id']);
@@ -2584,10 +2590,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	 *
 	 */
 	function loadPSWidgets(){
-		require_once('widgets/bwbps-widget.php');
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/widgets/bwbps-widget.php");
 		register_widget( 'PhotoSmash_Widget' );
 		
-		require_once('widgets/bwbps-tagcloud.php');
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/widgets/bwbps-tagcloud.php");
 		register_widget( 'PhotoSmash_TagCloud' );
 	
 	}

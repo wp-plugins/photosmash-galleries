@@ -104,16 +104,18 @@ class BWBPS_ImageFunc{
 		}
 		
 		$where['image_id'] = (int)$image_id;
-				
+		if(is_array($data) ){
 		$upd['updated'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
-		
+		}
 		if((int)$upd['updated'] > 0){
 			$upd['message'] = "Image $image_id resized...";
+			$upd['status'] = 1;
 		} else {
-			$upd['message'] = "Resize failed...image $image_id";
+			$upd['message'] = "Could not resize (probably not needed)...image $image_id";
+			$upd['status'] = 0;
 		}
 		
-		$upd['status'] = 1;
+		
 		
 		
 		return $upd;

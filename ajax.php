@@ -19,7 +19,9 @@ if (!function_exists('add_action'))
 check_ajax_referer( "bwbps_moderate_images" );
 
 if(!function_exists('json_encode')){
-	require("classes/JSON.php");
+
+	require_once(WP_PLUGIN_DIR . "/photosmash-galleries/classes/JSON.php");
+	
 }
 
 $bwbpsuploaddir = wp_upload_dir();
@@ -46,7 +48,7 @@ define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
 define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
 define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
 
-require_once('admin/image-functions.php');
+require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/image-functions.php");
 
 class BWBPS_AJAX{
 	
@@ -436,8 +438,8 @@ class BWBPS_AJAX{
 		
 		if(current_user_can('level_10') && $json['image_id']){
 			
-			require_once('bwbps-savecustomfields.php');
-			
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-savecustomfields.php");
+						
 			$bwbpsCF = new BWBPS_SaveCustomFields();
 			$customData = $bwbpsCF->saveCustomFields($json['image_id']);
 			if(is_array($customData)){

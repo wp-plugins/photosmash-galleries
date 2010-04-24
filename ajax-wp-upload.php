@@ -18,7 +18,7 @@ if (!function_exists('add_action'))
 	require_once("../../../wp-includes/post.php");
 } 
  
-require_once("bwbps-wp-uploader.php");
+require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-wp-uploader.php");
 
 
 //
@@ -173,21 +173,13 @@ class BWBPS_AJAXUpload{
 
 
 function getPhotoSmashOptions(){
-		$bwbpsOptions = get_option('BWBPhotosmashAdminOptions');
-		if($bwbpsOptions && !empty($bwbpsOptions))
-		{
-			//Options were found..add them to our return variable array
-			foreach ( $bwbpsOptions as $key => $option ){
-				$opts[$key] = $option;
-			}
-		} else {
-			$opts = false;
-		}
-		return $opts;
+	global $bwbPS;
+	
+	return $bwbPS->psOptions;
+
 }
 
 $bwbpsOptions = getPhotoSmashOptions();
-
 
 
 //Check to see if Admin wants to use a custom script

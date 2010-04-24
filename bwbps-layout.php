@@ -2601,7 +2601,7 @@ class BWBPS_Layout{
 		$urlargs["bwbps_page_".$gallery_id ] = (int)$page;
 		$urlargs = array_merge($viewerargs, $urlargs, $othergals );
 			
-		return add_query_arg($urlargs, $url);
+		return add_query_arg($urlargs);	//was $url
 	}
 	
 	//Get the paging arguments for other galleries on the page
@@ -2908,6 +2908,8 @@ class BWBPS_Layout{
 				}
 				
 				$imgids = $this->getGalleryViewerImageIDs($g['gallery_ids'], $g['exclude_galleries']);
+				
+				if(!$imgids){ return; }
 				
 				$sqlSpecialWhere .= " AND " . PSIMAGESTABLE . ".image_id IN (" . $imgids . ") ";
 				
