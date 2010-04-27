@@ -188,9 +188,6 @@ class BWBPS_ImageFunc{
 			
 		// get the WP attachment info
 		$attach_file = get_post_meta($attach_id, '_wp_attached_file');
-		
-		print_r($attach_file);
-		return;
 
 		$img[0]['file'] = $attach_file[0];
 		$imgdata['meta_data'] = serialize($attach_file[0]['image_meta']);

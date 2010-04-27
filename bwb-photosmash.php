@@ -60,6 +60,10 @@ define("PSLAYOUTSTABLE", $wpdb->prefix."bwbps_layouts");
 define("PSFORMSTABLE", $wpdb->prefix."bwbps_forms");
 define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
 define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
+define("PSSHARINGHUBS", $wpdb->prefix."bwbps_sharinghubs");
+define("PSSHARINGSITES", $wpdb->prefix."bwbps_sharingsites");
+
+
 
 
 //Set the Upload Path
@@ -83,10 +87,10 @@ define('PSTEMPLATESURL',WP_CONTENT_URL."/themes/");
 
 define('BWBPSPLUGINURL',WP_PLUGIN_URL."/photosmash-galleries/");
 
-define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a> 
+define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=psmashSharing'>Sharing</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
 
-define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> 
+define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=psmashSharing'>Sharing</a>
 		<br/>");
 		
 $bwbps_special_msg = "";
@@ -221,6 +225,7 @@ class BWB_PhotoSmash{
 		
 	var $psOptions;
 	var $psLayout;
+	var $psSharing;
 	
 	var $psForm;
 	
@@ -270,6 +275,8 @@ class BWB_PhotoSmash{
 		
 		//Add action for Tags Gallery
 		add_filter('the_posts', array(&$this, 'displayTagGallery') );
+		
+		require_once('bwbps-share.php');
 
 	}
 	
@@ -522,6 +529,10 @@ class BWB_PhotoSmash{
 			add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 9,  
 			'importPSImages', array(&$bwbPS, 'loadImageImporter'));
 			
+			add_submenu_page(basename(__FILE__), __('Photo Sharing')
+					, __('Photo Sharing'), 9, 'psmashSharing'
+					, array(&$bwbPS, 'loadPhotoSharing'));
+			
 			//Advanced Features (Layouts and Custom Fields
 			if($this->psOptions['use_advanced'] == 1){
 				$bshowadv = true;
@@ -584,6 +595,19 @@ class BWB_PhotoSmash{
 		
 		return true;
 	}
+	
+	function loadPhotoSharing(){
+	
+		if(!$this->psSharing){
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/bwbps-sharing.php");
+			$this->psSharing = new BWBPS_Sharing();
+		}
+		$this->psSharing->printSharing();
+		
+		return true;
+	}
+	
+	
 	
 	function loadImageImporter(){
 	

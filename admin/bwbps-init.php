@@ -377,6 +377,45 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
+			//Sharing Hubs
+			//Create the Sharing Hub table
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_sharinghubs (
+				hub_id INT(4) NOT NULL AUTO_INCREMENT,
+				hub_name VARCHAR(255),
+				hub_description TEXT,
+				hub_url VARCHAR(255),
+				api_url VARCHAR(255),
+				logo_url VARCHAR(255),
+				categories TEXT,
+				tags TEXT,
+				restricts_categories TINYINT(1),
+				requires_verification TINYINT(1),
+				verification_status TINYINT(1), 
+				number_sites INT(4),
+				pixoox_key TEXT,
+				admin_email VARCHAR(255),
+				hub_status TINYINT(1) NOT NULL default '0',
+				PRIMARY KEY  (hub_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+			//Sharing Sites
+			//Create the Sharing Sites table
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_sharingsites (
+				site_id INT(4) NOT NULL AUTO_INCREMENT,
+				site_name VARCHAR(255),
+				site_url VARCHAR(255),
+				api_url VARCHAR(255),
+				logo_url VARCHAR(255),
+				categories TEXT, 
+				tags TEXT, 
+				pixoox_key TEXT,
+				admin_email VARCHAR(255),
+				site_status TINYINT(1) NOT NULL default '0',
+				PRIMARY KEY  (hub_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
 		//Load Preloaded Layouts, Forms, etc
 		$this->insertPreloads();
 						
