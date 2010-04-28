@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.7.01
+Stable tag: 0.7.02
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -84,6 +84,15 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+0.7.02 - 4/27/2010
+
+    * Fixed Resizing message when no resize needed - when resizing an image, if there were no new image sizes to create, it was causing an error by trying to update the database. On the front-end, you just saw the Saving message...forever.
+    * Coming soon!: Pixoox Photo Sharing - Press-to-Press Photo sharing. Just think about it ;-)
+    * Fixed Gallery Viewer Database Error - when there were no galleries with a cover image set, it was giving a Database Error.
+    * Fixed Pagination - pagination on sites that had pretty permalinks turned off wasn't working properly.
+    * Fixed Admin Image Uploads - I left some test code in there that prevented the uploads. Ugggg...
+    * Added Color Border and Gallery ID to Photo Importer - when attachments were fetched that are in a gallery, they are outlined in red.
 
 Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "Changelog on Smashly.net") to see what is currently in development.
 
