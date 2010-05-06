@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.7.02
+Version: 0.7.03
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -821,6 +821,7 @@ function shortCodeGallery($atts, $content=null){
 			'no_gallery' => false,
 			'gallery_type' => false,
 			'no_form' => false,
+			'no_pagination' => false,
 			'gallery' => false,
 			'gal_id' => false,
 			'image_id' => false,			// NOTE: when referencing image_id from the DB results, use: psimageID   ...image_id is aliased!
@@ -835,6 +836,7 @@ function shortCodeGallery($atts, $content=null){
 			'tags' => false,
 			'tags_for_uploads' => false,
 			'images' => 0,
+			'page' => 0,
 			'thumb_height' => 0,
 			'thumb_width' => 0,
 			'any_height' => 0,
@@ -1068,6 +1070,7 @@ function shortCodeGallery($atts, $content=null){
 		}
 		
 		$g['limit_images'] = (int)$images;
+		$g['limit_page'] = (int)$page;
 		
 		if($thumb_height){
 			$g['thumb_height'] = (int)$thumb_height;
@@ -1093,6 +1096,9 @@ function shortCodeGallery($atts, $content=null){
 				
 		$g['use_thickbox'] = $thickbox;
 		$g['form_visible'] = $form_visible;
+		
+		$g['no_pagination'] = $no_pagination;
+		$g['no_form'] = $no_form;
 		
 		/* *********************************** */
 		// Shortcode for MANUAL FORM placement //
@@ -2702,6 +2708,19 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			$sc_atts[] = "images=$apostrophe" . $atts['images'] . "$apostrophe";
 		}
 		
+		//page
+		if( isset($atts['page']) ){
+			$sc_atts[] = "page=$apostrophe" . $atts['page'] . "$apostrophe";
+		}
+		
+		//no pagination
+		$sc_atts[] = "no_pagination=1";
+		
+		$sc_atts[] = "no_form=true";
+		
+		$sc_atts[] = "no_gallery_header=true";
+		
+		
 		return $sc_atts;
 	}
 	
@@ -2720,6 +2739,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		$picatts['thumb_height'] = $g['thumb_height'];
 		$picatts['gallery_type'] = $g['gallery_type'];
 		$picatts['images'] = $g['images'];
+		$picatts['page'] = $g['page'];
 		
 		
 		if($g['tags'] == 'post_tags'){
@@ -2732,7 +2752,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		
 		if( is_array($param_array)){
 			$params = implode("&", $param_array);
-			$params = urlencode($params);
+			//$params = urlencode($params);
 		}
 				
 		$ret = '<a class="piclenselink" href="javascript:PicLensLite.start({feedUrl:\'' 

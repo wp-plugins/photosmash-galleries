@@ -60,6 +60,7 @@ class BWBPS_Layout{
 			, 'post_url'
 			, 'ps_rating'
 			, 'bloginfo'
+			, 'blog_name'
 			, 'plugin_url'
 			, 'piclens'
 			, 'wp_attachment_link'
@@ -261,13 +262,16 @@ class BWBPS_Layout{
 			$perma = get_permalink($post->ID);	//The permalink for this post
 		}
 		
-		$pagenum = $this->getPageNumbers();
+		if(!$g['no_pagination']){
+			$pagenum = $this->getPageNumbers();
 		
-		//Set to page 1 if not supplied in Get or Post
-
-		if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
-			$pagenum[$g['gallery_id']] = 1;
-		}	
+		
+			//Set to page 1 if not supplied in Get or Post
+	
+			if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
+				$pagenum[$g['gallery_id']] = 1;
+			}	
+		}
 		
 		//Set up Attributes:  caption width, image class name, etc
 		if(!$g['thumb_width'] || $g['thumb_width'] < 60){
@@ -623,7 +627,7 @@ class BWBPS_Layout{
 			}
 			
 			//Need the insertion point to create a holder for adding new images.
-			if( !$g['no_insertbox'] ){
+			if( !$g['no_insertbox'] && !$g['no_form']){
 				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
 			}
 		}
@@ -2712,10 +2716,13 @@ class BWBPS_Layout{
 				$galid_sql = ' AND gallery_id = ' . (int)$g['gallery_id'];
 			}
 		
-			$br_row = $wpdb->get_row('SELECT AVG(avg_rating) as avgrating, AVG(rating_cnt) 
-				as numvotes
-				FROM ' . PSIMAGESTABLE . ' WHERE 
-				status = 1 ' . $galid_sql);
+		
+			if((int)$g['poll_id'] > -2 || (int)$g['poll_id'] == NULL ){
+				$br_row = $wpdb->get_row('SELECT AVG(avg_rating) as avgrating, 
+					AVG(rating_cnt) as numvotes
+					FROM ' . PSIMAGESTABLE . ' WHERE 
+					status = 1 ' . $galid_sql);
+			}
 				
 			if($br_row){
 				$nvotes = $br_row->numvotes;
@@ -2729,7 +2736,14 @@ class BWBPS_Layout{
 					. ".rating_cnt ) ) AS bwbps_br_rating ";
 				
 			} else {
-				$custdata .= ", " . PSIMAGESTABLE . ".avg_rating AS bwbps_br_rating ";
+			
+				if((int)$g['poll_id'] == -2){
+					//Use the average
+					$custdata .= ", if(" . PSIMAGESTABLE . ".votes_cnt = 0, 0, " . PSIMAGESTABLE . ".votes_sum / " . PSIMAGESTABLE . ".votes_cnt) AS bwbps_br_rating ";
+				} else {
+					$custdata .= ", " . PSIMAGESTABLE . ".avg_rating AS bwbps_br_rating ";
+				}
+				
 			}
 			
 		}
@@ -2744,26 +2758,38 @@ class BWBPS_Layout{
 				}
 			}
 		}
+		
+		// Calculate LIMIT
+		if((int)$g['limit_images']){
+		
+			if((int)$g['limit_page'] && (int)$g['limit_page'] > 1){
+				$limitpage = ( ((int)$g['limit_page'] -1) * (int)$g['limit_images']);
+			}
+			
+			$limitimages = " LIMIT " . $limitpage . (int)$g['limit_images'];
+		
+		
+		}
 
 		switch ($g['gallery_type']){
 			
 			case 20:	// Random
 				$sortby = 'RAND() ';
 				if(!(int)$g['limit_images']){
-					$g['limit_images'] = 8;
+					$limitimages = " LIMIT " . $limitpage . "8";
 				}
 				
-				$sortby .= " LIMIT ". (int)$g['limit_images'];
+				$sortby .= $limitimages;
 			
 				break;
 			
 			case 30:	// Recent
 				$sortby = PSIMAGESTABLE.'.created_date DESC ';
 				if(!(int)$g['limit_images']){
-					$g['limit_images'] = 8;
+					$limitimages = " LIMIT " . $limitpage . "8";
 				}
 				
-				$sortby .= " LIMIT ". (int)$g['limit_images'];
+				$sortby .= $limitimages;
 			
 				break;
 			case 40 :	//tag gallery
@@ -2831,7 +2857,7 @@ class BWBPS_Layout{
 				
 				if((int)$g['limit_images']){
 					
-					$sortby .= " LIMIT ". (int)$g['limit_images'];
+					$sortby .= $limitimages;
 				
 				}
 				
@@ -2857,14 +2883,14 @@ class BWBPS_Layout{
 				}
 				
 				if(!(int)$g['limit_images']){
-					$g['limit_images'] = 8;
+					$limitimages = " LIMIT " . $limitpage . "8";
 				}
 				
 				$sqlSpecialWhere .= " AND " . PSIMAGESTABLE . ".favorites_cnt > 0 ";
 				
 				$sortby = $this->getSortbyField($g, $sortorder);
 				
-				$sortby .= " LIMIT ". (int)$g['limit_images'];
+				$sortby .= $limitimages;
 				
 				break;
 			
@@ -2893,12 +2919,12 @@ class BWBPS_Layout{
 				}
 				
 				if(!(int)$g['limit_images']){
-					$g['limit_images'] = 8;
+					$limitimages = " LIMIT " . $limitpage . "8";
 				}
 				
 				$sortby = $this->getSortbyField($g, $sortorder);
 				
-				$sortby .= " LIMIT ". (int)$g['limit_images'];
+				$sortby .= $limitimages;
 				
 				break;
 				
@@ -2916,7 +2942,7 @@ class BWBPS_Layout{
 				$sortby = $this->getSortbyField($g, $sortorder);
 				
 				if((int)$g['limit_images']){
-					$sortby .= " LIMIT ". (int)$g['limit_images'];
+					$sortby .= $limitimages;
 				}
 				
 				break;
@@ -2927,7 +2953,7 @@ class BWBPS_Layout{
 				
 				if((int)$g['limit_images']){
 					
-					$sortby .= " LIMIT ". (int)$g['limit_images'];
+					$sortby .= $limitimages;
 				
 				}
 				
@@ -2988,11 +3014,10 @@ class BWBPS_Layout{
 		}
 		
 		//if($g['gallery_type'] == 70)
-		//	echo $sql;
+			//echo $sql;
 
 		$images = $wpdb->get_results($sql, ARRAY_A);
-		
-						
+								
 		return $images;
 	}
 	
@@ -3048,8 +3073,30 @@ class BWBPS_Layout{
 				$sortby = $wpdb->users.'.user_login ' . $sortorder . ', ' . $wpdb->users.'.user_nicename ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
 			
-			case 4 :	// Rating  -  Bayesian Ranking
-				$sortby = 'bwbps_br_rating ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+			case 4 :	// Rating
+				switch ((int)$g['poll_id'] ) {
+					
+					case -2 :	// Vote up /vote down
+						$sortby = 'bwbps_br_rating ' 
+							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
+						break;
+					
+					case -3 :	// Vote up
+						$sortby = 'votes_sum ' 
+							. $sortorder . ', '.PSIMAGESTABLE.'.votes_cnt ASC, '.PSIMAGESTABLE.'.seq';
+						break;
+						
+					case -1 :	//Stars - Bayesian Ranking
+						$sortby = 'bwbps_br_rating ' 
+							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
+						break;
+					
+					default :
+						$sortby = 'bwbps_br_rating ' 
+							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
+						break;
+				}
+				
 				break;
 			
 			case 5 :	// Favorites Count

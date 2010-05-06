@@ -15,21 +15,28 @@ if (!function_exists('add_action'))
  *	General attributes for the shortcode
  */
  
-$sc_atts = " no_form=true no_gallery_header=true ";
 
+
+$aa['no_form'] = 'true';
+$aa['no_gallery_header'] = 'true';
 $aa['id'] = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $aa['thumb_height'] = isset($_GET['thumb_height']) ? (int)$_GET['thumb_height'] : 0;
 $aa['thumb_width'] = isset($_GET['thumb_width']) ? (int)$_GET['thumb_width'] : 0;
 $aa['gallery_type'] = isset($_GET['gallery_type']) ? $_GET['gallery_type'] : 0;
 $aa['tags'] = isset($_GET['tags']) ? $_GET['tags'] : "";
 $aa['layout'] = isset($_GET['layout']) ? $_GET['layout'] : "";
-$aa['images'] = isset($_GET['images']) ? (int)$_GET['images'] : 0;
+$aa['images'] = isset($_GET['images']) ? (int)$_GET['images'] : 25;
+$aa['page'] = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+$aa['no_pagination'] = 1;
 
 $sc_atts_array = $bwbPS->filterMRSSAttsFromArray($aa, "'");
 
 if(is_array($sc_atts_array)){
 	$sc_atts .= implode(" ", $sc_atts_array);
 }
+
+
 
 $sc = "[photosmash $sc_atts ]";
 

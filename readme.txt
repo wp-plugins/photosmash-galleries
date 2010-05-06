@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 2.9.2
-Stable tag: 0.7.02
+Stable tag: 0.7.03
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -84,6 +84,12 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+0.7.03 - 5/5/2010
+
+    * Fixed Encoding in Photo Manager - for caption and custom fields.  Was using htmlentities(). Switched to esc_attr().  Fixed problem with non-English alphabets
+    * Fixed Gallery DropDowns in Photo Manager - was not showing galleries with NULL gallery types
+    * Changed Sort Order alogrithms for Ratings - for Vote up/Vote down, changed to average. For Vote up, changed to straight number of votes.  Stars still use Bayesian ordering
 
 0.7.02 - 4/27/2010
 

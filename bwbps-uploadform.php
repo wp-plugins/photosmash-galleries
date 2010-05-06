@@ -1198,7 +1198,7 @@ class BWBPS_UploadForm{
 					//Single Value Text Box
 					$ret = "<input tabindex='".$tabindex."' ".$id
 						." ".$ele_name
-						." value='".htmlentities($val, ENT_QUOTES)
+						." value='".esc_attr($val)
 						."' type='text' maxlength='255' class='bwbps_reset' />";
 				break;
 			case 1 :	//textarea
@@ -1212,7 +1212,7 @@ class BWBPS_UploadForm{
 					$ret .= " cols=40 ";
 				}
 				$ret .= " class='bwbps_reset bwbps_textarea' />"
-					.htmlentities($val, ENT_QUOTES)."</textarea>
+					.esc_attr($val)."</textarea>
 					";
 				break;
 			case 2 :	//option (ddl)
@@ -1264,7 +1264,7 @@ class BWBPS_UploadForm{
 				}
 				$ret = "<input tabindex='".$tabindex."' " . $id
 					. " ".$ele_name
-					. " value='".htmlentities($val, ENT_QUOTES)
+					. " value='".esc_attr($val)
 					. "' type='text' style='width:130px;' class='bwbps_reset' />";
 					
 				$ret .= "
@@ -1282,7 +1282,7 @@ class BWBPS_UploadForm{
 			case 6 :	//hidden
 				$ret = "<input  ".$id
 					." ".$ele_name
-					." value='".htmlentities($val, ENT_QUOTES)
+					." value='".esc_attr($val)
 					."' type='hidden' size='255' />";
 				break;
 				

@@ -24,8 +24,10 @@ class BWBPS_Init{
 			require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 			
 			if ( $wpdb->has_cap( 'collation' ) ) {
-				if ( ! empty($wpdb->charset) )
+				if ( ! empty($wpdb->charset) ){
 					$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
+					$alter_charset = "CHARACTER SET $wpdb->charset";
+				}
 				if ( ! empty($wpdb->collate) )
 					$charset_collate .= " COLLATE $wpdb->collate";
 			}
@@ -80,8 +82,8 @@ class BWBPS_Init{
 				favorites_cnt BIGINT(11),
 				avg_rating FLOAT(8,4) NOT NULL,
 				rating_cnt BIGINT(11) NOT NULL,
-				votes_sum BIGINT(11),
-				votes_cnt BIGINT(11),
+				votes_sum BIGINT(11) NOT NULL DEFAULT '0',
+				votes_cnt BIGINT(11) NOT NULL DEFAULT '0',
 				PRIMARY KEY   (image_id),
 				INDEX (gallery_id)
 				)  $charset_collate;";
@@ -127,11 +129,11 @@ class BWBPS_Init{
 			$sql = "CREATE TABLE " . $table_name . " (
 				gallery_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				post_id BIGINT(20),
-				gallery_name VARCHAR(250),
-				gallery_type TINYINT(1),
+				gallery_name VARCHAR(255),
+				gallery_type TINYINT(1) NOT NULL default '0',
 				caption TEXT,
-				add_text VARCHAR(250),
-				upload_form_caption VARCHAR(250),
+				add_text VARCHAR(255),
+				upload_form_caption VARCHAR(255),
 				contrib_role TINYINT(1) NOT NULL,
 				anchor_class VARCHAR(255),
 				img_count BIGINT(11),
@@ -172,10 +174,38 @@ class BWBPS_Init{
 				poll_id INT(4),
 				rating_position INT(4),
 				pext_insert_setid INT(4),
-				PRIMARY KEY  (gallery_id))
-				;";
+				PRIMARY KEY  (gallery_id)) $charset_collate;";
 			dbDelta($sql);
 					
+					
+			// fix character set for columns in tables prior to 0.7.03
+			$sql = "ALTER TABLE $table_name MODIFY gallery_name VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY caption TEXT $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY add_text VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY upload_form_caption VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY anchor_class VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY img_rel VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY img_class VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY caption_template VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
+			$sql = "ALTER TABLE $table_name MODIFY default_image VARCHAR(255) $alter_charset";
+			$wpdb->query($sql);
+			
 			
 			//Drop Old Index
 			$table_name = $wpdb->prefix . "bwbps_imageratings";
@@ -389,8 +419,8 @@ class BWBPS_Init{
 				categories TEXT,
 				tags TEXT,
 				restricts_categories TINYINT(1),
-				requires_verification TINYINT(1),
-				verification_status TINYINT(1), 
+				requires_signup TINYINT(1),
+				signup_status TINYINT(1), 
 				number_sites INT(4),
 				pixoox_key TEXT,
 				admin_email VARCHAR(255),
@@ -398,24 +428,7 @@ class BWBPS_Init{
 				PRIMARY KEY  (hub_id)
 				)  $charset_collate;";
 			dbDelta($sql);
-			
-			//Sharing Sites
-			//Create the Sharing Sites table
-			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_sharingsites (
-				site_id INT(4) NOT NULL AUTO_INCREMENT,
-				site_name VARCHAR(255),
-				site_url VARCHAR(255),
-				api_url VARCHAR(255),
-				logo_url VARCHAR(255),
-				categories TEXT, 
-				tags TEXT, 
-				pixoox_key TEXT,
-				admin_email VARCHAR(255),
-				site_status TINYINT(1) NOT NULL default '0',
-				PRIMARY KEY  (hub_id)
-				)  $charset_collate;";
-			dbDelta($sql);
-			
+						
 		//Load Preloaded Layouts, Forms, etc
 		$this->insertPreloads();
 						

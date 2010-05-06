@@ -2399,7 +2399,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			
 			// IMAGE DETAILS
 			
-			$psCaption = htmlentities($image->image_caption, ENT_QUOTES);
+			$psCaption = esc_attr($image->image_caption);
 			
 			if($i==0){$border = " style='border-right: 1px solid #999;'";} else {$border = '';}
 			
@@ -2790,7 +2790,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		global $wpdb;
 		
 		if($exclude){
-			$excludesql = " WHERE ".PSGALLERIESTABLE.".gallery_type < 10 ";
+			$excludesql = " WHERE ".PSGALLERIESTABLE.".gallery_type < 10 OR ".PSGALLERIESTABLE.".gallery_type IS NULL ";
 		}
 		
 		
