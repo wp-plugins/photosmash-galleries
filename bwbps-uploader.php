@@ -805,9 +805,10 @@ class BWBPS_Uploader{
  		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
  		
  		wp_mail($admin_email, "New images for moderation", $ret, $headers );
-		$this->psOptions['last_alert'] = time();
+ 		
+		$last_alert = time();
 		
-		update_option($this->adminOptionsName, $this->psOptions);
+		update_option('BWBPhotosmashLastAlert', $last_alert);
 		update_option('BWBPhotosmashNeedAlert',0);
 		
 		$data['alerted'] = -1;

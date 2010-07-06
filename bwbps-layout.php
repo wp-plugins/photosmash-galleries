@@ -154,6 +154,21 @@ class BWBPS_Layout{
 	//  Build the Markup that gets inserted into the Content...$g == the gallery data
 	function getGallery($g, $layoutName = false, $image=false, $useAlt=false)
 	{
+	
+		if( $g['wp_gallery'] && (int)$g['post_id'] ){
+		
+			$shortcode = "[gallery id=" . (int)$g['post_id'] 
+				. " " . $g['wp_gallery_params'] ."]";
+
+			$ret = do_shortcode( $shortcode );
+			
+			//Need the insertion point to create a holder for adding new images.
+			if( !$g['no_insertbox'] && !$g['no_form']){
+				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
+			}
+			
+			return $ret;
+		}
 		global $post;
 		global $wpdb;
 				
@@ -195,22 +210,6 @@ class BWBPS_Layout{
 		}
 
 		if(!$image){
-		
-			//Determine if we need to bring back Custom Fields
-			/*
-			if($this->psOptions['use_customfields'] || 
-				$this->psOptions['use_customform'] || $layoutName){
-				
-				$usecustomfields = true;
-				
-			} else { 
-				
-				$usecustomfields = false;
-				
-			}
-		
-			$images = $this->getGalleryImages($g, $usecustomfields);
-			*/
 			
 			$images = $this->getGalleryImages($g, true);
 			
@@ -377,7 +376,9 @@ class BWBPS_Layout{
 			}
 					
 			foreach($images as $image){
-						
+				
+				unset($imageTemp);
+				
 				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 				
 				if($g['ps_favorite_html']){
@@ -401,10 +402,13 @@ class BWBPS_Layout{
 				if( $image['pext_insert'] ){
 				
 					if(!$layout){
-						$psTable .= $this->getStandardLayout($g, $image);
+						$imageTemp .= $this->getStandardLayout($g, $image);
 					} else {
-						$psTable .= $image['pext_insert'];
+						$imageTemp .= $image['pext_insert'];
 					}
+					
+					$psTable .= apply_filters('bwbps_image', $imageTemp);
+					
 					continue;
 				
 				}
@@ -414,6 +418,9 @@ class BWBPS_Layout{
 				if($rate){
 					$rating['image_id'] = $image['psimageID'];
 					$rating['avg_rating'] = $image['avg_rating'];
+					
+					//if($image['bwbps_br_rating']) $rating['avg_rating'] = $image['bwbps_br_rating'];
+					
 					$rating['rating_cnt'] = $image['rating_cnt'];
 					$rating['votes_sum'] = $image['votes_sum'];
 					$rating['votes_cnt'] = $image['votes_cnt'];
@@ -506,41 +513,52 @@ class BWBPS_Layout{
 				//Get the Layout:  Standard or Custom
 				if(!$layout){
 					//Standard Layout
-					$psTable .= $this->getStandardLayout($g, $image);
+					$imageTemp .= $this->getStandardLayout($g, $image);
+					
+					$psTable .= apply_filters('bwbps_image', $imageTemp);
 							
 				} else {
 					//Custom Layout
 										
 					if($imgNum % 2 == 0){
-						$psTableRow .= $this->getCustomLayout($g, $image, $layout, true);	
+						$imageTemp .= $this->getCustomLayout($g, $image, $layout, true);	
 					} else {
-						$psTableRow .= $this->getCustomLayout($g, $image, $layout, false);	
+						$imageTemp .= $this->getCustomLayout($g, $image, $layout, false);	
 					}
-					
+
+					$imageTemp = apply_filters('bwbps_image', $imageTemp);
+
 					if($layout->cells_perrow){
+		
 						$cellsInRow++;
+		
 						if($cellsInRow % $layout->cells_perrow == 0){
-							$psTable .="<tr>".$psTableRow."</tr>";
-							$psTableRow = "";
+							$psTable .="<tr>".$imageTemp."</tr>";					
 							$cellsInRow = 0;
 						}
 					
 					} else {
-						$psTable .= $psTableRow;
-						$psTableRow = "";
+						$psTable .= $imageTemp;
 					}
+					
 				}
+				
+				unset($imageTemp);
 			}
 			
 		} else {
 			if(!$layout){
-				$psTable .= "<li class='psgal_".$g['gallery_id']
+				
+				$imageTemp =  "<li class='psgal_".$g['gallery_id']
 					."' style='height: ".($g['thumb_height'] + 15)
 					."px; margin: 15px 0;'><img alt='' 	src='"
 					.WP_PLUGIN_URL."/photosmash-galleries/images/"
 					."ps_blank.gif' width='1' height='"
 					.$g['thumb_height']."' /></li>";
+					
+				$psTable .= apply_filters('bwbps_empty_gallery', $imageTemp);	//Allow people to set their own look for an empty gallery
 			}
+			unset($imageTemp);
 		}
 		
 		//If using Cells Per Row (for tables in Custom Forms..a setting Advanced)
@@ -1387,7 +1405,7 @@ class BWBPS_Layout{
 				
 			case '[wp_attachment_link]' :
 				if((int)$image['wp_attach_id']){
-					$ret = get_attachment_link( (int)$image['wp_attach_id']);
+					$ret = get_attachment_link( (int)$image['wp_attach_id'] );
 				}
 				
 				break;
@@ -2701,7 +2719,7 @@ class BWBPS_Layout{
 		
 		
 		// Calculate ORDER BY
-		$sortorder = (int)$g['sort_order'] ? "DESC" : "ASC";
+		$sortorder = $g['sort_order']>0 || strtolower($g['sort_order']) == 'asc' ? "ASC" : "DESC";
 		
 		// Bayesian Sorting from:
 		// http://www.thebroth.com/blog/118/bayesian-rating
@@ -2710,7 +2728,7 @@ class BWBPS_Layout{
 			/ (avg_num_votes + this_num_votes)
 		*/
 		
-		if( (int)$g['sort_field'] == 4 ){
+		if( (int)$g['sort_field'] == 4 || (string)$g['sort_field'] == 'rank' ){
 		
 			if(!$g['gallery_type'] == 99){
 				$galid_sql = ' AND gallery_id = ' . (int)$g['gallery_id'];
@@ -3013,8 +3031,7 @@ class BWBPS_Layout{
 				
 		}
 		
-		//if($g['gallery_type'] == 70)
-			//echo $sql;
+		//echo $sql;
 
 		$images = $wpdb->get_results($sql, ARRAY_A);
 								
@@ -3050,48 +3067,51 @@ class BWBPS_Layout{
 	function getSortbyField($g, $sortorder){
 		global $wpdb;
 		
-		switch ( (int)$g['sort_field'] ){
+		switch ( (string)$g['sort_field'] ){
 				
-			case 0 :	// When Uploaded
-				$sortby = PSIMAGESTABLE.'.created_date ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
-				break;
-			case 1 :	// Custom Sort
+			case "sequence" :
+			case "1" :	// Custom Sort sequence
 				$sortby = PSIMAGESTABLE.'.seq, '.PSIMAGESTABLE.'.created_date '. $sortorder;
 				break;
+			
+			/*	-- Not implemented --
+			case "custom" :
 			case 2 :	// Custom Fields
-				$sortby = PSIMAGESTABLE.'.created_date ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
-				break;
-			case 3 :	// User IDs
+			 	break;
+			*/
+			
+			case "user" :
+			case "3" :	// User IDs
 				$sortby = PSIMAGESTABLE.'.user_id ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
 			
-			case 6 :	// User Name
+			case "user_name" :
+			case "6" :	// User Name
 				$sortby = $wpdb->users.'.user_nicename ' . $sortorder . ', ' . $wpdb->users.'.user_login ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
 			
-			case 7 :	// User Login
+			case "user_login" :
+			case "7" :	// User Login
 				$sortby = $wpdb->users.'.user_login ' . $sortorder . ', ' . $wpdb->users.'.user_nicename ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
 			
-			case 4 :	// Rating
+			case "rank" :
+			case "4" :	// Rating
+
 				switch ((int)$g['poll_id'] ) {
-					
+
 					case -2 :	// Vote up /vote down
-						$sortby = 'bwbps_br_rating ' 
-							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
+						$sortby = 'bwbps_br_rating '
+							. $sortorder . ', '.PSIMAGESTABLE.'.votes_cnt ASC ';
 						break;
 					
 					case -3 :	// Vote up
 						$sortby = 'votes_sum ' 
 							. $sortorder . ', '.PSIMAGESTABLE.'.votes_cnt ASC, '.PSIMAGESTABLE.'.seq';
 						break;
-						
-					case -1 :	//Stars - Bayesian Ranking
-						$sortby = 'bwbps_br_rating ' 
-							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
-						break;
-					
-					default :
+
+					case -1 :
+					default :	//Stars - Bayesian Ranking
 						$sortby = 'bwbps_br_rating ' 
 							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
 						break;
@@ -3099,13 +3119,22 @@ class BWBPS_Layout{
 				
 				break;
 			
-			case 5 :	// Favorites Count
+			case "favorites" :
+			case "5" :	// Favorites Count
 				$sortby = PSIMAGESTABLE.'.favorites_cnt ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			
+			case "caption" :
+				$sortby = PSIMAGESTABLE.'.image_caption ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
+				break;
+			
+			case "file_name" :	// this is actually stored in the database under image_name...bummer
+				$sortby = PSIMAGESTABLE.'.image_name ' . $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;
 			
 			default :	// When Uploaded
 				$sortby = PSIMAGESTABLE.'.created_date ' 
-					. $sortorder . ', '.PSIMAGESTABLE.'.seq';
+							. $sortorder . ', '.PSIMAGESTABLE.'.seq';
 				break;		
 		}
 		

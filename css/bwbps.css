@@ -601,3 +601,17 @@ div.bwbps_galviewer_head {
 	display: block !important;
 	width: 100%;
 }
+
+
+/* Pixoox PhotoSharing */
+span.pxx-sharing { color: #449900; }
+span.pxx-buried { color: #cc0000; }
+span.pxx-waiting { color: #881199; }
+span.pxx-not-sharing { color: #999999; }
+span.pxx-not-applied { color: #000000; }
+
+tr.pxx-sharing { background-color: #eeffdd; }
+tr.pxx-buried { background-color: #FFEFEF; }
+tr.pxx-waiting { background-color: #FFDFFF; }
+tr.pxx-not-sharing { background-color: #f5f5f5; }
+tr.pxx-not-applied { background-color: #fff; }

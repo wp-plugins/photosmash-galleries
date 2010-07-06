@@ -7,10 +7,11 @@ class BWBPS_ImageFunc{
 	var $uploads; //The wp_upload_dir array
 
 	var $added_images;
+	var $options;	// PS Options
 
 	//Constructor
-	function BWBPS_ImageFunc(){
-	
+	function BWBPS_ImageFunc(&$o){
+		$this->options = $o;
 	}
 	
 	
@@ -37,6 +38,63 @@ class BWBPS_ImageFunc{
 		
 		$result = $wpdb->get_row($sql, ARRAY_A);
 		return $result;
+	
+	}
+	
+	function getImageURLs($image){
+		return $this->getImageLocArray($image, 'url');
+	}
+	
+	function getImageDirs($image){
+		return $this->getImageLocArray($image, 'dir');
+	}
+	
+	// Returns an array of all the available Image Size URLs
+	function getImageLocArray($image, $loc_type){
+	
+		$uploads = wp_upload_dir();
+		
+		if($loc_type == 'dir'){
+			$thumbloc = PSTHUMBSPATH;
+			$imageloc = PSIMAGESPATH;
+			$baseloc = 'basedir';
+		} else {
+			$thumbloc = PSTHUMBSURL;
+			$imageloc = PSIMAGESURL;
+			$baseloc = 'baseurl';
+		}
+	
+		if( !$image['thumb_url'] ){
+				
+			if( $image['file_name'] ){
+				$urls['mini_url'] = $thumbloc.$image['file_name'];
+				$urls['thumb_url'] = $thumbloc.$image['file_name'];
+				$urls['medium_url'] = $thumbloc.$image['file_name'];
+				$urls['image_url'] = $imageloc.$image['file_name'];
+			}
+		
+		} else {
+		
+			// Add the Uploads base URL to the image urls.
+			// This way if the user ever moves the blog, everything might still work ;-) 
+			// set $uploads at top of function...only do it once
+			if(!$image['mini_url']){ $urls['mini_url'] = $image['thumb_url']; }
+			$urls['mini_url'] = $uploads[$baseloc] . '/' . $image['mini_url'];
+			$urls['thumb_url'] = $uploads[$baseloc] . '/' . $image['thumb_url'];
+			$urls['medium_url'] = $uploads[$baseloc] . '/' . $image['medium_url'];
+			$urls['image_url'] = $uploads[$baseloc] . '/' . $image['image_url'];
+		
+		}
+		
+		if( $image['file_url'] && $this->psValidateURL($image['file_url']) ){
+			$urls['image_url'] = $image['file_url'];
+		}
+		
+		if(!$urls['mini_url']){ $urls['mini_url'] = $urls['thumb_url']; }
+		
+		if(!$urls['medium_url']){ $urls['medium_url'] = $urls['thumb_url']; }
+		
+		return $urls;
 	
 	}
 	
@@ -415,6 +473,74 @@ class BWBPS_ImageFunc{
 		$ret = str_replace(basename($filepath), "", $filepath);
 		return $ret;
 	
+	}
+	
+	/* 
+	 *	Send New Image Alerts
+	 *
+	*/
+	//Send email alerts for new images
+	function sendNewImageAlerts($alert_now = false)
+	{
+		global $wpdb;
+		
+		if(!$alert_now && !get_option('BWBPhotosmashNeedAlert') == 1){ return; }
+		
+		if( !$this->options['alert_all_uploads'] ){
+			
+			$sqlStatus = " AND status = -1 " ;
+			$msgStatus = " awaiting moderation.";
+		
+		}
+		
+		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 $sqlStatus ;";
+		$results = $wpdb->get_results($sql);
+		if(!$results) return;
+		
+		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos". $msgStatus. ".  Select the appropriate gallery or click image below.<p><a href='".get_bloginfo('url')
+		."/wp-admin/admin.php?page=managePhotoSmashImages'>".get_bloginfo('name')." - PhotoSmash Photo Manager</a></p>";
+		
+		
+		$ret .= "<table><tr>";
+		$i = 0;
+		
+		$uploads = wp_upload_dir();
+		
+		foreach($results as $row)
+		{
+		
+			if( !$row->thumb_url ){
+				
+					$row->thumb_url = PSTHUMBSURL.$row->file_name;
+			
+			} else {
+				$row->thumb_url = $uploads['baseurl'] . '/' . $row->thumb_url;
+			
+			}
+		
+			$ret .= "<td><a href='".get_bloginfo('url')
+		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".$row->thumb_url."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
+			$i++;
+			if($i==4){
+				$ret .="</tr><tr>";
+				$i=0;
+			}
+		}
+		$ret .="</tr></table>";
+		$admin_email = get_bloginfo( "admin_email" );
+		
+ 		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
+ 		
+ 		wp_mail($admin_email, "New images for moderation", $ret, $headers );
+		$last_alert = time();
+		
+		update_option('BWBPhotosmashLastAlert', $last_alert);
+		update_option('BWBPhotosmashNeedAlert',0);
+		
+		$data['alerted'] = -1;
+		$where['alerted'] = 0;
+		$wpdb->update(PSIMAGESTABLE, $data, $where);
+		
 	}
 	
 }	//Closes class

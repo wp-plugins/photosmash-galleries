@@ -15,6 +15,11 @@ class BWBPS_Share
   var $display = false;
   
   var $hubs;
+  
+  var $sharing_options;
+  
+  var $h;	// pixoox helpers
+  var $img_funcs;	// Image Functions
  
 /*
 * @url is the url we are sending the image to
@@ -25,10 +30,16 @@ class BWBPS_Share
  
   function BWBPS_Share()
   {
-  	$this->hubs = $this->getSharingHubs();
   	
-  	if(!$this->hubs || !is_array($this->hubs)){ $this->hubs = false; return; }
+  	global $bwbPS;
   	
+  	$this->sharing_options = $bwbPS->sharing_options;
+  
+  	require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/pxx-helpers.php");
+	$this->h = new PixooxHelpers();
+	
+	$this->img_funcs = $bwbPS->img_funcs;
+	
   }
   
   
@@ -36,12 +47,11 @@ class BWBPS_Share
    *	Gets the list of Activated Sharing Hubs we need to send image to
    *	If verification is required, it also only gets verified hubs
   */
-  	
   function getSharingHubs(){
   	
   	global $wpdb;
   	
-  	$sql = "SELECT * FROM ". PSSHARINGHUBS . " WHERE hub_status > 0 AND (verification_status = 1 OR requires_verification = 0);";
+  	$sql = "SELECT * FROM ". PSHUBSTABLE . " WHERE hub_status > 0;";
   	
   	$res = $wpdb->get_results($sql);
   	
@@ -58,180 +68,309 @@ class BWBPS_Share
   function shareImage($image)
   {
   
-  	$this->post_data = $this->buildPostData($image);
+  	$ret = new BWBPS_Msg();
   	
-  	if(!empty($this->hubs) && is_array($this->hubs)){
+  	if( !(int)$image['image_id'] || $image['status'] < 1 ){ return; }
   	
+  	if( $image['upload_agent'] != 'user' && $image['upload_agent'] != 'approval' ){ return; }
+  
+  	if(!isset($this->hubs)){
+	  	$this->hubs = $this->getSharingHubs();
+	}
+  	  	
+  	if( empty($this->hubs) ){ $this->hubs = false; return; }
+  	
+  	if(empty($this->post_data)){
+	  	$this->post_data = $this->buildPostData($image);
+	}
+	  	
+  	if(is_array($this->hubs)){
+  		 	
   		foreach($this->hubs as $hub){
-  		
-  			if(!$hub->api_url || !$this->verifyURL($hub->api_url) ){
-  			
-  				$this->logImageAction( $image->image_id . ": " . $hub->name . ' - bad URL: ' . $hub->api_url);
+  			$hub->api_url = $this->h->validURL($hub->api_url);
+  			if( !$hub->api_url ){
+
+  				$ret->status = 1003;
+  				$ret->message = "bad api url";
+  				
+  				$this->logImageAction($image['image_id'], $hub->hub_id, $hub->hub_name, $ret);
+  				continue;
   			
   			}
 
-  			if(!$hub->active){ continue; }
-
-  			$this->post_data['pixoox_key'] = $this->getPixooxKey($hub->name);
-  			if(!$this->post_data['pixoox_key']){ 
-  				$this->logImageAction($image->image_id . ": " .$hub->name . ' missing pixoox key.');
-  				continue; 
+  			$this->post_data['pixoox_key'] = $this->h->decrypt($hub->pixoox_key);
+  			
+  			if(!$this->post_data['pixoox_key'] && $this->hub->requires_signup){ 
+  				
+  				$ret->status = 1004;
+  				$ret->message = "bad pixoox key";
+  				
+  				$this->logImageAction($image['image_id'], $hub->hub_id, $hub->hub_name, $ret);
+  				continue;
+  				
   			}
   			
-  			$this->post($hub->api_url, $this->post_data);
-  		
+  			// And now we send the Image via CURL
+  			unset($ret);
+	  		$response = $this->h->sendCURL($hub->api_url, $this->post_data);	  			  		
+	  			  	
+			/*
+				Return codes:
+				1001 - invalid nonce
+				1002 - invalid site url
+				1003 - invalid api url
+				1004 - invalid pixoox key
+				1005 - server settings are incomplete
+				1006 - unable to create user name for site url
+				1007 - User not authorized to upload to gallery
+				1008 - site has not been authorized for sharing
+				1010 - image timed out
+				1020 - invalid image type
+				1030 - image too large
+				2000 - ok
+			*/
+ 			
+  			if($response){ 
+  				$response = json_decode($response); 
+				
+				if( is_object( $response ) ){
+					$ret = $response;
+					$ret->status = $response->status;
+					$ret->message = $response->message;
+				}
+				
+  			} 
+			
+			if( empty($ret->status) )
+			{
+  				
+  				$ret->status = 1010;
+  				$ret->message = 'timed out';
+  			}
+
+  			
+  			$ret->hub_id = $hub->hub_id;
+  			$ret->hub_name = $hub->hub_name;
+  			
+  			$this->logImageAction($image['image_id'], $hub->hub_id, $hub->hub_name, $ret);
   		}
   	
   	}
-    
-    
-    if(empty($this->post_data) || !is_array($this->post_data)) //validates the data
-      $this->throw_error(0);
-      
-    $this->display = $displayXML;
+  	
+  	return;
  
-  }
+  }  
   
-  function getPixooxKey($hub){
-  
-  	return get_option('pixoox_hub_' . $hub);
-  
-  }
-  
-  function logImageAction($msg){
+  function logImageAction($image_id, $hub_id, $hub_name, $ret){
+  	
+  		global $wpdb;
+  		
+  		$data['image_id'] = (int)$image_id;
+  		$data['hub_id'] = (int)$hub_id;
+  		$data['hub_name'] = $hub_name;
+  		
+  		$data['status'] = (int)$ret->status;
+  		$data['url'] = isset($ret->media_url) ? $this->h->validURL($ret->media_url) : "";
+  		$data['message'] = isset($ret->message) ? $ret->message : "";
+  		
+  		$serialized = serialize($ret);
+  		
+  		$data['serialized'] = $serialized;
+  		
+  		$data['created_date'] = current_time('mysql',0);
+  		
+  		$wpdb->insert(PSSHARINGLOGTABLE, $data);
   
   }
   
   function buildPostData($image){
-  
-  	$p['url'] = get_permalink($image['post_id']);	// this is the URL the images will link to...refine this
-  	// Gallery Viewer is a possibility
-  	// Allow Sharers to set up where they want each gallery to point...add to the Galleries table
+    
+  	$p['url'] = $this->getLink($image);	// this is the URL the images will link to
   	
+  	if($p['url']){
   	
+  		$p['url'] = apply_filters( 'bwbps_sharing_url', $p['url']);
+  	
+  	}
+  	 
+  	$p['action'] 			= 'upload'; 	
   	$p['site_name'] 		= get_bloginfo('name');
   	$p['site_url']			= get_bloginfo('url');
   	$p['admin_email']		= get_bloginfo('admin_email');
-  	$p['description']		= get_bloginfo('description');
+	
+	$p['post_tags']			= $this->getTags($image);
+  	
+  	$p['caption']			= wp_kses($image['image_caption'], array());
+  	  	
+  	// Get the Image File
+  	$imageurls = $this->img_funcs->getImageDirs($image);
+  	
+  	switch ($this->sharing_options['send_size']){
+  	
+  		case 2 : 
+  			$file = $imageurls['image_url'];
+  			break;
+  		case 1 : 
+  			$file = $imageurls['thumb_url'];
+  			break;
+  		default : 
+  			$file = $imageurls['medium_url'];
+  			break;  	
+  	}
+  	  	
+  	$p['media'] = "@".$file; //Be sure to prefix @, else it wont upload
   	
   	if($p['description'])
-  	{
-  		
+  	{	
   		$p['description'] = strip_tags($p['description']);
   		
   		if(strlen($p['description']) > 140){
   			$p['description'] = substr($p['description'],0,137) . "...";
   		}
-  	
   	}
   	
-  	$p['twitter_id'] = "";
+  	return $p;
   
   }
   
-  function postToTwitPic($attach){
+  function getTags($image){
+  
+  	// Get Photo Tags if this is an Approval generated share
+	if( $image['upload_agent'] ){
+  		$image['post_tags'] = $this->getImageTerms( $image['image_id'] );
+  	}
+  
+  	if( !empty($image['post_tags']) ){
 	
-		// In Media upload, user can elect not to send a twitpic
-		//...other uploads that add attachments go through always
-		if(isset($_REQUEST['twitpicit_verified']) ){
+		$tags = $image['post_tags']; 		
+  		
+  	} else {
+  	  		
+  		$pid = (int)$image['post_id'] ? (int)$image['post_id'] : (int)$image['gal_post_id'];
+  		
+  		if($pid){
+  			$gottags = get_the_tags($pid);
+  			
+  			if ( is_array($gottags) ){
+		  		foreach ($gottags as $tag)
+				{
+					$tags[] = $tag->name;
+				}
+			}
 			
-			if(!isset($_REQUEST['twitpicit_post_image'])){
-				return;
-			} 
+			$gotcats = get_the_category($pid);
 			
-		}
-		
-		if(!isset($this->tpPost)){
-			require_once('twitpic-it-post.php');
-		}
-			
-		$tweet =  $this->_settings['twitpicit']['update_twitter'] ? true : false;
-		
-		$file='file_to_be_uploaded.gif';
-		
-		
-		$postfields = array();
-		 
-		$postfields['username'] = $this->_settings['twitpicit']['twitter_username'];
-		 
-		$postfields['password'] = $this->_settings['twitpicit']['twitter_password'];
-		
-		
-		//Get File Path and Post Permalink, etc
-		$imgdata = $this->getImagePathFromAttachment($attach);
-		
-		$file = $imgdata['media'];
-		
-		if(!$file){ return false; }
-		
-		if(isset($_REQUEST['twitpicit_msg']) ){
-			
-			$postfields['message'] = wp_filter_kses( $_REQUEST['twitpicit_msg'] );
-		
-		} else {
-		
-			$postfields['message'] = stripslashes($this->_settings['twitpicit']['twitter_msg']);
-		
-		}
-		
-		$postfields['message'] = str_replace("[post_url]", $imgdata['permalink'], $postfields['message']);		
-		$postfields['media'] = "@$file"; //Be sure to prefix @, else it wont upload
-				 
-		$t=new TwitPicItPost($postfields,false,$tweet);
-		$xml = $t->post();
-		
+			if( is_array($gotcats) ){
+			foreach ($gotcats as $cat)
+				{
+					$tags[] = $cat->cat_name;
+				}
+			}
+  		}
+  	}
+  	
+  	if( is_array($tags) ){ 	
+		$tags = array_unique($tags);
+		$tags = array_map("trim", $tags);
+		$tags = wp_kses($tags, array());
+		$tags = implode(",", $tags);
 	}
- 
-  function post($url, $post_data)
-  {
-	return $this->makeCurl($url, $post_data);
+  	
+  	return $tags;
+  
   }
   
-  function makeCurl($url, $post_data)
-  {
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 2);
-    curl_setopt($curl, CURLOPT_HEADER, false);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($curl, CURLOPT_BINARYTRANSFER, 1);
-    curl_setopt($curl, CURLOPT_URL, $url);
-    curl_setopt($curl, CURLOPT_POST, 3);
-    curl_setopt($curl, CURLOPT_POSTFIELDS, $post_data);
-    curl_setopt($curl, CURLOPT_TIMEOUT, 1);	//This causes the request to timeout and drive on
-    
-    $this->result = curl_exec($curl);
-    
-    curl_close($curl);
-    
-    /*
-    
-    // undo this comment and the timeout above if you want to sit around and wait for a response.
-    // trouble is that with opening this up to everybody to be a sharing hub, 
-    // we don't know if their servers will be fast or if they'll just upset users with slow/hung servers
-    
-    if($this->display)
-    {
-      header ("content-type: text/xml");
-      echo $this->result ;
-    }
-    
-	$res->mediaurl = $this->extractTaggedText($this->result, '<mediaurl>', '</mediaurl>' ) ;
-	$res->mediaid = $this->extractTaggedText($this->result, '<mediaid>', '</mediaid>') ;
-    //Requires PHP5
-    if(function_exists('simplexml_load_string')){
-    	//$res = simplexml_load_string($this->result);
-    } else {
-    	$res->mediaurl = $this->extractTaggedText($this->result, '<mediaurl>', '</mediaurl>' ) ;
-    	$res->mediaid = $this->extractTaggedText($this->result, '<mediaid>', '</mediaid>') ;
-    }
-    
-    return $res;
-    */
-    
-    return true;
-    
+  // This is used to get Photo Tags...Approval 'shares' do not contain the tags in the image array, so we go get them
+  function getImageTerms( $image_id ){
+  	
+  	$argsarray = array('name');
+  	$terms = wp_get_object_terms( $image_id, 'photosmash', $argsarray);
+	$termlist = "";
+	$termlist = get_the_term_list( $image_id, 'photosmash', '', ',' );
+	return $termlist;
+
   }
   
+  function getLink($image){
+  	global $bwbPS;
+  	
+  	switch ((int)$this->sharing_options['images_url']) {
+  	
+  		case 3 :	// Specific Post/Page
+  			if((int)$this->sharing_options['images_url_post_id']){
+	  			$link = get_permalink( $this->sharing_options['images_url_post_id'] );
+  			}
+  			break;
+  		
+  		case 2:		// Gallery Viewer
+  			
+  			if((int)$bwbPS->psOptions['gallery_viewer']){  				
+  				$link = get_permalink( (int)$bwbPS->psOptions['gallery_viewer'] );
+  				if($link){
+  					$link = add_query_arg('psmash-image', $image['image_id'], $link);
+  				}
+  			}
+  			break;
+  			
+  		case 1:		// Image Posts
+  			
+  			global $psmashExtend;
+  			
+  			if( isset($psmashExtend) && $psmashExtend->options['new_posts'] ){
+  				if((int)$image['post_id']){
+  					$link = get_permalink( (int)$image['post_id'] );
+	  			}
+  			}
+  			
+  			break;
+  			
+  		case 0:	// Attachment / Gallery Post
+  			
+  			$link = $this->getDefaultLink( $image );
+  			
+  			break;
+  	}
+  	
+  	if ( !$link ){
+  		$link = $this->getDefaultLink( $image );
+  	}
+  	
+  	
+  	return $link;
+  
+  }
+  
+  function getDefaultLink($image){
+  	
+  		// Send the Attachment Page link if at all possible
+		if((int)$image['wp_attach_id']){
+			
+			$link = get_attachment_link( (int)$image['wp_attach_id'] );
+			
+			if( !$link ){
+				$link = get_permalink((int)$image['wp_attach_id']);
+			}
+		}
+		
+		if( !$link && (int)$image['gal_post_id'] ){
+			$link = get_permalink( (int)$image['gal_post_id'] );
+		}
+		
+		if( !$link && (int)$image['post_id'] ){
+  			$link = get_permalink( (int)$image['post_id'] );
+	  	}
+		
+		if( !$link ){
+			// Just send the plain old Image URL...I don't know what else to do
+			$link = $image['image_url'];
+		}
+		
+		return $link;
+  	
+  }
+  
+  
+    
   
   // NOT USED unless we remove the cURL timeout
   function extractTaggedText($xml,  $start, $end){
@@ -247,20 +386,16 @@ class BWBPS_Share
 
   
   }
-  
-  function throw_error($code) //handles few errors, you can add more
-  {
-    switch($code)
-    {
-      case 0:
-        echo 'Think, you forgot to pass the data';
-        break;
-      default:
-        echo 'Something just broke !!';
-        break;
-    }
-    exit;
-  }
 } //class ends here
- 
+
+class BWBPS_Msg {
+	
+	var $status = 0;
+	var $message = "";
+	
+	function BWBPS_Msg(){
+	
+	}
+
+}
 ?>

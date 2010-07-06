@@ -462,6 +462,8 @@ class BWBPS_Admin{
 			$d['status'] = isset($_POST['gal_status']) ? 1 : 0;
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
 			
+			$d['post_id'] = (int)$_POST['gal_post_id'];
+			
 			if(!(int)$_POST['gal_cover_imageid'] && $gallery_id){
 				$coverimg = $this->pickGalleryCoverImage($gallery_id);
 			} else {
@@ -650,7 +652,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	<tr>
 		<th><b>Display code:</b></th>
 		<td>[photosmash id=<?php echo $galleryID;?>]
-		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php if($galOptions['post_id']){ echo "<br/>Associated with post: ".$galOptions['post_id'];} ?>
+		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php  echo "<br/>Associated with post: ".$galOptions['post_id']; ?>
 		</td>
 	</tr>
 	
@@ -669,11 +671,25 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				</td>
 	</tr>
 	
+	<tr>
+				<th>Related Post ID:</th>
+				<td>
+					<input type='text' name="gal_post_id" value='<?php echo $galOptions['post_id'];?>' size="5"/> <a style='color: #cc0000 !important; font-size: 15px; font-weight: bold;' href='javascript: void(0);' onclick='alert("Attention! This is a very important setting to your Gallery.  It controls which Post this gallery will show up on when the photosmash shortcode is used without an ID. It also controls the Post ID that images loaded to this gallery will receive."); return false;'>?</a> 
+					<?php if( (int)$galOptions['post_id'] ){ 
+						$postpermalink = get_permalink($galOptions['post_id']);
+						
+						echo "<a target='_blank' href='" .$postpermalink ."'>" . $postpermalink . "</a>";
+						
+						}
+					?>
+				</td>
+	</tr>
+	
 	
 	<tr>
 				<th>Gallery Image ID:</th>
 				<td>
-					<input type='text' name="gal_cover_imageid" value='<?php echo $galOptions['cover_imageid'];?>' size="10"/> (Blank for a Random image. Visit <a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galOptions['gallery_id']; ?>' title='Photo Manager' target='_blank'>Photo Manager</a> to find an image ID.)
+					<input type='text' name="gal_cover_imageid" value='<?php echo $galOptions['cover_imageid'];?>' size="5"/> (Blank for a Random image. Visit <a href='admin.php?page=managePhotoSmashImages&psget_gallery_id=<?php echo $galOptions['gallery_id']; ?>' title='Photo Manager' target='_blank'>Photo Manager</a> to find an image ID.)
 					<?php
 					
 					if((int)$galOptions['cover_imageid']){
@@ -704,17 +720,10 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					*/
 					?>
 					<select name="gal_gallery_type">
-						<option value="0" <?php if($psOptions['gallery_type'] == 0) echo 'selected=selected'; ?>>Photo gallery</option>
-						<option value="3" <?php if($galOptions['gallery_type'] == 3) echo 'selected=selected'; ?>>YouTube gallery</option>
+						<option value="0" <?php if($galOptions['gallery_type'] == 0) echo 'selected=selected'; ?>>Photo gallery</option>
 						
-						<?php
-						 /*  We're blocking out the Video options right now
-						<option value="4" <?php if($galOptions['gallery_type'] == 4) echo 'selected=selected'; ?>>Video - YouTube + Upload</option>
-						<option value="5" <?php if($galOptions['gallery_type'] == 5) echo 'selected=selected'; ?>>Video - Uploads only</option>
+						<option value="97" <?php if($galOptions['gallery_type'] == 97) echo 'selected=selected'; ?>>WordPress Gallery</option>
 						
-						*/ 
-						?>
-						<option value="6" <?php if($galOptions['gallery_type'] == 6) echo 'selected=selected'; ?>>Mixed - Images + YouTube</option>
 						<option value="10" <?php if($galOptions['gallery_type'] == 10) echo 'selected=selected'; ?>>Contributor Gallery</option>
 						<option value="20" <?php if($galOptions['gallery_type'] == 20) echo 'selected=selected'; ?>>Random Images</option>
 						<option value="30" <?php if($galOptions['gallery_type'] == 30) echo 'selected=selected'; ?>>Recent Images</option>
@@ -726,6 +735,19 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						
 						<option value="99" <?php if($galOptions['gallery_type'] == 99) echo 'selected=selected'; ?>>Highest Ranked</option>
 						<option value="100" <?php if($galOptions['gallery_type'] == 100) echo 'selected=selected'; ?>>Gallery Viewer</option>
+						
+						<option value="3" <?php if($galOptions['gallery_type'] == 3) echo 'selected=selected'; ?>>YouTube gallery (deprecated)</option>
+						
+						<?php
+						 /*  We're blocking out the Video options right now
+						<option value="4" <?php if($galOptions['gallery_type'] == 4) echo 'selected=selected'; ?>>Video - YouTube + Upload</option>
+						<option value="5" <?php if($galOptions['gallery_type'] == 5) echo 'selected=selected'; ?>>Video - Uploads only</option>
+						
+						*/ 
+						?>
+						<option value="6" <?php if($galOptions['gallery_type'] == 6) echo 'selected=selected'; ?>>Mixed - Images + YouTube (deprecated)</option>
+
+						
 					</select>
 				</td>
 	</tr>
@@ -733,7 +755,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	<tr>
 				<th>Display using Layout:</th>
 				<td>
-					<?php echo $layoutsDDL;?>
+					<?php  echo $layoutsDDL;?>
 				</td>
 	</tr>	
 	
@@ -752,6 +774,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<option value="6" <?php if($galOptions['sort_field'] == 6) echo 'selected=selected'; ?>>User Name</option>
 						<option value="7" <?php if($galOptions['sort_field'] == 7) echo 'selected=selected'; ?>>User Login</option>
 						<option value="4" <?php if($galOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Rating</option>
+						<option value="5" <?php if($galOptions['sort_field'] == 5) echo 'selected=selected'; ?>>Favorited Count</option>
 					</select>
 					
 					<input type="radio" name="gal_sort_order" value="0" <?php if(!$galOptions['sort_order']) echo 'checked'; ?>>Ascending &nbsp;
@@ -1987,6 +2010,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		global $bwbPS;
 		$psOptions = $this->psOptions;
 		
+		
 		if(isset($_POST['showModerationImages'])){
 			//Getting images needing moderation
 			$galleryID ='moderation';
@@ -2014,7 +2038,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				$ddlID = $galleryID;
 				
 				$imgcount = $this->getGalleryImageCount($galleryID);
-				$bwbPS->psImageFunctions->updateGalleryImageCount((int)$galleryID,0, $imgcount);
+				$bwbPS->img_funcs->updateGalleryImageCount((int)$galleryID,0, $imgcount);
 			}
 		}
 		
@@ -2555,7 +2579,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<tr><td>Image id:</td><td>"
 				. $image->image_id."</td></tr>
 				<tr><td>WP media id: </td>
-					<td>" . $image->wp_attach_id."</td></tr>
+					<td><a href='" . get_attachment_link( $image->wp_attach_id ) . "' title='view attachment'>" . $image->wp_attach_id . "</a></td></tr>
 				<tr><td>Gallery: </td>
 					<td><a href='admin.php?"
 				. "page=managePhotoSmashImages&amp;psget_gallery_id="

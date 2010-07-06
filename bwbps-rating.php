@@ -30,6 +30,7 @@ class BWBPS_Rating{
 		$data['gallery_id'] = (int)$_REQUEST['gallery_id'];
 		$data['poll_id'] = (int)$_REQUEST['poll_id'];
 		
+		
 		if((int)$user_ID == 0){
 		
 			$data['user_ip'] = $this->getUserIP();
@@ -77,13 +78,17 @@ class BWBPS_Rating{
 			$data['rating'] = (int)$score;
 			$data['status'] = (int)$status;
 			
+			$summaries_data = $data;
+			
+			$data['comment'] = '';
+			
 			$ret = $wpdb->insert(PSRATINGSTABLE, $data);
 			$rating_id = $wpdb->insert_id;
 			
 			if($ret){		
 			
 				//Update the Summary tables
-				$ret = $this->updateSummaries($data);
+				$ret = $this->updateSummaries($summaries_data);
 				echo "Vote added.";
 				
 			} else {

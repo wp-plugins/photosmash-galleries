@@ -145,7 +145,7 @@ class BWBPS_AJAXUpload{
 		if($processStatus){ 
 			$image_id = $this->saveUploadToDBStep($saveCustomFields); 
 			
-			do_action('bwbps_upload_done', $this->psUploader->imageData);
+			do_action('bwbps_upload_done', array( $this->psUploader->imageData) );
 			
 			return $image_id;
 			

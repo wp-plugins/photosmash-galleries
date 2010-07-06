@@ -9,6 +9,7 @@
  *
 */
 
+
 if (!function_exists('add_action'))
 {
 	require_once("../../../wp-load.php");
@@ -32,6 +33,7 @@ class BWBPS_AJAXUpload{
 	function BWBPS_AJAXUpload($psOptions, $_allowNoImg=false){
 	
 		$this->psUploader = new BWBPS_Uploader($psOptions);	
+		$this->psUploader->upload_agent = 'user';	// This tells everybody where this image is coming from
 		$this->allowNoImg = $_allowNoImg;
 		
 	}
@@ -55,6 +57,7 @@ class BWBPS_AJAXUpload{
 
 		//Set the "handle" object to the uploaded file
 		$this->psUploader->getFileType($fileInputNumber);  //Takes a param for file field # (blank or 2 are presets)
+	
 		
 	}
 	
@@ -91,7 +94,6 @@ class BWBPS_AJAXUpload{
 				break;
 		}
 		
-			
 		return $ret;
 	}
 	
@@ -125,8 +127,10 @@ class BWBPS_AJAXUpload{
 	 *  Process Upload File
 	 *	All-in-one function for Prepare Upload and Saving Image to Database
 	*/
-	function processUpload($fileInputNumber="", $processThumbnail = true, $saveCustomFields = true)
+	function processUpload($fileInputNumber="", $processThumbnail = true, 
+		$saveCustomFields = true)
 	{
+		//So, this is legacy...we always want to save custom fields now
 		$saveCustomFields = true;
 		//Step 1 -3
 		$this->prepareUploadStep($fileInputNumber);
@@ -138,9 +142,7 @@ class BWBPS_AJAXUpload{
 		if($processStatus){ 
 		
 			$image_id = $this->saveUploadToDBStep($saveCustomFields); 
-			
-			do_action('bwbps_upload_done', $this->psUploader->imageData);
-						
+									
 		}
 		
 		
@@ -148,6 +150,7 @@ class BWBPS_AJAXUpload{
 		
 			//Step 6 - Add image to Media Library if turned on
 			$this->addToWPMediaLibrary();
+			do_action('bwbps_upload_done', $this->psUploader->imageData);
 			
 			//Step 7 - Do Action 'bwbps_uploaded' - this triggers the create new post in PhotoSmash Extend
 			//		 - it can also be called by other plugins or themes

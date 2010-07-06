@@ -3,9 +3,6 @@
 define('DOING_AJAX', true);
 define('WP_ADMIN', true);
 
-
-
-
 if (!function_exists('add_action'))
 {
 	require_once("../../../wp-load.php");
@@ -48,20 +45,23 @@ define("PSRATINGSSUMMARYTABLE", $wpdb->prefix."bwbps_ratingssummary");
 define("PSCUSTOMDATATABLE", $wpdb->prefix."bwbps_customdata");
 define("PSCATEGORIESTABLE", $wpdb->prefix."bwbps_categories");
 
-require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/image-functions.php");
-
 class BWBPS_AJAX{
 	
 	var $psUploader;
 	var $allowNoImg = false;
 	var $psOptions;
 	
-	var $psImageFunctions; // Image Functions class
+	var $img_funcs; // Image Functions class
 	
 	function BWBPS_AJAX(){
-		$this->psOptions = $this->getPSOptions();
+		//$this->psOptions = $this->getPSOptions();
 		
-		$this->psImageFunctions = new BWBPS_ImageFunc();
+		global $bwbPS;
+		
+		$this->psOptions = $bwbPS->psOptions;
+		$this->img_funcs = $bwbPS->img_funcs;
+				
+		//$this->img_funcs = new BWBPS_ImageFunc($this->psOptions);
 		
 		if(isset($_POST['action']) && $_POST['action']){
 			$action = $_POST['action'];
@@ -564,7 +564,17 @@ class BWBPS_AJAX{
 			$json['action'] = 'approved';
 			$json['deleted'] = '';
 			
-			$this->psImageFunctions->updateGalleryImageCount(0, $json['image_id']);
+			$this->img_funcs->updateGalleryImageCount(0, $json['image_id']);
+			
+			
+			$sql = "SELECT * FROM " . PSIMAGESTABLE . " WHERE image_id = " . (int)$json['image_id'];
+		
+			$image = $wpdb->get_row($sql, ARRAY_A);
+			
+			if($image){
+				$image['upload_agent'] = 'approval';
+				do_action('bwbps_image_approved', $image );
+			}
 								
 			echo json_encode($json);
 			return;
@@ -732,7 +742,7 @@ class BWBPS_AJAX{
 					.' WHERE image_id = %d', $imgid));
 					
 				
-				$this->psImageFunctions->updateGalleryImageCount($gallery_id);
+				$this->img_funcs->updateGalleryImageCount($gallery_id);
 					
 					
 				if((int)$row['wp_attach_id'] && $delete_med_lib ){
@@ -822,7 +832,7 @@ class BWBPS_AJAX{
 				$json['action'] = 'deleted'.$filename;
 				$json['deleted'] = 'deleted';
 				
-				$this->psImageFunctions->updateGalleryImageCount(0, $json['image_id']);
+				$this->img_funcs->updateGalleryImageCount(0, $json['image_id']);
 				
 			} else {$json['status'] = 0;}
 		} else {
@@ -1014,7 +1024,7 @@ class BWBPS_AJAX{
 			
 			if($image_id){
 							
-				$imgFunc = $this->psImageFunctions;
+				$imgFunc = $this->img_funcs;
 				
 				$json = $imgFunc->resizeImage($image_id);
 				

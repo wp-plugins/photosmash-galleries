@@ -261,6 +261,22 @@ class BWBPS_Info{
 			$aret[5] = '';
 		}
 		
+		//Ratings Table
+		$table_name = $wpdb->prefix . "bwbps_imageratings";
+		$ret .="
+			<li>". $table_name.": ";
+		
+		if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+			$b = false;
+			$aret[0] += 1;
+			$aret[6]=" - <span style='color:red;'>was missing...update run successfully</span>";
+			$ret .= "<span style='color: red;'>Missing</span></li>";
+		} else {
+			
+			$ret .= "<span style='color: green;'>Exists</span>".$aret[6]."</li>";
+			$aret[6] = '';
+		}
+		
 		if(!$b){
 			require_once('bwbps-init.php');
 			$bwbpsinit = new BWBPS_Init();						

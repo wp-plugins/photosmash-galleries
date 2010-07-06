@@ -227,7 +227,7 @@ class BWBPS_Init{
 				user_id BIGINT(20) NOT NULL,
 				user_ip VARCHAR(30) ,
 				rating TINYINT(1) NOT NULL,
-				comment VARCHAR(250) NOT NULL,
+				comment VARCHAR(250),
 				updated_date TIMESTAMP NOT NULL,
 				status TINYINT(1) NOT NULL,
 				PRIMARY KEY  (rating_id),
@@ -420,12 +420,33 @@ class BWBPS_Init{
 				tags TEXT,
 				restricts_categories TINYINT(1),
 				requires_signup TINYINT(1),
+				allows_adult TINYINT(1), 
 				signup_status TINYINT(1), 
 				number_sites INT(4),
+				user_name VARCHAR(60),
 				pixoox_key TEXT,
+				twitter_token TEXT,
+				nonce VARCHAR(255),
 				admin_email VARCHAR(255),
+				created_date DATETIME NOT NULL,
 				hub_status TINYINT(1) NOT NULL default '0',
 				PRIMARY KEY  (hub_id)
+				)  $charset_collate;";
+			dbDelta($sql);
+			
+			//Sharing Log
+			//Create the Sharing Log table
+			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_sharinglog (
+				log_id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				image_id BIGINT(20) NOT NULL,
+				hub_id INT(4),
+				hub_name VARCHAR(255),
+				status INT(4),
+				url VARCHAR(255),
+				message TEXT,
+				serialized TEXT,
+				created_date DATETIME NOT NULL,
+				PRIMARY KEY  (log_id)
 				)  $charset_collate;";
 			dbDelta($sql);
 						
@@ -574,16 +595,14 @@ class BWBPS_Init{
 		unset($d);
 		
 		//Preload the Image Viewer Layout
-		if(!$wpdb->get_var("SELECT layout_id FROM " 
-			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'image_view_layout'")){
-		
+				
 			$d['layout_name'] = 'image_view_layout';
 			
 			$d['cells_perrow'] = 0;
 			$d['layout'] = "
 <div class='bwbps_galviewer' style='width:100%; text-align: center;'>
 	<div class=''>
-		<a rel='lightbox[album_[gallery_id]]' href='[image_url]' title='[caption_escaped]'>[medium]</
+		<a rel='lightbox[album_[gallery_id]]' href='[image_url]' title='[caption_escaped]'>[medium]</a>
 	</div>
 	<div style='clear: both;'>
 			[caption]
@@ -599,14 +618,42 @@ class BWBPS_Init{
 	<h3 style='width: 100%; text-align: center;'>EXIF Data</h3>
 	[exif_table no_exif_msg='No EXIF data available' show_blank=false]
 </div>
-			";
+";
 			$d['alt_layout'] = "";
 			$d['wrapper'] = "";
 			$d['css'] = "";
 			
 			$d['pagination_class'] = "bwbps_pag_2";
+		
+		// Had a bug in the html in 0.7.03...must update it
+		if(!$wpdb->get_var("SELECT layout_id FROM " 
+			. $wpdb->prefix."bwbps_layouts WHERE layout_name = 'image_view_layout'")){
 						
 			$wpdb->insert($wpdb->prefix."bwbps_layouts", $d);
+					
+		} else {
+			
+			
+			$where['layout_name'] = 'image_view_layout'; 
+			$wpdb->update($wpdb->prefix."bwbps_layouts", $d, $where);
+		}
+		
+		unset($d);
+		
+		//Preload Pixoox Sharing Hub
+		if(!$wpdb->get_var("SELECT hub_id FROM " 
+			. $wpdb->prefix."bwbps_sharinghubs WHERE hub_name = 'Pixoox'")){
+		
+			$d['hub_name'] = 'Pixoox';
+			$d['hub_description'] = 'The Official PhotoSmash sharing hub';
+			$d['tags'] = 'wordpress, photosmash, photo sharing';
+			$d['hub_url'] = 'http://pixoox.com';
+			$d['api_url'] = 'http://pixoox.com/api/';
+			$d['allows_adult'] = 0;
+			$d['admin_email'] = 'api@pixoox.com';
+			$d['restricts_categories'] = 1;
+						
+			$wpdb->insert($wpdb->prefix."bwbps_sharinghubs", $d);
 					
 		}
 		

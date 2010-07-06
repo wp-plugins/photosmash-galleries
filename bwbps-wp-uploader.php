@@ -20,7 +20,11 @@ class BWBPS_Uploader{
 	
 	var $file;
 	
-	var $psImageFunctions; // Image Functions class
+	var $upload_agent = "";
+	
+	var $img_funcs; // Image Functions class
+	
+	var $sharing_options;
 	
 	/* 
 	 * Constructor
@@ -34,18 +38,21 @@ class BWBPS_Uploader{
 			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/classes/JSON.php");
 		}
 		
-		if( !$no_referer && function_exists('check_ajax_referer') && !check_ajax_referer( "bwb_upload_photos" ))
-		{
+		if( !$no_referer && function_exists('check_ajax_referer') 
+			&& !check_ajax_referer( "bwb_upload_photos" )){
+			
 			$json['message']= "Invalid authorization...nonce field missing.";
 			$json['succeed'] = 'false'; 
 			echo json_encode($json);
 			exit();
+			
 		};
 		
 		$this->psOptions = $psOptions;
 		
-		$this->psImageFunctions = $bwbPS->psImageFunctions;
+		$this->img_funcs = $bwbPS->img_funcs;
 		
+		// This is messed up, but I think you have to set the Gallery array manually if you provide an ID :-(
 		if(!$gallery_id === false){
 			$this->json['gallery_id'] = (int)$gallery_id;
 		} else {
@@ -57,6 +64,13 @@ class BWBPS_Uploader{
 		}
 		
 		$this->json['custom_callback'] = 0;
+		
+		$this->sharing_options = get_option('bwbps_sharing_options');
+		
+		if($this->sharing_options['sharing_active']){
+			// Load the Share Class...it will instantiate itself and set an Action
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-share.php");
+		}
 	}
 	
 	
@@ -81,6 +95,7 @@ class BWBPS_Uploader{
 		
 		if(!$this->user_level){
 			$this->json['message'] = "You do not have authorization for uploading to this gallery.";
+			$this->json['status'] = 1007;
 			$this->json['succeed'] = "false";
 			$this->echoJSON();
 			exit();
@@ -159,13 +174,13 @@ class BWBPS_Uploader{
 	}
 	
 	/*	
-	 *	STEP 3:   Get File Handle
+	 *	STEP 3:   Get File Type
 	 *
 	*/
-	function getFileType($fileFieldNumber = ""){
+	function getFileType($fileFieldNumber = "", $_filetype = false){
 				
 		//Figure out the File Type that was uploaded
-		if(isset($_POST['bwbps_filetype'.$fileFieldNumber])){
+		if( $_filetype != 'image' && isset($_POST['bwbps_filetype'.$fileFieldNumber])){
 			$filetype = (int)$_POST['bwbps_filetype'.$fileFieldNumber];
 		} else { 
 			$filetype = 0; 
@@ -248,7 +263,7 @@ class BWBPS_Uploader{
 	 *	STEP 4:   Process File Upload
 	 *
 	*/
-	function processUpload($g, $fileFieldNumber = "", $allowNoImg=false){
+	function processUpload($g, $fileFieldNumber = "", $allowNoImg=false, $filesPostName = 'bwbps_uploadfile'){
 			
 		$uploads = wp_upload_dir();
 	
@@ -256,7 +271,7 @@ class BWBPS_Uploader{
 		
 			case 0 :	// File is from a File Upload field
 				$file = $this->processFileFromUpload($g, $uploads
-					, $fileFieldNumber, $allowNoImg);
+					, $fileFieldNumber, $allowNoImg, $filesPostName);
 				break;
 		
 			case 1 :	// File is from URL
@@ -341,7 +356,7 @@ class BWBPS_Uploader{
 	 * Get the Image File from a Uploaded File
 	 * 
 	 */
-	function processFileFromUpload($g, $uploads, $fileFieldNumber = "", $allowNoImg=false){
+	function processFileFromUpload($g, $uploads, $fileFieldNumber = "", $allowNoImg=false, $filesPostName = 'bwbps_uploadfile'){
 				
 		if(! is_writable($uploads['path']) ){
 			$this->exitUpload("Uploads path is not writable: " . $uploads['path']);
@@ -349,7 +364,7 @@ class BWBPS_Uploader{
 		}
 		
 		
-		$upload = $_FILES['bwbps_uploadfile'.$fileFieldNumber];
+		$upload = $_FILES[$filesPostName.$fileFieldNumber];
 		
 		if( empty($upload['tmp_name'] )){
 			if(!$allowNoImg){
@@ -511,7 +526,6 @@ class BWBPS_Uploader{
 	
 	/*	
 	 *	STEP 5:   Save Image to the Database
-	 *
 	*/
 	function saveImageToDB($g, $bSaveCustomFields=true){
 		global $current_user;
@@ -558,7 +572,7 @@ class BWBPS_Uploader{
 			$data['alerted'] = 1;
 		}
 		$data['updated_by'] = $current_user->ID;
-		$data['created_date'] = date( 'Y-m-d H:i:s');
+		$data['created_date'] = current_time('mysql');  //date( 'Y-m-d H:i:s');
 		
 		//Meta/Exif
 		$data['meta_data'] = '';
@@ -601,17 +615,23 @@ class BWBPS_Uploader{
 		$this->imageData['display_name'] = $current_user->display_name;
 		$this->imageData['user_nicename'] = $current_user->user_nicename;
 		$this->imageData['user_url'] = $current_user->user_url;
+		$this->imageData['gal_post_id'] = $g['post_id'];
+		
+		$this->imageData['upload_agent'] = $this->upload_agent;
 		
 		//Trigger for up the Upload Alert Email
 		if($image_id){
 			if( $this->psOptions['img_alerts'] == -1 ) {
-				$this->sendNewImageAlerts();
+				$this->img_funcs->sendNewImageAlerts(true);
 			} else {
 				update_option('BWBPhotosmashNeedAlert', 1);
 			}
 		}
 		
-		$this->psImageFunctions->updateGalleryImageCount($data['gallery_id']);
+		//Update Image Count in the Gallery
+		$this->img_funcs->updateGalleryImageCount($data['gallery_id']);
+				
+		do_action('bwbps_new_image_saved', $this->imageData );
 		
 		return $image_id;
 	}
@@ -705,6 +725,8 @@ class BWBPS_Uploader{
 			$wpdb->update( PSIMAGESTABLE, $data, $where );
 			
 			$this->imageData['wp_attach_id'] = $attach_id;
+			
+			clean_post_cache( (int)$this->json['post_id'] );
 					
 		} else {
 			return false;
@@ -774,12 +796,6 @@ class BWBPS_Uploader{
 	
 	
 	}
-	
-	
-	
-	
-	
-	
 	
 	/* 
 	 * Set Gallery Variable - 
@@ -888,13 +904,13 @@ class BWBPS_Uploader{
 	
 		
 	
-	function getImageCaption(){
+	function getImageCaption( $post_name = 'bwbps_imgcaption' ){
 		//Get Caption
 		//For some reason, img_caption doesn't always carry the value & vice versa
-		if(!$_POST['bwbps_imgcaption']){
-			$json = $this->stripSlashes($_POST['bwbps_imgcaptionInput']);   
+		if(!$_POST[$post_name]){
+			$json = $this->stripSlashes($_POST[$post_name . 'Input']);   
 		} else {
-			$json = $this->stripSlashes($_POST['bwbps_imgcaption']);   
+			$json = $this->stripSlashes($_POST[$post_name]);   
 		}
 		
 		$tags = $this->getFilterArrays();
@@ -923,70 +939,7 @@ class BWBPS_Uploader{
 				$this->imageData = array_merge($this->imageData, $this->customData);
 			}
 		//}	
-	}
-	
-	//Send email alerts for new images
-	function sendNewImageAlerts()
-	{
-		global $wpdb;
-				
-		if( !$this->psOptions['alert_all_uploads'] ){
-			
-			$sqlStatus = " AND status = -1 " ;
-			$msgStatus = " awaiting moderation.";
-		
-		}
-		
-		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 $sqlStatus ;";
-		$results = $wpdb->get_results($sql);
-		if(!$results) return;
-		
-		$ret = get_bloginfo('name')." has ". $results->num_rows. " new photos". $msgStatus. ".  Select the appropriate gallery or click image below.<p><a href='".get_bloginfo('url')
-		."/wp-admin/admin.php?page=managePhotoSmashImages'>".get_bloginfo('name')." - PhotoSmash Photo Manager</a></p>";
-		
-		
-		$ret .= "<table><tr>";
-		$i = 0;
-		
-		$uploads = wp_upload_dir();
-		
-		foreach($results as $row)
-		{
-		
-			if( !$row->thumb_url ){
-				
-					$row->thumb_url = PSTHUMBSURL.$row->file_name;
-			
-			} else {
-				$row->thumb_url = $uploads['baseurl'] . '/' . $row->thumb_url;
-			
-			}
-		
-			$ret .= "<td><a href='".get_bloginfo('url')
-		."/wp-admin/admin.php?page=managePhotoSmashImages&psget_gallery_id=".$row->gallery_id."'><img src='".$row->thumb_url."' /><br/>gallery id: ".$row->gallery_id."</a></td>";
-			$i++;
-			if($i==4){
-				$ret .="</tr><tr>";
-				$i=0;
-			}
-		}
-		$ret .="</tr></table>";
-		$admin_email = get_bloginfo( "admin_email" );
-		
- 		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
- 		
- 		wp_mail($admin_email, "New images for moderation", $ret, $headers );
-		$this->psOptions['last_alert'] = time();
-		
-		update_option($this->adminOptionsName, $this->psOptions);
-		update_option('BWBPhotosmashNeedAlert',0);
-		
-		$data['alerted'] = -1;
-		$where['alerted'] = 0;
-		$wpdb->update(PSIMAGESTABLE, $data, $where);
-		
-	}
-	
+	}	
 	
 	/*
 	 *	Create New Gallery
@@ -1076,7 +1029,7 @@ class BWBPS_Uploader{
 			$tablename = $wpdb->prefix.'bwbps_galleries';
 			
 			//Create new Gallery Record
-			$d['created_date'] = date('Y-m-d H:i:s');
+			$d['created_date'] = current_time('mysql'); //date('Y-m-d H:i:s');
 			$d['status'] = 1;
 			if( $wpdb->insert($tablename,$d)){
 				$d['gallery_id']= $wpdb->insert_id;
