@@ -285,7 +285,7 @@ class BWBPS_Importer{
 		<hr/>
 		
 		<div class='tablenav'>
-		Fetch from: <?php echo $postDDL; ?> <input type="submit" name="showModerationImages" class="button-primary" value="<?php _e('Fetch Images', 'bwbPS') ?>" />
+		Fetch: <?php echo $postDDL; ?> or Search post: <input type='text' name='postname_search' id='postname_search' value='<?php if( isset($_POST['postname_search']) && $_POST['postname_search']) echo wp_kses(esc_attr($_POST['postname_search']), array() ); ?>'/> <input type="submit" name="showModerationImages" class="button-primary" value="<?php _e('Fetch Images', 'bwbPS') ?>" />
 		Show: <input type='text' name='bwbpsLimitImg' size=4 value='<?php echo $limit;
 				?>' /> | Start:
 				<input type='text' name='bwbpsStartImg' size=4 value='<?php  echo $start;
@@ -579,9 +579,22 @@ class BWBPS_Importer{
 		
 		global $wpdb;
 		
+		
 		if((int)$post_id> -1){
 		
 			$sql_post = " AND b.post_parent = " . (int)$post_id;	
+			
+		}
+		
+		if( isset($_POST['postname_search']) ){
+		
+			$postsearch = trim(wp_kses( esc_sql($_POST['postname_search']), array() ));
+			
+			if( $postsearch ){
+				$sql_post = " AND d.post_title LIKE '%" . $postsearch . "%' ";
+				
+				$sql_post_join = " LEFT OUTER JOIN " . $wpdb->posts . " d ON b.post_parent = d.ID ";	
+			}
 			
 		}
 		
@@ -604,7 +617,7 @@ class BWBPS_Importer{
 		
 		$sql = "SELECT a.*, b.post_parent, b.post_title, c.gallery_id FROM " .$wpdb->postmeta . " a LEFT OUTER JOIN " 
 			. $wpdb->posts . " b ON a.post_id = b.ID LEFT OUTER JOIN " . PSIMAGESTABLE 
-			. " c ON c.wp_attach_id = a.post_id WHERE a.meta_key = '_wp_attachment_metadata'"
+			. " c ON c.wp_attach_id = a.post_id " . $sql_post_join . " WHERE a.meta_key = '_wp_attachment_metadata'"
 			. $sql_post . $sql_med_ids . $sql_attach_ids . $limitsql;
 			
 			

@@ -99,7 +99,7 @@ class BWBPS_UploadForm{
         	<input type="hidden" name="MAX_FILE_SIZE" value="'.$g["max_file_size"].'" />
         	<input type="hidden" name="bwbps_imgcaption" id="' . $g["pfx"] . 'bwbps_imgcaption" value="" />
         	<input type="hidden" name="gallery_id" id="' . $g["pfx"] . 'bwbps_galleryid" value="'.(int)$g["gallery_id"].'" />
-        	<input type="hidden" name="bwbps_post_id" id="' . $g["pfx"] . 'bwbps_post_id" value="'.(int)$post->ID.'" />
+        	<input type="hidden" name="bwbps_post_id" id="' . $g["pfx"] . 'bwbps_post_id" value="'.(int)$g["gal_post_id"].'" />
         	'.$noimage.'
         	';
 			

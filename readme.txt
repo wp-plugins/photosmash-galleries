@@ -85,13 +85,27 @@ You can also exclude the standard css file and include your own through options 
 
 == Changelog ==
 
-0.7.03 - 5/5/2010
+= 0.7.04 - 7/10/2010 =
+    * Added search post name field in Image Importer (admin) - allows you to limit the images fetched by searching on post name (partial words are ok).  This is in the Import Photos page.
+    * Fixed an issue with inserting a rating - the 'comment' field is NOT NULL in the database, and it wasn't being inserted, so some MySQL setups were failing to insert. The NOT NULL has been removed, so it should update to allow nulls.
+    * Fixed memory leak - switched to passing $image in for the standard layout by reference.  This reduced the memory usage significantly when using Standard Layout. Custom Layouts did not exhibit the memory issue.
+    * Added sort_field, sort_order to shortcode - you can now specify a sort_field ( sequence, user, user_name, user_login, rank, favorites ) in the shortcode by adding:  sort_field='rank'.  You can also specify the order by adding: sort_order='asc' or 'desc'.  These are also available in the $_REQUEST variable (for you techies), but you'll need to add the gallery ID to your $_GET or $_POST (because you can have multiple galleries on a page): sort_field22=rank&sort_order22=desc .  The shortcode portion should work fine with paging, but the $_REQUEST method may have weird results on paging...I haven't tried it yet.
+    * Added ability to display galleries as standard WordPress Galleries - as long as you've got both options under PhotoSmash Settings / Uploading (tab) / "Use WordPress Upload process" turned on, you have always been able to display your PhotoSmash images using the standard WordPress [ gallery]  (sans the space) shortcode.  There are some other galleries that might co-opt this shortcode and cause this to fail if you're running them on the same blog (I think NextGEN uses that same shortcode, so it might not play nice).  Now you can have PhotoSmash display galleries using the WP gallery out of the box.  Here's more info: http://smashly.net/blog/wordpress-attachment-pages-and-photosmash/
+    * Separated Gallery Functions to new Class - this was a big change, so please keep your eyes pealed for gotchas. The code is now more efficient and more compact.
+    * Added 'name' attribute to Shortcode - this allows you to call a Gallery by name instead of by ID. It will create a new Gallery with the name if it doesn't exist. So you can now easily create multiple galleries in a Post/Page by adding shortcodes like: [ photosmash name='fun pics'] and [ photosmash name='funny pics']
+    * Added sort by file_name  (shortcode sorting only) - by request!
+    * Added sort by Caption  (shortcode sorting only) - probably won't get much use, but good for testing!
+    * Added sort by Favorites Count (shortcode or dropdown in Settings) - makes the Most Favorited gallery work much better
+    * Added various filters and actions - making it easier for other plugins to interact. Filters: bwbps_add_photo_link (passes the 'Add Photo' html for filtering); bwbps_empty_gallery (passes the empty gallery html); bwbps_image (passes the image html block after it is processed). Actions: bwbps_save_new_image (passes the image object immediately after image is added to database)
+    * Moved Admin Javascript to bwbps-admin.js - reduced the size of the javascript file that gets loaded to your visitors on the front end by 20KB. The Admin JS is now only being loaded on the Admin pages
+
+= 0.7.03 - 5/5/2010 =
 
     * Fixed Encoding in Photo Manager - for caption and custom fields.  Was using htmlentities(). Switched to esc_attr().  Fixed problem with non-English alphabets
     * Fixed Gallery DropDowns in Photo Manager - was not showing galleries with NULL gallery types
     * Changed Sort Order alogrithms for Ratings - for Vote up/Vote down, changed to average. For Vote up, changed to straight number of votes.  Stars still use Bayesian ordering
 
-0.7.02 - 4/27/2010
+= 0.7.02 - 4/27/2010 =
 
     * Fixed Resizing message when no resize needed - when resizing an image, if there were no new image sizes to create, it was causing an error by trying to update the database. On the front-end, you just saw the Saving message...forever.
     * Coming soon!: Pixoox Photo Sharing - Press-to-Press Photo sharing. Just think about it ;-)

@@ -759,6 +759,15 @@ function checkEmailAlerts(){
 */
 function shortCodeGallery($atts, $content=null){
 		global $post;
+		
+		/*	
+		//Memory Usage code - to check if we have leaks - uncomment the one at top of this function also
+		if (function_exists('memory_get_usage')){
+		$memory_usage = round(memory_get_usage() / 1024 / 1024, 2) . __(' MByte', 'bwbps-lang');
+		_e('Memory usage', 'bwbps-lang');
+		echo $memory_usage;
+		}
+		*/
 				
 		$this->checkEmailAlerts();
 		
@@ -781,8 +790,9 @@ function shortCodeGallery($atts, $content=null){
 			'after_gallery' => '', // Text/html to place after the gallery
 			'wp_gallery' => false,	// Display the gallery using the WordPress Gallery instead - only displays images that are in the Media Library for the gallery's post ID
 			'wp_gallery_params' => '',	// additional shortcode parameters for using the WP [gallery] shortcode to disply the gallery
-			'id' => false,
-			'name' => false,
+			'id' => false,		// The Gallery ID (or use name, or rely on the Post ID to find linked gallery)
+			'name' => false,	// Uses the Gallery's Name to retrieve the Gallery
+			'use_post_id' => false,	// Uses the post ID from the loop instead of the Post ID from the Gallery
 			'form' => false,
 			'sort_field' => false,
 			'sort_order' => false,
@@ -996,6 +1006,13 @@ function shortCodeGallery($atts, $content=null){
 
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
+		
+		// Figure out Which Post ID to use
+		if( $use_post_id ){
+			$g['gal_post_id'] = (int)$post->ID;
+		} else {
+			$g['gal_post_id'] = (int)$g['post_id'] ? (int)$g['post_id'] : (int)$post->ID;
+		}
 		
 		//Set up for a Tag driven gallery
 			$g['tags'] = $tags ? $tags : false;
@@ -1227,6 +1244,15 @@ function shortCodeGallery($atts, $content=null){
 			}
 		}
 		
+		/*	
+		//Memory Usage code - to check if we have leaks - uncomment the one at top of this function also
+		if (function_exists('memory_get_usage')){
+		$memory_usage = round(memory_get_usage() / 1024 / 1024, 2) . __(' MByte', 'bwbps-lang');
+		_e('Memory usage', 'bwbps-lang');
+		echo $memory_usage;
+		}
+		*/
+		
 		unset($galparms);
 
 	return $before_gallery . $ret . $after_gallery;
@@ -1284,10 +1310,12 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 	{
 		$this->psOptions['tb_height'] = (int)$this->psOptions['tb_height'] ? (int)$this->psOptions['tb_height'] : 390;
 		$this->psOptions['tb_width'] = (int)$this->psOptions['tb_width'] ? (int)$this->psOptions['tb_width'] : 545;
-	
+		
+		if(!(int)$g['post_id']){ $g['gal_post_id'] = $post->ID; }
+		
 		$ret = '<span class="bwbps_addphoto_link"><a href="TB_inline?height='
 			. $this->psOptions['tb_height'] .'&amp;width=' 
-			. $this->psOptions['tb_width']. '&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$post->ID.', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
+			. $this->psOptions['tb_width']. '&amp;inlineId='.$g["pfx"].'bwbps-formcont" onclick="bwbpsShowPhotoUpload('.(int)$g["gallery_id"].', '.(int)$g['gal_post_id'].', \''.$g["pfx"].'\');" title="'.$blogname.' - Gallery Upload" class="thickbox">'.$g['add_text'].'</a></span>';
 	
 	} else {
 

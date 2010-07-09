@@ -650,7 +650,7 @@ class BWBPS_Layout{
 			}
 		}
 	
-		
+		unset( $images );
 		return $ret;
 	}
 	
@@ -792,7 +792,7 @@ class BWBPS_Layout{
 	 *
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
-	function getStandardLayout($g, $image){
+	function getStandardLayout(&$g, &$image){
 		
 		if( $image['pext_insert'] ){
 		
@@ -1450,7 +1450,9 @@ class BWBPS_Layout{
 				break;
 				
 			case '[gallery_url]' :
-				$ret = $this->getGalleryURL( (int)$image['gallery_id'] );
+
+				$main_viewer = isset($atts['main']) ? (int)$this->psOptions['gallery_viewer'] : false;
+				$ret = $this->getGalleryURL( (int)$image['gallery_id'], $main_viewer );
 				break;
 			
 			case '[gallery_post_url]' :
@@ -2022,12 +2024,16 @@ class BWBPS_Layout{
 		return $ret;
 	}
 	
-	function getGalleryURL( $gallery_id ){
+	function getGalleryURL( $gallery_id, $main_viewer = false ){
 		
-		$args = array("psmash-gallery" => (int)$gallery_id );
-		
-		return add_query_arg($args);
-	
+		if( $main_viewer ){
+			$args = array("psmash-gallery" => (int)$gallery_id );
+			return add_query_arg($args, get_permalink($main_viewer));
+		} else {
+			$args = array("psmash-gallery" => (int)$gallery_id );
+			return add_query_arg($args);
+		}
+
 	}
 	
 	function getTermObjects($qtags, $select_msg = ""){
@@ -3034,6 +3040,8 @@ class BWBPS_Layout{
 		//echo $sql;
 
 		$images = $wpdb->get_results($sql, ARRAY_A);
+		
+		$wpdb->flush();
 								
 		return $images;
 	}
