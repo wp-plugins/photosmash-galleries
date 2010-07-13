@@ -7,7 +7,11 @@ class BWBPS_Layout{
 	var $stdFields;
 	var $psOptions;
 	var $tabindex;
+	var $total_records = 0;
 	var $moderateNonceCount = 0;
+	
+	var $attachment_ids;	// Used because we need to do a get_children on the attachments to avoid a Query nightmare
+	var $attachments_gotten = false;
 	
 	var $layouts;
 	
@@ -20,6 +24,9 @@ class BWBPS_Layout{
 		$this->psOptions = $options;
 		$this->custFields = $cfList;
 		$this->stdFields = $this->getStandardFields();
+		
+		add_action('bwbps_get_attachment_link', array(&$this, 'getAttachmentPosts'));
+		
 	}
 	
 	function getStandardFields(){
@@ -155,6 +162,8 @@ class BWBPS_Layout{
 	function getGallery($g, $layoutName = false, $image=false, $useAlt=false)
 	{
 	
+		$g['img_perpage'] = (int)$g['img_perpage'];
+	
 		if( $g['wp_gallery'] && (int)$g['post_id'] ){
 		
 			$shortcode = "[gallery id=" . (int)$g['post_id'] 
@@ -208,6 +217,27 @@ class BWBPS_Layout{
 				'allow_rating' => $allow_anon
 			);
 		}
+		
+		if(!$g['no_pagination']){
+			$pagenum = $this->getPageNumbers();
+		
+		
+			//Set to page 1 if not supplied in Get or Post
+	
+			if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
+				$pagenum[$g['gallery_id']] = 1;
+			}	
+		
+			//get the pagination navigation
+			if( (int)$g['img_perpage'] ){
+				
+				//What image # do we begin page with?
+				$lastImg = $pagenum[$g['gallery_id']] * $g['img_perpage'];
+				$startImg = $lastImg - $g['img_perpage'] + 1;
+				$g['starting_image'] = $startImg > 1 ? ($startImg - 1) : 0;
+				$startImg = 1;
+			} 
+		}
 
 		if(!$image){
 			
@@ -220,8 +250,8 @@ class BWBPS_Layout{
 		}
 		
 		// For TAG gallery - if tags_has_all, then filter out any images that do not have all of the tags
-		if($g['gallery_type'] == 40 && $g['tags_has_all'] && is_array($images) && !empty($images)){		
-			
+		if($g['gallery_type'] == 40 && $g['tags_has_all'] && !empty($images) && is_array($images)){		
+		
 			unset($imgids);
 			
 			foreach($images as $img){
@@ -251,26 +281,19 @@ class BWBPS_Layout{
 			unset($imgs);
 			unset($img);
 			unset($images_temp);
+			
 		}
 	
 		//Calculate Pagination variables
 		$totRows = $wpdb->num_rows;	// Total # of images (total rows returned in query)
+		
 		if($post->photosmash == 'author' || $post->photosmash == 'tag'){
 			$perma = $post->photosmash_link;
 		} else {
 			$perma = get_permalink($post->ID);	//The permalink for this post
 		}
 		
-		if(!$g['no_pagination']){
-			$pagenum = $this->getPageNumbers();
 		
-		
-			//Set to page 1 if not supplied in Get or Post
-	
-			if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
-				$pagenum[$g['gallery_id']] = 1;
-			}	
-		}
 		
 		//Set up Attributes:  caption width, image class name, etc
 		if(!$g['thumb_width'] || $g['thumb_width'] < 60){
@@ -336,34 +359,36 @@ class BWBPS_Layout{
 			$imgNum = 0;
 		}
 		
-		//get the pagination navigation
-		if($totRows && $g['img_perpage']){
+		if( !empty($images) ){
 			
-			//What image # do we begin page with?
-			$lastImg = $pagenum[$g['gallery_id']] * $g['img_perpage'];
-			$startImg = $lastImg - $g['img_perpage'] + 1;
-		} 
+			
+			// Prepare the way for Attachment Links (this monkey business is necessary to prevent crazy query counts
+			unset( $this->attachment_ids );
+			$this->attachments_gotten = false;
+			foreach( $images as $imgtemp ){
+				if( (int)$imgtemp['wp_attach_id'] ){
+					$this->attachment_ids[] = (int)$imgtemp['wp_attach_id'];
+				}		
+			}
 		
-		
-		if($images){
 			//Add SetID and Layout ID for use Insert Sets - PhotoSmash Extend
 			$images[0]['pext_insert_setid'] = (int)$g['pext_insert_setid'];
 			$images[0]['pext_layout_id'] = ($layout ? $layout->layout_id : false);
-			$images[0]['pext_start_image'] = $startImg;
+			$images[0]['pext_start_image'] = 1;
 			$images[0]['pext_imgs_perpage'] = $g['img_perpage'];
-			$images[0]['pext_page_number'] = $pagenum[$g['gallery_id']];
+			$images[0]['pext_page_number'] = 1;
+			
 			$images = apply_filters('bwbps_gallery_loop', $images);
 						
-			$totRows = count($images);
+			
 			//get the pagination navigation
-			if($totRows && $g['img_perpage'] && !$g['no_pagination']){
-				$nav = $this->getPagingNavigation($perma, $pagenum, $totRows, $g, $layout);
+			if($g['img_perpage'] && !$g['no_pagination']){
+				$nav = $this->getPagingNavigation($perma, $pagenum, $this->total_records, $g, $layout);
 			} else {
 				$nav = "";
-				$startImg = 0;
-				$lastImg = $totRows + 1;
 			}
-			
+			$startImg = 0;
+			$lastImg = count($images);
 		
 			if($this->psOptions['img_targetnew']){
 				$g['url_attr']['imagetargblank'] = " target='_blank' ";
@@ -861,7 +886,7 @@ class BWBPS_Layout{
 	 * @param (object) $layout - custom layout definition; 
 	 * @param (bool) $alt - alternating image or regular (even or odd)
 	 */
-	function getCustomLayout($g, $image, $layout, $alt){
+	function getCustomLayout($g, &$image, $layout, $alt){
 	
 		
 		if($alt){
@@ -1028,14 +1053,14 @@ class BWBPS_Layout{
 	 *
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
-	function getPartialLayout($g, $image, $layoutName, $alt=false){
+	function getPartialLayout($g, &$image, $layoutName, $alt=false){
 		$g['suppress_no_image'] = false;
 		if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 		return $this->getGallery($g, $layoutName, $image, $alt);
 	
 	}
 	
-	function getFileField($g, $image, $is_thumb=true){
+	function getFileField($g, &$image, $is_thumb=true){
 		$ftype = (int)$image['file_type'];
 		
 		if($is_thumb){
@@ -1145,7 +1170,7 @@ class BWBPS_Layout{
 	 * @param (object) $g - gallery definition array; (object) $image - an image object
 	 */
 	 
-	function getCFFieldHTML($fld, $image, $g, $atts){
+	function getCFFieldHTML($fld, &$image, $g, $atts){
 				
 		//Set up thumb size
 		if($atts['h'] || $atts['w']){
@@ -1405,7 +1430,7 @@ class BWBPS_Layout{
 				
 			case '[wp_attachment_link]' :
 				if((int)$image['wp_attach_id']){
-					$ret = get_attachment_link( (int)$image['wp_attach_id'] );
+					$ret = $this->get_attachment_link( (int)$image['wp_attach_id'] );
 				}
 				
 				break;
@@ -2024,6 +2049,35 @@ class BWBPS_Layout{
 		return $ret;
 	}
 	
+	function get_attachment_link( $attachment_id ){
+		
+		do_action('bwbps_get_attachment_link');  // Allows it to do a get_children on the attachment IDs to prevent query firehose
+		
+		return get_attachment_link( $attachment_id );
+		
+	}
+	
+	function getAttachmentPosts(){
+		
+		if($this->attachments_gotten){ return; }	//We've already done this so exit
+		
+		$this->attachments_gotten = true;
+		
+		if( is_array($this->attachment_ids) ){
+			/* 
+				If you don't do a get_children on the Attachments 
+				(really, their post_parent, but we've hacked it here to make it work)
+				then the Attachment posts are not in the Posts cache.
+				This causes 2 queries for each Attachment link, one to retrieve the attachment, the other to
+				get the post_parent.  
+				This function gets all the attachments (we built an array of their IDs back in getGallery)
+				and puts them into the cache via the miracle of get_children()
+			*/
+			$atts = get_children(array('post_parent' => null, 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image', 'post__in' => $this->attachment_ids));
+		}
+		
+	}
+	
 	function getGalleryURL( $gallery_id, $main_viewer = false ){
 		
 		if( $main_viewer ){
@@ -2449,7 +2503,7 @@ class BWBPS_Layout{
 					$scaption = "";	//Close out the link from above
 										
 					if((int)$image['wp_attach_id']){
-						$attach_perma = get_attachment_link( (int)$image['wp_attach_id']);
+						$attach_perma = $this->get_attachment_link( (int)$image['wp_attach_id']);
 					}
 					
 					if($attach_perma){
@@ -2466,7 +2520,7 @@ class BWBPS_Layout{
 				case 15: //Caption & Thumbnail link to Attachment Page
 				
 					if((int)$image['wp_attach_id']){
-						$attach_perma = get_attachment_link( (int)$image['wp_attach_id']);
+						$attach_perma = $this->get_attachment_link( (int)$image['wp_attach_id']);
 					}
 					
 					if($attach_perma){
@@ -2657,7 +2711,8 @@ class BWBPS_Layout{
 	function getLayout($layout_id, $layout_name=false){
 		global $wpdb;
 		
-		if($layout_name){ $layoutName = $layout_name;} else { $layoutName = "psid-".$layout_id;}
+		$layoutName = $layout_name ? strtolower($layout_name) : "psid-".$layout_id;
+		
 		if(is_array($this->layouts)){
 			if(array_key_exists($layoutName, $this->layouts)){
 				return $this->layouts[$layoutName];
@@ -2673,7 +2728,7 @@ class BWBPS_Layout{
 		}
 		$query = $wpdb->get_row($sql);
 		
-		$this->layouts[$layoutName];	//Cache layouts to prevent future DB calls
+		$this->layouts[$layoutName] = $query;	//Cache layouts to prevent future DB calls
 		
 		return $query;
 	}
@@ -2788,6 +2843,8 @@ class BWBPS_Layout{
 		
 			if((int)$g['limit_page'] && (int)$g['limit_page'] > 1){
 				$limitpage = ( ((int)$g['limit_page'] -1) * (int)$g['limit_images']);
+				
+				$limitpage = $limitpage . ", ";
 			}
 			
 			$limitimages = " LIMIT " . $limitpage . (int)$g['limit_images'];
@@ -2802,8 +2859,6 @@ class BWBPS_Layout{
 				if(!(int)$g['limit_images']){
 					$limitimages = " LIMIT " . $limitpage . "8";
 				}
-				
-				$sortby .= $limitimages;
 			
 				break;
 			
@@ -2812,8 +2867,6 @@ class BWBPS_Layout{
 				if(!(int)$g['limit_images']){
 					$limitimages = " LIMIT " . $limitpage . "8";
 				}
-				
-				$sortby .= $limitimages;
 			
 				break;
 			case 40 :	//tag gallery
@@ -2879,12 +2932,6 @@ class BWBPS_Layout{
 								
 				$sortby = $this->getSortbyField($g, $sortorder);
 				
-				if((int)$g['limit_images']){
-					
-					$sortby .= $limitimages;
-				
-				}
-				
 				break;
 			
 			case 70 : //Favorites - gets the favorited images for the logged in user
@@ -2913,8 +2960,6 @@ class BWBPS_Layout{
 				$sqlSpecialWhere .= " AND " . PSIMAGESTABLE . ".favorites_cnt > 0 ";
 				
 				$sortby = $this->getSortbyField($g, $sortorder);
-				
-				$sortby .= $limitimages;
 				
 				break;
 			
@@ -2948,8 +2993,6 @@ class BWBPS_Layout{
 				
 				$sortby = $this->getSortbyField($g, $sortorder);
 				
-				$sortby .= $limitimages;
-				
 				break;
 				
 			case 100 : // Gallery Viewer
@@ -2964,26 +3007,17 @@ class BWBPS_Layout{
 				$sqlSpecialWhere .= " AND " . PSIMAGESTABLE . ".image_id IN (" . $imgids . ") ";
 				
 				$sortby = $this->getSortbyField($g, $sortorder);
-				
-				if((int)$g['limit_images']){
-					$sortby .= $limitimages;
-				}
-				
+
 				break;
 			
 			default :
 			
 				$sortby = $this->getSortbyField($g, $sortorder);
 				
-				if((int)$g['limit_images']){
-					
-					$sortby .= $limitimages;
-				
-				}
-				
 				break;					
 			
 		}
+		
 		
 		// Add the WHERE clause for the Smart Galleries
 		if ( $g['smart_gallery'] ){
@@ -3003,6 +3037,13 @@ class BWBPS_Layout{
 		
 		}
 		
+		// Calculate paging
+		if( $g['img_perpage'] ){
+			if( $g['img_perpage'] > (int)$g['limit_images'] ){
+				$limitimages = ' LIMIT ' . (int)$g['starting_image'] . ", " . $g['img_perpage'];
+			}
+		}
+		
 		$sqlWhere .= " " . $sqlSpecialWhere;
 				
 		//Admins can see all images
@@ -3016,13 +3057,18 @@ class BWBPS_Layout{
 				.$custdata.' FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
-				. $sqlWhere . ' ORDER BY '.$sortby;	
+				. $sqlWhere . ' ORDER BY '.$sortby . $limitimages;	
+				
+			$sql_count = 'SELECT DISTINCT '.PSIMAGESTABLE.'.image_id FROM '
+				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
+				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
+				. $sqlWhere;	
 									
 			
 		} else {
 			//Non-Admins can see their own images and Approved images
 			$uid = $user_ID ? $user_ID : -1;
-					
+				
 			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '
 				.$wpdb->users.'.user_nicename,'
@@ -3033,15 +3079,33 @@ class BWBPS_Layout{
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
 				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
-				.$uid.')  ORDER BY '.$sortby;			
+				.$uid.')  ORDER BY '.$sortby . $limitimages;			
+				
+			$sql_count = 'SELECT DISTINCT '.PSIMAGESTABLE.'.image_id FROM '
+				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
+				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
+				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
+				.$uid.')';
 				
 		}
 		
 		//echo $sql;
-
-		$images = $wpdb->get_results($sql, ARRAY_A);
 		
-		$wpdb->flush();
+		// Get Count for Paging
+		$this->total_records = 0;
+		
+		if( $g['img_perpage'] ){
+			$count = $wpdb->get_results($sql_count, ARRAY_A);
+		
+			if($count){				
+				$this->total_records = $wpdb->num_rows;
+				
+				$images = $wpdb->get_results($sql, ARRAY_A);
+			}
+		} else {
+			$images = $wpdb->get_results($sql, ARRAY_A);
+			$this->total_records = $wpdb->num_rows;
+		}
 								
 		return $images;
 	}
@@ -3050,6 +3114,8 @@ class BWBPS_Layout{
 		global $wpdb;
 		
 		$q = trim(stripslashes($_POST['bwbps_q']));
+		
+		do_action('bwbps_ext_search', $q);
 			
 		if(!$q){ return false; }
 		

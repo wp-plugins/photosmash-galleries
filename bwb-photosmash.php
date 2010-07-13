@@ -92,7 +92,7 @@ define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash
 
 define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a>
 		<br/>");
-		
+
 /*
 define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=psmashSharing'>Sharing</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
@@ -519,11 +519,20 @@ class BWB_PhotoSmash{
 	
 	//Get the Custom Fields Query Results
 	function getCustomFields(){
-		global $wpdb;
-		$sql = "SELECT * FROM ".PSFIELDSTABLE." WHERE status = 1 ORDER BY seq";
+
+		$fields = get_option('bwbps_custom_fields');
 		
-		$query = $wpdb->get_results($sql);
-		return $query;
+		if( empty($fields) || ( !is_array($fields) && $fields != 'none' ) ){
+			global $wpdb;
+			$sql = "SELECT * FROM ".PSFIELDSTABLE." WHERE status = 1 ORDER BY seq";
+			$fields = $wpdb->get_results($sql);
+			$fields = $fields ? $fields : 'none';
+			update_option('bwbps_custom_fields', $fields);
+		}
+		
+		$fields = is_array($fields) ? $fields : false;
+		
+		return $fields;
 	}
 		
 	/**
@@ -760,14 +769,17 @@ function checkEmailAlerts(){
 function shortCodeGallery($atts, $content=null){
 		global $post;
 		
-		/*	
+		/*
+	
 		//Memory Usage code - to check if we have leaks - uncomment the one at top of this function also
+		echo "<h3>Please note that testing is in process to make PhotoSmash better...pardon the interruptions</h3>";
 		if (function_exists('memory_get_usage')){
 		$memory_usage = round(memory_get_usage() / 1024 / 1024, 2) . __(' MByte', 'bwbps-lang');
 		_e('Memory usage', 'bwbps-lang');
 		echo $memory_usage;
 		}
-		*/
+		
+*/
 				
 		$this->checkEmailAlerts();
 		
@@ -1244,14 +1256,16 @@ function shortCodeGallery($atts, $content=null){
 			}
 		}
 		
-		/*	
+		/*
+	
 		//Memory Usage code - to check if we have leaks - uncomment the one at top of this function also
 		if (function_exists('memory_get_usage')){
 		$memory_usage = round(memory_get_usage() / 1024 / 1024, 2) . __(' MByte', 'bwbps-lang');
 		_e('Memory usage', 'bwbps-lang');
 		echo $memory_usage;
 		}
-		*/
+		
+*/
 		
 		unset($galparms);
 

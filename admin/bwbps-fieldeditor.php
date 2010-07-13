@@ -130,6 +130,15 @@ class BWBPS_FieldEditor{
 		
 		//Set fields to show that they have been generated
 		$wpdb->query("UPDATE ".PSFIELDSTABLE." SET status = 1 ");
+		
+		// Store custom fields as an option
+		$sql = "SELECT * FROM ".PSFIELDSTABLE." WHERE status = 1 ORDER BY seq";
+		$fields = $wpdb->get_results($sql);
+		
+		$fields = $fields ? $fields : 'none';
+		
+		update_option('bwbps_custom_fields', $fields);
+		
 		return true;
 	
 	}
@@ -209,6 +218,14 @@ class BWBPS_FieldEditor{
 		if($ret){$this->message = "<b>Field deleted...</b>";
 			$this->field_id = 0;
 		}
+		
+		// Store custom fields as an option
+		$sql = "SELECT * FROM ".PSFIELDSTABLE." WHERE status = 1 ORDER BY seq";
+		$fields = $wpdb->get_results($sql);
+		
+		$fields = $fields ? $fields : 'none';
+		
+		update_option('bwbps_custom_fields', $fields);
 		
 		return;
 	}
@@ -423,7 +440,7 @@ class BWBPS_FieldEditor{
 			$fieldsTable = $this->getTableOfFields($options['form_id']);
 			
 			if($this->ungeneratedfields)
-			{$this->message .= "<p style='color:red; margin-bottom: 10px;'>Custom table may be out of date.  Generate when finished adding/editing fields.</p>";}
+			{$this->message .= "<p style='color:red; margin-bottom: 10px;'>Custom table may be out of date.  Generate Table when finished adding/editing fields.</p>";}
 			
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';

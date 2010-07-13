@@ -484,7 +484,7 @@ class BWBPS_ImageFunc{
 	{
 		global $wpdb;
 		
-		if(!$alert_now && !get_option('BWBPhotosmashNeedAlert') == 1){ return; }
+		if(!$alert_now || get_option('BWBPhotosmashNeedAlert') != 1){ return; }
 		
 		if( !$this->options['alert_all_uploads'] ){
 			
@@ -492,6 +492,11 @@ class BWBPS_ImageFunc{
 			$msgStatus = " awaiting moderation.";
 		
 		}
+		
+		$last_alert = time();
+		
+		update_option('BWBPhotosmashLastAlert', $last_alert);
+		update_option('BWBPhotosmashNeedAlert',0);
 		
 		$sql = "SELECT * FROM ".PSIMAGESTABLE." WHERE alerted = 0 $sqlStatus ;";
 		$results = $wpdb->get_results($sql);
@@ -532,10 +537,6 @@ class BWBPS_ImageFunc{
  		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
  		
  		wp_mail($admin_email, "New images for moderation", $ret, $headers );
-		$last_alert = time();
-		
-		update_option('BWBPhotosmashLastAlert', $last_alert);
-		update_option('BWBPhotosmashNeedAlert',0);
 		
 		$data['alerted'] = -1;
 		$where['alerted'] = 0;
