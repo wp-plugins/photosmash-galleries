@@ -2286,7 +2286,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			
 			<table class='widefat fixed' cellspacing='0'>
 			<thead><tr>
-				<th class='' scope='col' style='width: 380px;'>Toggle <a href='javascript: void(0);' onclick='bwbpsTogglePhotoMgrFields(); return false;'>Fields</a><span id='bwbps-fieldtoglinks' style='$showfields'>: &nbsp; 
+				<th class='' scope='col' style='width: 380px; color: #cc0000 !important; font-size: 12px;'>Toggle <a href='javascript: void(0);' onclick='bwbpsTogglePhotoMgrFields(); return false;'>Fields <img src='" . BWBPSPLUGINURL . "images/down.png' alt='expand' style='margin: 5px 0 0 !important; padding: 0 !important;' /></a><span id='bwbps-fieldtoglinks' style='$showfields'>: &nbsp; 
 			<a href='javascript: void(0);' onclick='jQuery(\".bwbps-stdfields\").toggle(); return false;'>Standard</a>,
 			<a href='javascript: void(0);' onclick='bwbpsToggleCustomData(); return false;'>Custom</a>,
 			<a href='javascript: void(0);' onclick='jQuery(\".bwbps-metafields\").toggle(); return false;'>Meta</a></span> </th>

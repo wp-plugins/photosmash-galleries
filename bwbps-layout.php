@@ -2899,6 +2899,8 @@ class BWBPS_Layout{
 					
 						
 					}
+					
+					do_action('bwbps_ext_search', $g['tags']);
 
 					$tagtemp = explode(",", $g['tags']);
 				

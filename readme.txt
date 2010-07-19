@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 3.0
-Stable tag: 0.7.03
+Stable tag: 0.8.00
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 

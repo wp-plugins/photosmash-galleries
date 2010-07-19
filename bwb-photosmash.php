@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.7.04
+Version: 0.8.00
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -37,8 +37,8 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.7.04');
-define('PHOTOSMASHEXTVERSION', '0.2.02');
+define('PHOTOSMASHVERSION', '0.8.00');
+define('PHOTOSMASHEXTVERSION', '0.2.10');
 
 define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
 
@@ -519,20 +519,12 @@ class BWB_PhotoSmash{
 	
 	//Get the Custom Fields Query Results
 	function getCustomFields(){
-
-		$fields = get_option('bwbps_custom_fields');
+	
+		global $wpdb;
+		$sql = "SELECT * FROM ".PSFIELDSTABLE." WHERE status = 1 ORDER BY seq";
 		
-		if( empty($fields) || ( !is_array($fields) && $fields != 'none' ) ){
-			global $wpdb;
-			$sql = "SELECT * FROM ".PSFIELDSTABLE." WHERE status = 1 ORDER BY seq";
-			$fields = $wpdb->get_results($sql);
-			$fields = $fields ? $fields : 'none';
-			update_option('bwbps_custom_fields', $fields);
-		}
-		
-		$fields = is_array($fields) ? $fields : false;
-		
-		return $fields;
+		$query = $wpdb->get_results($sql);
+		return $query;
 	}
 		
 	/**
@@ -737,7 +729,7 @@ function checkEmailAlerts(){
 	// contains Options defaults and the Alert message psuedo-cron	
 	
 	//This does the alert if it is set to alert immediately
-	if( $this->psOptions['img_alerts'] == -1 ){
+	if( $this->psOptions['img_alerts'] == -1 && (int)get_option('BWBPhotosmashNeedAlert') ){
 		$this->img_funcs->sendNewImageAlerts(true);
 		return;
 	}

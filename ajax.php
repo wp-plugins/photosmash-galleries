@@ -759,7 +759,7 @@ class BWBPS_AJAX{
 					
 					wp_delete_object_term_relationships( $imgid, 'photosmash' );
 
-					//Dete Post Meta for Attachment
+					//Delete Post Meta for Attachment
 					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->postmeta
 						.' WHERE post_id = %d', (int)$row['wp_attach_id']));	
 						
@@ -769,6 +769,9 @@ class BWBPS_AJAX{
 				if( !$filename ){ $filename = ""; } else { $filename = " - ".$filename; }
 				$json['action'] = 'deleted'.$filename;
 				$json['deleted'] = 'deleted';
+				
+				// Update the Tag Counts
+				$this->img_funcs->updateTagCounts();
 				
 				
 			} else {$json['status'] = 0;}

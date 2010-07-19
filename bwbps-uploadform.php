@@ -267,7 +267,7 @@ class BWBPS_UploadForm{
 		if($g['post_tags'] && !$g['tags_for_uploads']){
 			
 			if(!$g['post_tags_label']){
-				$g['post_tags_label'] = 'Tags (separate w/ commas):';
+				$g['post_tags_label'] = 'Tags (separate w/ commas)';
 			}
 					
 			$retForm .= '<tr><th>' . $g['post_tags_label'] . ':</th>
