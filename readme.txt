@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 3.0
-Stable tag: 0.8.00
+Stable tag: 0.8.01
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -84,6 +84,10 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 0.8.01 - 7/22/2010 =
+
+    * Fixed Sorting and Pagination - the changes in the last release caused sort order to behave incorrectly and caused the gallery to prefer the Images/Page set in Gallery Settings over the # of Images set in shortcodes when limiting the number of images returned in the query.
 
 = 0.8.00 - 7/15/2010 =
 

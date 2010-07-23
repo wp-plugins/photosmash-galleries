@@ -162,7 +162,13 @@ class BWBPS_Layout{
 	function getGallery($g, $layoutName = false, $image=false, $useAlt=false)
 	{
 	
+		// Determine if we are limiting by images per page or specified # of images
 		$g['img_perpage'] = (int)$g['img_perpage'];
+		
+		if( (int)$g['limit_images'] && (int)$g['img_perpage'] ){
+			if( $g['limit_images'] < $g['img_perpage'] ) $g['img_perpage'] = 0;
+		}
+		
 	
 		if( $g['wp_gallery'] && (int)$g['post_id'] ){
 		
@@ -2778,9 +2784,15 @@ class BWBPS_Layout{
 		}
 		
 		
-		
 		// Calculate ORDER BY
-		$sortorder = $g['sort_order']>0 || strtolower($g['sort_order']) == 'asc' ? "ASC" : "DESC";
+		if( strtolower($g['sort_order']) == 'desc' || (int)$g['sort_order'] ){
+			$g['sort_order'] = "DESC";
+		} else {
+			$g['sort_order'] = "ASC";
+		}
+		
+		$sortorder = $g['sort_order'];
+		
 		
 		// Bayesian Sorting from:
 		// http://www.thebroth.com/blog/118/bayesian-rating
@@ -3040,10 +3052,16 @@ class BWBPS_Layout{
 		}
 		
 		// Calculate paging
+		if( (int)$g['limit_images'] && (int)$g['img_perpage'] ){
+			if( $g['limit_images'] <= $g['img_perpage'] ){
+				$g['img_perpage'] = 0;
+			} else {
+				$hardlimit = " LIMIT " . (int)$g['limit_images'];
+			} 
+		}
+		
 		if( $g['img_perpage'] ){
-			if( $g['img_perpage'] > (int)$g['limit_images'] ){
-				$limitimages = ' LIMIT ' . (int)$g['starting_image'] . ", " . $g['img_perpage'];
-			}
+			$limitimages = ' LIMIT ' . (int)$g['starting_image'] . ", " . $g['img_perpage'];
 		}
 		
 		$sqlWhere .= " " . $sqlSpecialWhere;
@@ -3064,7 +3082,7 @@ class BWBPS_Layout{
 			$sql_count = 'SELECT DISTINCT '.PSIMAGESTABLE.'.image_id FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
-				. $sqlWhere;	
+				. $sqlWhere . $hardlimit;	
 									
 			
 		} else {
@@ -3087,11 +3105,11 @@ class BWBPS_Layout{
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
 				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
-				.$uid.')';
+				.$uid.')'  . $hardlimit;
 				
 		}
 		
-		//echo $sql;
+		// echo $sql;
 		
 		// Get Count for Paging
 		$this->total_records = 0;
