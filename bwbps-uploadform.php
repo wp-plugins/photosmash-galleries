@@ -140,16 +140,17 @@ class BWBPS_UploadForm{
 			
 			$pcats = wp_get_post_categories($post->ID);
 			
-			if(is_array($pcats)){
-				foreach($pcats as $pcat){
-					if((int)$pcat){
-						$ret .= "<input type='hidden' name='bwbps-post-cats[]' value='"
-				. (int)$pcat ."' />
-				";
-					}
-				}
+			$ret .= $this->getPostCatFieldHidden($pcats);
 			
-			}		
+		}
+		
+		if( $g['post_cats'] ){
+		
+			$pcats = str_replace(" ","", $g['post_cats']);
+			
+			$pcats = explode(",", $pcats);
+			$ret .= $this->getPostCatFieldHidden($pcats);
+			
 		}
 		
 		if($g['tags_for_uploads']){
@@ -171,6 +172,25 @@ class BWBPS_UploadForm{
 		}
 		
 		return $ret;
+	}
+	
+	function getPostCatFieldHidden($pcats){
+		if(empty($pcats)){ return; }
+		if(!is_array($pcats)){
+			if( !(int)trim($pcats) ){ return; }
+			$pcats = array( trim($pcats) );
+		}
+		
+		foreach($pcats as $pcat){
+			if((int)trim($pcat)){
+				$ret .= "<input type='hidden' name='bwbps-post-cats[]' value='"
+		. (int)$pcat ."' />
+		";
+			}
+		}
+		
+		return $ret;
+		
 	}
 	
 	/**

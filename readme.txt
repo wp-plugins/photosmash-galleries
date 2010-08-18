@@ -3,8 +3,8 @@ Contributors: bennebw
 Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 3.0
-Stable tag: 0.8.01
+Tested up to: 3.0.1
+Stable tag: 0.8.02
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -84,6 +84,10 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 0.8.02 - 8/18/2010 =
+
+    * Added post_cats for shortcodes [PhotoSmash Extend] - use post_cats='1,2,3' (where 1,2,3 are the id's of Categories) inside your shortcode you want to set for newly created Posts. Note, this only works with PhotoSmash Extend. An example shortcode is: [ photosmash create_post='New_post_uploald' id=1 post_tags=true post_cats='1,2,3'] (remove the space from the shortcode)
 
 = 0.8.01 - 7/22/2010 =
 

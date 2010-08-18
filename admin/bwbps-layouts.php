@@ -310,6 +310,8 @@ class BWBPS_LayoutsEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[wp_attachment_link] - <span style='font-size: 9px;'>WP attachment page url</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[wp_permalink] - <span style='font-size: 9px;'>WP attachment page url - because there's a bug on Pages</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[wp_attach_id] - <span style='font-size: 9px;'>WP attachment ID #</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_url] - <span style='font-size: 9px;'>Post's permalink (not linkified)</span></li>
@@ -317,6 +319,8 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_name] - <span style='font-size: 9px;'>Post's name (not linkified)</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_id] - <span style='font-size: 9px;'>Post's ID</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[comments_count] - <span style='font-size: 9px;'>Count of comments for an image's post</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_links] - <span style='font-size: 9px;'>Links to the tags - to separate with commas (or other), use attribute like sep=', '. Other attributes:  before and after</span></li>
 						

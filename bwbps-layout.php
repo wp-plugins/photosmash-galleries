@@ -71,6 +71,8 @@ class BWBPS_Layout{
 			, 'plugin_url'
 			, 'piclens'
 			, 'wp_attachment_link'
+			, 'wp_permalink'
+			, 'wp_permalink_byforce'
 			, 'wp_attach_id'
 			, 'tag_links'
 			, 'tag_dropdown'
@@ -86,6 +88,7 @@ class BWBPS_Layout{
 			, 'gallery_url'
 			, 'gallery_post_url'
 			, 'gallery_image_count'
+			, 'comments_count'
 		);
 	}
 	
@@ -1440,6 +1443,23 @@ class BWBPS_Layout{
 				}
 				
 				break;
+				
+			case '[wp_permalink]' :
+				if((int)$image['wp_attach_id']){
+					$ret = get_permalink( (int)$image['wp_attach_id'] );
+				}
+				
+				break;
+				
+			case '[wp_permalink_byforce]' : //usually cause somebody else's plugin is putting the whammy on the attachment_link and permalink filters
+				// Really...don't use this unless you absolutely cannot get around it
+				if((int)$image['wp_attach_id']){
+					$i = (int)$image['wp_attach_id'];
+					$att_post = get_post($i);
+					$ret = $att_post->post_name;
+				}
+				
+				break;
 			
 			case '[wp_attach_id]' :
 				if((int)$image['wp_attach_id']){
@@ -1611,6 +1631,12 @@ class BWBPS_Layout{
 				$ret = get_post($ret);
 				$ret = $ret->post_title;
 				break;
+				
+			case '[comments_count]' :
+				if((int)trim($image['post_id'])){
+					$ret = get_comments_number((int)$image['post_id']);
+				}
+				break;	
 			
 			case '[file_name]' :
 				$ret = $image['image_name'];

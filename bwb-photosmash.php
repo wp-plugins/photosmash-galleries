@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.8.01
+Version: 0.8.02
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -834,8 +834,9 @@ function shortCodeGallery($atts, $content=null){
 			'post_cat_exclude' => false,
 			'post_cat_show' => false,	// Supply this with a value that evaluates to true (e.g. something other than 0 or false or '') and it turns on the post categories selection box and is used as the LABEL for the field
 			'post_cat_depth' => 0,
+			'post_cats' => false,	//  Supply this with category id's to set for new post (comma separated)
 			'post_cat_selected' => false,
-			'post_cat_single_select' => false,	// make this 0 to turn off multi-select
+			'post_cat_single_select' => false,	// make this 1 to turn off multi-select
 			'post_thumbnail_meta' => false,	// use this as the name of the post meta (custom field) for post thumbnail
 			'post_tags' => false,	// whether or not to show an input box for tags (comma separated)
 			'post_tags_label' => false,
@@ -1033,6 +1034,7 @@ function shortCodeGallery($atts, $content=null){
 		$g['post_cat_show'] = $post_cat_show;
 		$g['post_cat_depth'] = $post_cat_depth;
 		$g['post_cat_selected'] = $post_cat_selected;
+		$g['post_cats'] = $post_cats;
 		$g['post_thumbnail_meta'] = $post_thumbnail_meta;
 		$g['post_tags'] = $post_tags;
 		$g['tags_has_all'] = $tags_has_all;
