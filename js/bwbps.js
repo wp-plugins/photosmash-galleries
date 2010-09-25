@@ -115,6 +115,53 @@ function bwbpsFavoriteSuccess(data, image_id){
 	}
 }
 
+// User Delete Own Images...only will delete if image is not approved
+function bwbpsUserDeleteImage(image_id){
+
+	var _data = {};
+	
+	if(!confirm('Do you wish to permanently delete this image?')){ return; }
+	
+	_data['action'] = 'userdeletewithpost';
+	
+	_data['image_id'] = image_id;
+	
+	_data['_ajax_nonce'] = bwbps_upload_nonce;
+		
+	try{
+		$j('#ps_savemsg').show();
+	}catch(err){}
+	
+	jQuery(".bwbps_delbtn_" + image_id).after("<span style='color: red; font-size: .8em;' class='bwbps_deleting_" + image_id +"'>deleting...</span>");
+	jQuery(".bwbps_delbtn_" + image_id).remove();
+	
+	$j.ajax({
+		type: 'POST',
+		url: bwbpsAjaxUserURL,
+		data : _data,
+		dataType: 'json',
+		success: function(data) {
+			bwbpsUserDeleteImageSuccess(data, image_id);
+		}
+	});
+	
+	return false;
+
+}
+
+function bwbpsUserDeleteImageSuccess(data, image_id){
+	if(data == -1){
+		alert('Security failed: nonce.');
+		return;
+	}
+	
+	if(data.status == 1)
+	{
+		jQuery(".bwbps_deleting_" + image_id).html('deleted');
+	}
+}
+
+
 
 // Upload Image by Ajax
 function bwbpsAjaxLoadImage(myForm){

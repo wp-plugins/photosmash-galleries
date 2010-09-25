@@ -122,6 +122,9 @@ class BWBPS_Importer{
 				$this->saveImageToDB($g, $imgdata);
 				
 				$cnt++;
+				
+				unset($imgdata);
+				
 			} else {
 				$failed[] = "Attach id (no metadata): " . $sel_img;
 			}

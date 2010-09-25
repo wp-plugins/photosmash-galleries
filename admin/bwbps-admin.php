@@ -601,7 +601,7 @@ class BWBPS_Admin{
 			$galOptions = $this->getGalleryDefaults();
 		}
 		
-		$layoutsDDL = $this->getLayoutsDDL((int)$galOptions['layout_id'], false);
+		$layoutsDDL = $this->getLayoutsDDL((int)$galOptions['layout_id'], false, 0);
 		
 		?>
 		<div class=wrap>
@@ -725,6 +725,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<option value="97" <?php if($galOptions['gallery_type'] == 97) echo 'selected=selected'; ?>>WordPress Gallery</option>
 						
 						<option value="10" <?php if($galOptions['gallery_type'] == 10) echo 'selected=selected'; ?>>Contributor Gallery</option>
+						
+						<option value="9" <?php if($galOptions['gallery_type'] == 9) echo 'selected=selected'; ?>>Post-Author Uploads</option>
+						
 						<option value="20" <?php if($galOptions['gallery_type'] == 20) echo 'selected=selected'; ?>>Random Images</option>
 						<option value="30" <?php if($galOptions['gallery_type'] == 30) echo 'selected=selected'; ?>>Recent Images</option>
 						<option value="40" <?php if($galOptions['gallery_type'] == 40) echo 'selected=selected'; ?>>Tags Gallery</option>
@@ -1067,7 +1070,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			$galOptions = $this->getGalleryDefaults();
 		}
 		
-		$layoutsDDL = $this->getLayoutsDDL((int)$galOptions['layout_id'], false);
+		$layoutsDDL = $this->getLayoutsDDL((int)$galOptions['layout_id'], false, 0 );
 		
 		?>
 		<div class=wrap>
@@ -1422,7 +1425,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Default Layout:</th>
 				<td>
-					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true);
+					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true, 0 );
 					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default layout for displaying images
 					
 					<?php if($psOptions['use_advanced']){
@@ -2916,7 +2919,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	
 	//Get Layouts DDL
-	function getLayoutsDDL($selected_layout,$psDefault){
+	function getLayoutsDDL($selected_layout,$psDefault, $type=false){
 		
  		global $wpdb;
  		
@@ -2930,8 +2933,12 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			$ret .= "<option value='0' ".$sel.">&lt;Default layout&gt;</option>";
 		}
 		
+		if($type !== false){
+			$where = " WHERE layout_type=" . (int) $type. " ";
+		}
+				
 		$query = $wpdb->get_results("SELECT layout_id, layout_name FROM "
-			.PSLAYOUTSTABLE." ORDER BY layout_name;");
+			.PSLAYOUTSTABLE. $where ." ORDER BY layout_name;");
 		
 		if($query){
 			foreach($query as $row){

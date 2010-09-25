@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 3.0.1
-Stable tag: 0.8.02
+Stable tag: 0.8.03
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -84,6 +84,14 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 0.8.03 - 9/24/2010 =
+
+    * Added '[delete_button]' to custom layouts - this gives you the ability to present your users with a delete button on the images they uploaded.  You'll need to add this to the custom layouts (there's a tutorial on custom layouts if interested).
+    * Fixed importing image - was using 2nd image multiple times when multiple images were imported.  Was working earlier, but something along the way broke this.
+    * Fixed custom layouts use of the # of images per row for tables - this was broken during the last big overhaul which removed certain code to make it faster.
+    * Added image_id to [ photosmash] shortcode - while this has long been possible using the [ psmash] shortcode.  Using it in the photosmash shortcode allows you to display a single image with all the benefits of a full gallery, including star ratings and favorites.
+    * Added Post-Author Uploads as a Gallery type - this gallery type allows you to set up galleries that only allow the Author of the Page/Post on which it is displayed to upload images to it.  This is probably most useful when allowing users to create new posts on uploads with PhotoSmash Extend, but can be used without Extend.  The only requirement is that the user you want to upload to the gallery has to be the Author of the WP page/post.
 
 = 0.8.02 - 8/18/2010 =
 

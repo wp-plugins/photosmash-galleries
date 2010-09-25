@@ -60,6 +60,8 @@ class BWBPS_LayoutsEditor{
 		$d['alt_layout'] = stripslashes($d['alt_layout']);
 		$d['css'] = stripslashes($d['css']);
 		$d['wrapper'] = stripslashes($d['wrapper']);
+		$d['layout_type'] = (int)$_POST['bwbps_layout_type'];
+		$d['footer_layout'] = stripslashes($_POST['bwbps_footer_layout']);
 					
 		
 		if($this->layout_id == 0){
@@ -169,12 +171,25 @@ class BWBPS_LayoutsEditor{
 <tr>
 	<th>Layout name:</th>
 	<td>
-		<input type='text' name="bwbps_layout_name" value='<?php echo $layoutOptions['layout_name'];?>'/>
+		<input type='text' name="bwbps_layout_name" value='<?php echo esc_attr($layoutOptions['layout_name']);?>'/>
 		<ol><li>Used in shortcodes to display layout: <span style='color:red;'>[photosmash layout='<?php if($layoutOptions['layout_name']){echo $layoutOptions['layout_name']; } else {
 		echo 'my_layout';} ?>']</span></li>
 		<li>Use letters, numbers, and underscore ( _ ) only</li></ol>
 	</td>
 </tr>
+<tr>
+	<th>Layout type:</th>
+	<td>
+		<select name="bwbps_layout_type">
+			<option value="0" <?php if((int)$layoutOptions['layout_type'] == 0) echo 'selected=selected'; ?>>Normal gallery layout</option>
+			<option value="1" <?php if((int)$layoutOptions['layout_type'] == 1) echo 'selected=selected'; ?>>PS Extend new post layout</option>
+			<option value="2" <?php if((int)$layoutOptions['layout_type'] == 2) echo 'selected=selected'; ?>>PS Extend navigation layout</option>
+			<option value="10" <?php if((int)$layoutOptions['layout_type'] == 10) echo 'selected=selected'; ?>>Other layouts</option>
+		</select>
+		Note: this does not affect the operation of layouts, only whether they show up in certain dropdowns (e.g. Layout in Gallery Settings)
+	</td>
+</tr>
+
 <tr>
 <th id='bwbps_layout'>HTML Layout:</th>
 	<td>
@@ -191,7 +206,7 @@ class BWBPS_LayoutsEditor{
 </tr>
 
 <tr>
-<th id='bwbps_alt_layout'>Wrapper:</th>
+<th id='bwbps_wrapper'>Wrapper:</th>
 	<td>
 		<textarea name="bwbps_wrapper" cols="43" rows="6"><?php echo htmlentities($layoutOptions['wrapper']);?></textarea>
 		<br/>- Wrapper allows you to put HTML around the gallery of images after it's complete.  You'd need it for ol, ul, and table tags, but it could be used for all kinds of style the overall gallery.<br/><br/>- Use [gallery] to set where in the wrapper the images should go.  Example:<br/>
@@ -235,7 +250,16 @@ class BWBPS_LayoutsEditor{
 	</td>
 </tr>
 
-
+<tr>
+<th id='bwbps_layout'>Javascript Layout:</th>
+	<td>
+		<input type='text' name="bwbps_footer_layout" value='<?php esc_attr_e($layoutOptions['footer_layout']);
+		?>' />
+		<br/>- Enter another Custom Layout name here to create javascript for each image.  This javascript will be inserted to the footer of your page.  The &lt;script&gt; tags will be added automatically.  Use the Wrapper of your Javascript Custom Layout if you'd like to wrap your images scripts in a function, or if you need to call certain functions once.  Example of use: you could add javascript that would add your images to a Google Map!
+		<br/><br/>You can override this Javascript Layout in your shortcode by using an attribute like: javascript_layout='my_js_layout' 
+		<br/>You can prevent the javascript_layout from being used by adding javascript_layout='none' to your shortcode.
+	</td>
+</tr>
 
 <tr>
 <th><input type="submit" name="saveLayout" class="button-primary" tabindex="20" value="<?php _e('Save Layout', 'bwbpsLang') ?>" /></th>
@@ -303,6 +327,8 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[favorite] - <span style='font-size: 9px;'>The star for allowing users to favorite an image</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[favorite_cnt] - <span style='font-size: 9px;'>How many times an image has been favorited</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[delete_button] - <span style='font-size: 9px;'>Button to allow your users to delete their images. Use attribute 'button_name' to specify the button's text.  Will default to 'delete'.</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[ps_rating] - <span style='font-size: 9px;'>Show's the rating stars (make sure you've got configured in your gallery)</span></li>
 						

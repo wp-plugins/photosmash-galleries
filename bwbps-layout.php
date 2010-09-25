@@ -82,6 +82,7 @@ class BWBPS_Layout{
 			, 'tags_has_all'
 			, 'favorite'
 			, 'favorite_cnt'
+			, 'delete_button'
 			, 'image_gallery_name'
 			, 'gallery_caption'
 			, 'gallery_caption_escaped'
@@ -182,7 +183,7 @@ class BWBPS_Layout{
 			
 			//Need the insertion point to create a holder for adding new images.
 			if( !$g['no_insertbox'] && !$g['no_form']){
-				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
+				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' class='bwbps-insert-box'></div>";
 			}
 			
 			return $ret;
@@ -411,8 +412,6 @@ class BWBPS_Layout{
 					
 			foreach($images as $image){
 				
-				unset($imageTemp);
-				
 				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 				
 				if($g['ps_favorite_html']){
@@ -550,6 +549,7 @@ class BWBPS_Layout{
 					$imageTemp .= $this->getStandardLayout($g, $image);
 					
 					$psTable .= apply_filters('bwbps_image', $imageTemp);
+					unset($imageTemp);
 							
 				} else {
 					//Custom Layout
@@ -558,6 +558,11 @@ class BWBPS_Layout{
 						$imageTemp .= $this->getCustomLayout($g, $image, $layout, true);	
 					} else {
 						$imageTemp .= $this->getCustomLayout($g, $image, $layout, false);	
+					}
+					
+					if( $javascript_layout ){
+						$psJavascript .= $this->getCustomLayout($g, $image, $javascript_layout, false) . "
+						";
 					}
 
 					$imageTemp = apply_filters('bwbps_image', $imageTemp);
@@ -569,15 +574,17 @@ class BWBPS_Layout{
 						if($cellsInRow % $layout->cells_perrow == 0){
 							$psTable .="<tr>".$imageTemp."</tr>";					
 							$cellsInRow = 0;
+							unset($imageTemp);
 						}
 					
 					} else {
 						$psTable .= $imageTemp;
+						unset($imageTemp);	// Need to call separately because it needs to stay alive for CellsInRow above
 					}
 					
 				}
 				
-				unset($imageTemp);
+				
 			}
 			
 		} else {
@@ -613,7 +620,7 @@ class BWBPS_Layout{
 		if($rate){
 				$ratetoggle = "<span class='bwbps-rating-toggle'><a href='javascript: void(0);'"
 					. " onclick='bwbpsToggleRatings(". $g['gallery_id'] 
-					. "); return false;' title='Toggle image ratings'>Toggle ratings</a></span><div style='clear: both; margin: 0; padding: 0;'></div>";			
+					. "); return false;' title='Toggle image ratings'>Toggle ratings</a></span><div class='bwbps-toggle-ratings-clear' style=' margin: 0; padding: 0;'></div>";			
 		}
 		
 		if(!$layout){
@@ -680,7 +687,7 @@ class BWBPS_Layout{
 			
 			//Need the insertion point to create a holder for adding new images.
 			if( !$g['no_insertbox'] && !$g['no_form']){
-				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' style='clear: both;'></div>";
+				$ret .= "<div id='bwbpsInsertBox_".$g['gallery_id']."' class='bwbps-insert-box'></div>";
 			}
 		}
 	
@@ -1961,6 +1968,33 @@ class BWBPS_Layout{
 				
 				$ret = (int)$image['favorites_cnt'];
 				break;
+				
+			case '[delete_button]' :	// will place a Delete button if the current user is the owner of the image
+				
+				if( !is_user_logged_in() ){ return; }
+				
+				global $current_user;
+				global $bwbPS;
+				
+				if(!isset($bwbPS->footerJSArray['upload_nonce'])){
+					$nonce = wp_create_nonce('bwb_upload_photos');
+					
+					$bwbPS->addFooterJSArray("var bwbps_upload_nonce = '" . $nonce . "';", 'upload_nonce');
+					
+				}
+				
+				if($atts['button_name']){
+					$btn_name = esc_attr($atts['button_name']);
+				} else {
+					$btn_name = 'delete';
+				}
+				
+			    if ((int)$image['user_id'] == (int)$current_user->ID)
+			       $ret = "<input class='bwbps_user_delete_button bwbps_delbtn_" 
+			       	. $image['psimageID']."' type='button' value='$btn_name' onclick='bwbpsUserDeleteImage(".$image['psimageID'].")' />";
+			    else
+			       $ret = "";
+			    break;
 							
 			case '[tag_links]' :
 								
@@ -2775,7 +2809,6 @@ class BWBPS_Layout{
 	 */
 	function getGalleryImages($g, $customFields=false){
 		global $wpdb;
-		global $user_ID;
 		global $current_user;
 		
 		$user_id = (int)$current_user->ID;
@@ -2805,7 +2838,7 @@ class BWBPS_Layout{
 			$favoriteDataJoin .= " LEFT OUTER JOIN ".PSFAVORITESTABLE
 				." ON ".PSIMAGESTABLE.".image_id = "
 				.PSFAVORITESTABLE.".image_id "
-				." AND " . PSFAVORITESTABLE . ".user_id = " . $user_id . " ";
+				." AND " . PSFAVORITESTABLE . ".user_id = " . (int)$user_id . " ";
 			
 		}
 		
@@ -2983,7 +3016,7 @@ class BWBPS_Layout{
 				$favoriteDataJoin = " INNER JOIN ".PSFAVORITESTABLE
 				." ON ".PSIMAGESTABLE.".image_id = "
 				.PSFAVORITESTABLE.".image_id "
-				." AND " . PSFAVORITESTABLE . ".user_id = " . $user_id . " ";
+				." AND " . PSFAVORITESTABLE . ".user_id = " . (int)$user_id . " ";
 				
 				break;
 				
@@ -3113,7 +3146,7 @@ class BWBPS_Layout{
 			
 		} else {
 			//Non-Admins can see their own images and Approved images
-			$uid = $user_ID ? $user_ID : -1;
+			$uid = (int)$user_id ? (int)$user_id : -1;
 				
 			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				.PSIMAGESTABLE.'.image_id as psimageID, '

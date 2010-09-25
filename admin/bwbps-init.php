@@ -69,8 +69,8 @@ class BWBPS_Init{
 				url VARCHAR(250) NOT NULL,
 				custom_fields TEXT,
 				meta_data TEXT,
-				geolong float(10,6) NOT NULL,
-				geolat float(10,6) NOT NULL,
+				geolong double NOT NULL,
+				geolat double NOT NULL,
 				img_attribution TEXT,
 				img_license TINYINT(1),
 				updated_by BIGINT(20) NOT NULL,
@@ -313,6 +313,7 @@ class BWBPS_Init{
 			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_layouts (
 				layout_id INT(11) NOT NULL AUTO_INCREMENT,
 				layout_name VARCHAR(30) ,
+				layout_type TINYINT NOT NULL default '0',
 				layout TEXT ,
 				alt_layout TEXT ,
 				wrapper TEXT ,
@@ -321,9 +322,13 @@ class BWBPS_Init{
 				pagination_class VARCHAR(255),
 				lists VARCHAR(255) ,
 				fields_used TEXT,
+				footer_layout TEXT,
 				PRIMARY KEY  (layout_id)
 				)  $charset_collate;";
 			dbDelta($sql);
+			
+			
+			$wpdb->query("UPDATE " . $wpdb->prefix."bwbps_layouts SET layout_type = 0 WHERE layout_type = NULL");
 			
 			
 			/* Create the CUSTOM FORMS table

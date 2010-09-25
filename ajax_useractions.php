@@ -7,10 +7,6 @@ if (!function_exists('add_action'))
 
 check_ajax_referer("bwb_upload_photos" );
 
-if(!function_exists('json_encode')){
-	require("classes/JSON.php");
-}
-
 $bwbpsuploaddir = wp_upload_dir();
 
 
@@ -88,7 +84,7 @@ class BWBPS_AJAX{
 		global $wpdb, $user_ID;
 		
 		
-		$json['message'] = $user_ID. " is discarding image ".$imgid = (int)$_POST['image_id'];
+		$imgid = (int)$_POST['image_id'];
 				
 		if(current_user_can('level_0')){
 			$imgid = (int)$_POST['image_id'];
@@ -177,9 +173,15 @@ class BWBPS_AJAX{
 				$json['action'] = 'deleted'.$filename;
 				$json['deleted'] = 'deleted';
 				
-			} else {$json['status'] = 0;}
+				$json['message'] = "Image deleted.";
+				
+			} else {
+				$json['status'] = 0;
+				$json['message'] = "Unable to delete image at this time.";	
+			}
 		} else {
 			$json['status'] = 0;
+			$json['message'] = "Must be logged in.";
 		}
 		
 		echo json_encode($json);

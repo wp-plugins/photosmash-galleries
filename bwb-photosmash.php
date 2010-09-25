@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.8.02
+Version: 0.8.03
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -253,6 +253,11 @@ class BWB_PhotoSmash{
 	
 	var $footerJS = ""; // Load this up with Javascript...PS uses wp_footer hook to put Javascript in footer
 	var $footerReady = "";
+	
+	var $footerJSArray;
+	
+	var $footerJSReadyArray;
+	
 	var $count = 0;
 	
 	var $galViewerCount = 0;
@@ -760,6 +765,7 @@ function checkEmailAlerts(){
 */
 function shortCodeGallery($atts, $content=null){
 		global $post;
+		global $current_user;
 		
 		/*
 	
@@ -851,6 +857,16 @@ function shortCodeGallery($atts, $content=null){
 		if($gallery_viewer ){
 			$gallery_type = 100;
 		}
+		
+		
+		//These galleries are 
+		if( $gallery_type == 9 || $gallery_type == 'post_author' ){
+			$gallery_type=9;
+			if( !current_user_can('level_10') && $current_user->ID != $post->post_author ){
+				$no_form=true;
+			}
+				
+		}
 				
 		//A beautiful little shortcode that lets you set a different layout for single Post and Page pages than the one on Main Page, Categories, and Archives
 		if($single_layout){
@@ -863,6 +879,23 @@ function shortCodeGallery($atts, $content=null){
 			$id=$gallery;
 			if(!$id){
 				$id=$gal_id;
+			}
+		}
+		
+		$image = false;	// You can now include an Image ID and return a single image
+		if( (int)$image_id ){
+			if(is_array($this->images)){
+				if(!array_key_exists($image_id, $this->images)){
+					$this->images[$image_id] = $this->getImage($image_id);
+				} 
+			}else{
+				$this->images[$image_id] = $this->getImage($image_id);
+			}
+			
+			// Set the ID for the Gallery to be loaded
+			if( is_array($this->images[$image_id]) && (int)$this->images[$image_id]['gallery_id'] ){
+				$id = $this->images[$image_id]['gallery_id'];
+				$image = $this->images[$image_id];
 			}
 		}
 						
@@ -1011,6 +1044,14 @@ function shortCodeGallery($atts, $content=null){
 
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
+		
+		//These galleries are 
+		if( $g['gallery_type'] == 9 ){
+			if( !current_user_can('level_10') && $current_user->ID != $post->post_author ){
+				$no_form=true;
+			}
+				
+		}
 		
 		// Figure out Which Post ID to use
 		if( $use_post_id ){
@@ -1247,7 +1288,7 @@ function shortCodeGallery($atts, $content=null){
 				
 			
 			$this->loadedGalleries[] = $post->ID."-".$g['gallery_id'];
-			$ret .= $this->buildGallery($g, $skipForm, $layoutName, $formName );
+			$ret .= $this->buildGallery($g, $skipForm, $layoutName, $formName, $image );
 			
 			if(!$g['no_gallery_header']){			
 				$ret .= "
@@ -1393,7 +1434,7 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 		return $query;
 	}
 
-function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
+function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $image=false)
 {
 	$blogname = str_replace('"',"",get_bloginfo("blogname"));
 	$admin = current_user_can('level_10');
@@ -1438,7 +1479,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		$atts['link_text'] = $g['piclens_link'];
 		$class = $g['piclens_class'] ? $g['piclens_class'] : 'alignright';
 		
-		$ret = "<div class='bwbps-piclens-link $class'>" . $this->getPicLensLink($g, $atts) . "</div>" . $ret . "<div style='clear: both;'></div>";
+		$ret = "<div class='bwbps-piclens-link $class'>" . $this->getPicLensLink($g, $atts) . "</div>" . $ret . "<div class='bwbps-piclens-clear'></div>";
 	}
 	
 	if(!isset($this->psLayout)){
@@ -1446,7 +1487,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 		$this->psLayout = new BWBPS_Layout($this->psOptions, $this->cfList);
 	}
 
-	$ret .=	$this->psLayout->getGallery($g, $layoutName);
+	$ret .=	$this->psLayout->getGallery($g, $layoutName, $image);
 	if(!$g['no_gallery_header']){
 		$ret .= "</div>
 			<div class='bwbps_clear'></div>";
@@ -1791,7 +1832,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	
 	function getImage($image_id){
 		global $wpdb;
-		global $user_ID;
+		global $current_user;
+		
+		$user_id = (int)$current_user->ID;
 		
 		//Set up SQL for Custom Data if in Use
 		$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
@@ -1800,13 +1843,13 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			
 		$custdata = ", ".PSCUSTOMDATATABLE.".* ";
 			
-		if(current_user_can('level_0') && $user_id){
+		if(current_user_can('level_0') && (int)$user_id){
 			$custdata .= ", " . PSFAVORITESTABLE . ".favorite_id ";
 			
 			$favoriteDataJoin = " LEFT OUTER JOIN ".PSFAVORITESTABLE
 				." ON ".PSIMAGESTABLE.".image_id = "
 				.PSFAVORITESTABLE.".image_id "
-				." AND " . PSFAVORITESTABLE . ".user_id = " . $user_id . " ";
+				." AND " . PSFAVORITESTABLE . ".user_id = " . (int)$user_id . " ";
 			
 		}
 		
@@ -1830,9 +1873,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			
 		} else {
 			//Non-Admins can see their own images and Approved images
-			$uid = $user_ID ? $user_ID : -1;
+			$uid = (int)$user_id ? (int)$user_id : -1;
 			
-			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, ".PSGALLERIESTABLE.".img_class,"
+			$sql = $wpdb->prepare("SELECT ".PSIMAGESTABLE.".*, "
+					.PSIMAGESTABLE.".image_id as psimageID, ".PSGALLERIESTABLE.".img_class,"
 					.PSGALLERIESTABLE.".img_rel, "
 					.$wpdb->users.".user_nicename,"
 					.$wpdb->users.".display_name,"
@@ -2220,7 +2264,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 	 */
 	function injectFooterJavaScript(){
 	
-		if(!$this->footerJS && !$this->footerReady){ return; }
+		if( !$this->footerJS && !$this->footerReady && !is_array($this->footerJSArray) ){ return; }
 	
 		$ret = "
 		<!-- PhotoSmash JavaScript  -->
@@ -2237,6 +2281,43 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			". $this->footerReady . "
 			
 			});
+			";
+		
+		}
+		
+		if(is_array($this->footerJSReadyArray)){
+			
+			$ret .= "
+			// On Document Ready
+			jQuery(document).ready(function() {
+			";
+			
+			foreach($this->footerJSReadyArray as $fjs){
+			
+				$ret .= $fjs;
+			
+			}
+			
+			$ret .= "
+			
+			});
+			";
+		
+		}
+
+		
+		if(is_array($this->footerJSArray)){
+			
+			$ret .= "
+			";
+			
+			foreach($this->footerJSArray as $fjs){
+			
+				$ret .= $fjs;
+			
+			}
+			
+			$ret .= "
 			";
 		
 		}
@@ -2260,6 +2341,49 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false)
 			$this->footerJS .= "
 			
 			".$js;
+		
+		}
+	}
+	
+	/**
+	 * Adds JavaScript to an array that will be inserted into the Footer wrapped in Script tags
+	 * Use this when you might be creating duplication...so you overwrite the array key with the duplicates...ex: array['key1'] = my_image;  array['key1'] = my_image; 
+	 * In that example, you only wind up with key1 in there once
+	 * Think google maps, etc.
+	 * 
+	 */
+	function addFooterJSArray($js, $key){
+		
+		if($js){
+		
+			if($key){
+			$this->footerJSArray[$key] .= "
+			
+			".$js;
+			
+			} else {
+			$this->footerJSArray[] .= "
+			
+			".$js;
+			}
+		
+		}
+	}
+	
+	function addFooterJSReadyArray($js, $key){
+		
+		if($js){
+		
+			if($key){
+			$this->footerJSReadyArray[$key] .= "
+			
+			".$js;
+			
+			} else {
+			$this->footerJSReadyArray[] .= "
+			
+			".$js;
+			}
 		
 		}
 	}
