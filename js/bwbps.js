@@ -18,6 +18,8 @@ $j.fn.tagName = function() {
 
 $j(document).ready(function() { 
 	//Show and hide the Loading icon on Ajax start/end
+	
+	/*
 	$j("#bwbps_loading")
 	.ajaxStart(function(){
 		$j(this).show();
@@ -33,6 +35,7 @@ $j(document).ready(function() {
 		bwbpsUploadStatus = false;
 	});
 	
+	*/
 	
 	$j('.bwbps_uploadform').submit(function() { 
 		$j('#bwbps_message').html('');
@@ -178,9 +181,11 @@ function bwbpsAjaxLoadImage(myForm){
 	$j('#' + form_pfx + 'bwbps_message').html('');
 	$j('#' + form_pfx + 'bwbps_previewpost').html('');
 	$j("#" + form_pfx + "bwbps_loading").show();
+	/*
 	$j("#" + form_pfx + "bwbps_loading").ajaxComplete(function(){
 		$j(this).hide();
 	});
+	*/
 	
 	var options = { 
 		beforeSubmit:  function(){ 
@@ -190,7 +195,11 @@ function bwbpsAjaxLoadImage(myForm){
 			} else { return true; } 
 		},
 		success: function(data, statusText){ bwbpsUploadSuccess(data, statusText, form_pfx); } , 
-		failure: function(){alert('failed');},
+		failure: function(){ 
+			alert('failed');
+			$j("#" + form_pfx + "bwbps_loading").hide(); 
+			bwbpsUploadStatus = false;
+			},
 		url:      bwbpsAjaxUpload,
 		iframe: true,
 		dataType:  'json'
@@ -296,6 +305,9 @@ function bwbpsVerifyFileFilled(form_pfx){
 function bwbpsUploadSuccess(data, statusText, form_pfx)  {
 	//This Alternate function is set in PhotoSmash Settings Advanced page
 	//If the alternate function returns false...continue with standard function
+	
+	$j("#" + form_pfx + "bwbps_loading").hide(); 
+	
 	if(bwbpsAlternateUploadFunction(data, statusText, form_pfx)){ return false;}
 
 	$j('#' + form_pfx + 'bwbps_submitBtn').removeAttr('disabled');

@@ -1,9 +1,6 @@
 <?php
 /*  FUNCTIONS FOR UPLOADING AND SAVING IMAGES TO GALLERIES */
 
-if(!function_exists('json_encode')){
-	require("classes/JSON.php");
-}
 
 if(function_exists('check_ajax_referer') && !check_ajax_referer( "bwb_upload_photos" )){
 	$json['message']= "Invalid authorization...nonce field missing.";

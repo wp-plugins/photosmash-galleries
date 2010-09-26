@@ -34,10 +34,6 @@ class BWBPS_Uploader{
 		
 		global $bwbPS;
 		
-		if(!function_exists('json_encode')){
-			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/classes/JSON.php");
-		}
-		
 		if( !$no_referer && function_exists('check_ajax_referer') 
 			&& !check_ajax_referer( "bwb_upload_photos" )){
 			
@@ -1079,7 +1075,7 @@ class BWBPS_Uploader{
 		$this->json = $this->cleanJS($this->json);
 		
 		//Echoes back the JSON Array for an Ajax Call
-		echo json_encode($this->json);
+		echo "<textarea>" . json_encode($this->json) . "</textarea>";
 	}
 	
 	function cleanJS($arr){

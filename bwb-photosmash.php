@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.8.03
+Version: 0.8.04
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -1517,6 +1517,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-form');
+		
+		/*
+		wp_register_script('bwbps_jsform', plugins_url('/photosmash-galleries/js/jquery.form.js' ), array('jquery'), '1.0');
+		wp_enqueue_script('bwbps_jsform');
+		*/
+		
 		wp_enqueue_script('thickbox');
 				
 		wp_register_script('bwbps_js', plugins_url('/photosmash-galleries/js/bwbps.js' ), array('jquery'), '1.0');

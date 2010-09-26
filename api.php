@@ -25,11 +25,6 @@ if( !$_POST['action'] == 'getkey'){
 
 define("PSPIXOOXAPIURL", "http://pixoox.com/api/");
 
-if(!function_exists('json_encode')){
-
-	require_once(WP_PLUGIN_DIR . "/photosmash-galleries/classes/JSON.php");
-	
-}
 
 //
 //	Pixoox WordPress Client API	-- Requires PhotoSmash plugin to be installed

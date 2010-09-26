@@ -8,9 +8,6 @@ if (!function_exists('add_action'))
 $nonce=$_REQUEST['_wpnonce'];
 if (! wp_verify_nonce($nonce, 'bwbps-image-rating') ) die('Security check');
 
-if(!function_exists('json_encode')){
-	require("classes/JSON.php");
-}
 
 $bwbpsuploaddir = wp_upload_dir();
 

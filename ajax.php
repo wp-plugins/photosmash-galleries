@@ -15,11 +15,6 @@ if (!function_exists('add_action'))
 
 check_ajax_referer( "bwbps_moderate_images" );
 
-if(!function_exists('json_encode')){
-
-	require_once(WP_PLUGIN_DIR . "/photosmash-galleries/classes/JSON.php");
-	
-}
 
 $bwbpsuploaddir = wp_upload_dir();
 

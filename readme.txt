@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 3.0.1
-Stable tag: 0.8.03
+Stable tag: 0.8.04
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -84,6 +84,11 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 0.8.04 - 9/25/2010 - well that was fast ;-) =
+
+    * Made PhotoSmash compatible with latest version of jquery.form.js -- and by corrollary, the latest version of Contact Form 7 -- well, the latest version of Contact Form 7 introduced a new version of jquery.form.js -- this is not the version that is currently distributed with WP.  The new version of that file requires you to wrap your JSON in textarea tags if you're uploading files.  Since CF 7 is so popular, it behooves me to make PhotoSmash compatible...and now it is. Hopefully! ;-)
+    * Removed JSON.php class - this file was for PHP4 compatibility.  WordPress actually includes this file itself as of 2.8 or 2.9, so this is no longer necessary.
 
 = 0.8.03 - 9/24/2010 =
 

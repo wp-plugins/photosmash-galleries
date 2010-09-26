@@ -5,9 +5,6 @@ if (!function_exists('add_action'))
 	require_once("../../../wp-load.php");
 }
 
-if(!function_exists('json_encode')){
-	require("classes/JSON.php");
-}
 
 $bwbpsuploaddir = wp_upload_dir();
 
