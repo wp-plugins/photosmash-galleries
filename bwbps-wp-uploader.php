@@ -33,6 +33,7 @@ class BWBPS_Uploader{
 	function BWBPS_Uploader($psOptions, $gallery_id=false, $no_referer=false){
 		
 		global $bwbPS;
+		global $current_user;
 		
 		if( !$no_referer && function_exists('check_ajax_referer') 
 			&& !check_ajax_referer( "bwb_upload_photos" )){
@@ -57,6 +58,19 @@ class BWBPS_Uploader{
 				$this->g = $this->getGallerySettings($this->json['gallery_id']);
 			}
 			
+		}
+		
+		if($this->g['max_user_uploads']){
+			// This limits the number of uploads a user can make to a specific gallery
+			$icnt = $this->img_funcs->getUserImageCountByGallery((int)$current_user->ID, 
+				$this->g['gallery_id'], $this->g['uploads_period']);
+			
+			if( $icnt >= $this->g['max_user_uploads'] ){
+				$json['message']= "Maximum allowable uploads reached";
+				$json['succeed'] = 'false'; 
+				echo json_encode($json);
+				exit();
+			}
 		}
 		
 		$this->json['custom_callback'] = 0;
@@ -125,6 +139,9 @@ class BWBPS_Uploader{
 		$this->json['file_type'] = (int)$_POST['bwbps_file_type'];
 		
 		$this->json['image_caption'] = $this->getImageCaption();
+		
+		$this->json['geolong'] = floatval($_POST['bwbps_geolong']);
+		$this->json['geolat'] = floatval($_POST['bwbps_geolat']);
 		
 		if(isset($_POST['bwbps_post_tags'])){
 		
@@ -572,8 +589,8 @@ class BWBPS_Uploader{
 		
 		//Meta/Exif
 		$data['meta_data'] = '';
-		$data['geolong'] = 0;
-		$data['geolat'] = 0;
+		$data['geolong'] = $this->json['geolong'];
+		$data['geolat'] = $this->json['geolat'];
 		
 		$data['seq'] = -1;
 		$data['avg_rating'] = 0;

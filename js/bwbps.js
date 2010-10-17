@@ -624,12 +624,16 @@ function bwbpsModerateImage(action, image_id, post_id)
 	var meta_data = "";
 	var file_url = "";
 	var image_seq = "";
+	var image_geolat = 0;
+	var image_geolong = 0;
 	var image_post_id = 0;
 	if(myaction == 'savecaption'){ 
 		image_caption = $j('#imgcaption_' + imgid).val(); 
 		image_url = $j('#imgurl_' + imgid).val();
 		image_seq = $j('#imgseq_' + imgid).val();
 		image_tags = $j('#imgtags_' + imgid).val(); 
+		image_geolat = $j('#geolat_' + imgid).val();
+		image_geolong = $j('#geolong_' + imgid).val();
 		meta_data = $j('#imgmeta_' + imgid).val(); 
 		file_url = $j('#fileurl_' + imgid).val(); 
 		image_post_id  = $j('#image_post_id_' + imgid).val(); 
@@ -647,6 +651,8 @@ function bwbpsModerateImage(action, image_id, post_id)
        '_ajax_nonce' : _moderate_nonce,
        'image_caption' : image_caption,
        'image_url' : image_url,
+       'image_geolat' : image_geolat,
+       'image_geolong' : image_geolong,
        'image_tags' : image_tags,
        'meta_data' : meta_data,
 	   'file_url' : file_url,

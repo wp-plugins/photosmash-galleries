@@ -90,6 +90,7 @@ class BWBPS_Layout{
 			, 'gallery_post_url'
 			, 'gallery_image_count'
 			, 'comments_count'
+			, 'infowindow_link'
 		);
 	}
 	
@@ -541,6 +542,13 @@ class BWBPS_Layout{
 				
 				/*	CALCULATE the Image and Caption URL  */				
 				$this->calculateURLs($g, $image, $perma);
+				
+				
+				// Calculate Google Map marker if lat & long are available and gmap_id is set
+				// Do this after all the other goodies are calculated
+				if($g['gmap_id']){
+					$this->addGoogleMapMarker($image, $g);
+				}
 				
 								
 				//Get the Layout:  Standard or Custom
@@ -1392,6 +1400,18 @@ class BWBPS_Layout{
 					
 				} else { $ret = ""; }
 				
+				break;
+				
+			case '[infowindow_link]' :
+				if( isset($image['gmap_marker']) ){
+					$name = $atts['name'] ? $atts['name'] : 'map';
+					
+					$class = $atts['class'] ? ' class="' .$atts['class'] . '" ' : '';
+					
+					$ret = "<a href='javascript: void(0);' onclick='bwb_gmap.showInfoWindow(" 
+						. $image['gmap_num'] . ", " 
+						. $image['gmap_marker'] . "); return false;' $class >$name</a>";
+				}
 				break;
 			
 			case '[blog_name]' :
@@ -2991,7 +3011,7 @@ class BWBPS_Layout{
 						. "LEFT OUTER JOIN " . $wpdb->term_taxonomy
 						. " ON " . $wpdb->term_taxonomy . ".term_taxonomy_id = "
 						. $wpdb->term_relationships . ".term_taxonomy_id AND " 
-						. " wp_term_taxonomy.taxonomy = 'photosmash' "
+						. $wpdb->term_taxonomy . ".taxonomy = 'photosmash' "
 						. "LEFT OUTER JOIN ". $wpdb->terms 
 						. " ON ". $wpdb->terms . ".term_id = "
 						. $wpdb->term_taxonomy . ".term_id "
@@ -3046,7 +3066,7 @@ class BWBPS_Layout{
 						. "LEFT OUTER JOIN " . $wpdb->term_taxonomy
 						. " ON " . $wpdb->term_taxonomy . ".term_taxonomy_id = "
 						. $wpdb->term_relationships . ".term_taxonomy_id AND " 
-						. " wp_term_taxonomy.taxonomy = 'photosmash' "
+						. $wpdb->term_taxonomy . ".taxonomy = 'photosmash' "
 						. "LEFT OUTER JOIN ". $wpdb->terms 
 						. " ON ". $wpdb->terms . ".term_id = "
 						. $wpdb->term_taxonomy . ".term_id "
@@ -3492,6 +3512,63 @@ class BWBPS_Layout{
 	function psValidateURL($url)
 	{
 		return ( ! preg_match('/^(http|https):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $url)) ? FALSE : TRUE;
+	}
+	
+	/* Add Google Maps Markers
+	 * code for Google Maps
+	 *
+	*/
+	
+	function addGoogleMapMarker(&$image, $g){
+		global $bwbPS;
+		
+		
+		//Set up criteria for creating the Map
+		$map = $g['gmap_id'];
+		
+		$bwbPS->addMap($map, $image["geolat"], $image["geolong"] );
+		
+		$imap_cnt = count($bwbPS->gmaps) - 1;
+		
+		if( floatval($image['geolat']) && floatval($image['geolong']) ){
+			
+			// Get InfoWindow
+			$infowindow = '';
+			$gmap_layout->layout_name = 'gmap_layout88';
+			if( $bwbPS->psOptions['gmap_layout'] )
+			{
+				$gmap_layout->layout = $bwbPS->psOptions['gmap_layout'];
+			
+			} else {
+				$gmap_layout->layout = '<div style="padding: 5px;">[thumb]<br/>[caption]</div>';
+			}
+			
+			$infowindow = $this->getCustomLayout($g, $image, $gmap_layout, false);	
+				
+			$infowindow = esc_sql(str_replace(array("\r", "\r\n", "\n"), ' ', (string)$infowindow));
+
+				
+			
+			
+			/*
+			$marker = '["' . esc_js($image["image_caption"]) . '", ' 
+				. floatval($image["geolat"]) . ', ' . floatval($image["geolong"]) 
+					. ', "' . $infowindow . '"]';
+			*/
+					
+			$marker = "bwb_markers[" . $imap_cnt . "]" 
+				. ".push( bwb_gmap.addMarkerWithInfoWindow(bwb_maps[" . $imap_cnt . "], " 
+				. floatval($image["geolat"]) . ", "
+				. floatval($image["geolong"]) . ", '" . $infowindow . "', " . $imap_cnt . "));\nbwbcnt = bwb_markers[" . $imap_cnt . "].length - 1;\nbwbbound_" . $map . ".extend(bwb_markers[" . $imap_cnt . "][bwbcnt].getPosition());\n";
+				
+			$bwbPS->gmaps[$map]['markers'][] = $marker;
+			
+			$icnt = count($bwbPS->gmaps[$map]['markers']) - 1;
+			
+			$image['gmap_marker'] =  $icnt;
+			$image['gmap_num'] =  $imap_cnt;
+			
+		}
 	}
 }
 ?>

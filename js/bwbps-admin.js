@@ -735,6 +735,14 @@ function photosmashClass() {
 
 	this.activeRecord = 0;
 	
+	this.verifyCreateGallery = function(){
+	
+		if( jQuery('#bwbps_gallery_id').val() == 0 && jQuery('#gal_gallery_name').val() == ''){
+			return( confirm('You are creating a new Gallery...but no Gallery name specified.  Continue?') );
+		}
+	
+	}
+	
 	// DOWNLOAD SHARING HUBS
 	this.downloadSharingHubs = function(){
 	
@@ -1028,6 +1036,51 @@ function photosmashClass() {
 		jQuery("#pxxmenu-" + id).append(jQuery("#pxxmenu"));
 		jQuery("#pxxmenu").show();
 	
+	}
+	
+	// Google Maps Interactions
+	this.showMapEdit = function(image_id, d_position){
+	
+		jQuery("#bwbmap_image").html(jQuery("#psimage_" + image_id).html());
+				
+		jQuery("#psimage-tbody").hide();
+		jQuery("#bwbmap_lat").val(jQuery("#geolat_" + image_id).val());
+		jQuery("#bwbmap_lng").val(jQuery("#geolong_" + image_id).val());
+		jQuery("#bwbmap_image_id").val(image_id);
+		jQuery("#bwbmap_image_id_disp").html(image_id);
+		
+		jQuery("#bwbmap_address").val('');
+		
+		if(typeof(bwb_marker) == "object"){ bwb_marker.setMap(null); }
+		
+		if( jQuery("#bwbmap_lat").val() && jQuery("#bwbmap_lng").val() ){
+		
+			if( !isNaN(jQuery("#bwbmap_lat").val()) && jQuery("#bwbmap_lat").val() > 0 ){
+			
+			bwb_marker = bwb_gmap.simpleMarker( bwbmap_post_map, jQuery("#bwbmap_lat").val(), jQuery("#bwbmap_lng").val());
+			bwbmap_post_map.setZoom(11);
+			
+			bwbmap_post_map.setCenter(bwb_marker.getPosition());
+			} else {
+				bwbmap_post_map.setZoom(3);
+			}
+		}
+		
+		jQuery(document).scrollTop(330);
+		this.imagePosition = d_position;
+	}
+	
+	var imagePosition = 100;
+	
+	this.mapEditDone = function(image_id){
+		jQuery("#psimage-tbody").show();
+		if( this.imagePosition > 50 ){ this.imagePosition = this.imagePosition - 50; }
+		jQuery(document).scrollTop(this.imagePosition);
+	}
+	
+	this.setLatLngEdit = function(latlng){
+		jQuery("#bwbmap_lat").val(latlng.lat());
+		jQuery("#bwbmap_lng").val(latlng.lng());
 	}
 	
 }

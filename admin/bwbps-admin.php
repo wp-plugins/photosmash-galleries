@@ -416,6 +416,20 @@ class BWBPS_Admin{
 			$ps['contrib_gal_on'] = isset($_POST['ps_contrib_gal_on']) ? 1 : 0;
 			$ps['suppress_contrib_posts'] = isset($_POST['ps_suppress_contrib_posts']) ? 1 : 0;
 			
+			/* Google Map Config */
+			$ps['gmap_width'] = (int)$_POST['ps_gmap_width'] ? (int)$_POST['ps_gmap_width'] : 450;
+			$ps['gmap_height'] = (int)$_POST['ps_gmap_height'] ? (int)$_POST['ps_gmap_height'] : 350;
+			$ps['gmap_js'] = stripslashes(trim($_POST['ps_gmap_js']));
+			$ps['gmap_layout'] = stripslashes(trim($_POST['ps_gmap_layout']));
+			$ps['auto_maptowidget'] = isset($_POST['ps_auto_maptowidget']);
+			$ps['tags_mapid'] = stripslashes(trim($_POST['ps_tags_mapid']));
+
+			$ps['geocode_label'] = stripslashes(trim($_POST['ps_geocode_label']));
+			$ps['geocode_description'] = stripslashes(trim($_POST['ps_geocode_description']));
+			$ps['latitude_label'] = stripslashes(trim($_POST['ps_latitude_label']));
+			$ps['longitude_label'] = stripslashes(trim($_POST['ps_longitude_label']));
+
+			
 			/* Moderation */
 			$ps['mod_approve_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_approve_msg'])));
 			$ps['mod_reject_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_reject_msg'])));
@@ -522,6 +536,9 @@ class BWBPS_Admin{
 			if($d['thumb_width']==0) $d['thumb_width'] = $psOptions['thumb_width'];
 			if($d['thumb_height']==0) $d['thumb_height'] = $psOptions['thumb_height'];
 			
+			$d['max_user_uploads'] = (int)$_POST['gal_max_user_uploads'];
+			$d['uploads_period'] = (int)$_POST['gal_uploads_period'];
+			
 			
 			
 			
@@ -624,7 +641,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 <input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
 </p>
 </form>
-<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>" onsubmit='return photosmash.verifyCreateGallery();'>
 	<input type="hidden" id="bwbps_gallery_id" name="gal_gallery_id" value="<?php echo $galleryID;?>" />
 
 <div id="bwbpsslider" class="wrap">
@@ -667,7 +684,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	<tr>
 				<th>Gallery name:</th>
 				<td>
-					<input type='text' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
+					<input type='text' id='gal_gallery_name' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
 				</td>
 	</tr>
 	
@@ -880,6 +897,20 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 </div>
 <div id='bwbps_uploading'>
 	<table class="form-table">
+			<tr>
+				<th>Max uploads per user:</th>
+				<td>
+					<input type='text' size="5" name="gal_max_user_uploads" value='<?php echo (int)$galOptions['max_user_uploads'];?>'/>
+					 per time 
+					<select name="gal_uploads_period">
+						<option value="0" <?php if((int)$galOptions['uploads_period'] == 0) echo 'selected=selected'; ?>>Ever</option>
+						<option value="1" <?php if((int)$galOptions['uploads_period'] == 1) echo 'selected=selected'; ?>>Hour</option>
+						<option value="24" <?php if((int)$galOptions['uploads_period'] == 24) echo 'selected=selected'; ?>>24 hours</option>
+						<option value="168" <?php if((int)$galOptions['uploads_period'] == 168) echo 'selected=selected'; ?>>Week</option>
+					</select>
+					<br/>Enter 0 for unlimited.
+				</td>
+			</tr>
 			<tr>
 				<th>Custom form name:</th>
 				<td><?php echo $this->getCFDDL($galOptions['custom_formid']); ?> Only used when 'Use Custom Forms' is turned on in PhotoSmash Settings/Advanced</td>
@@ -1377,7 +1408,8 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		<li><a href="#bwbps_moderation">Moderation</a></li>
 		<li><a href="#bwbps_thumbnails">Images</a></li>
 		<li><a href="#bwbps_advanced">Advanced</a></li>
-		<li><a href="#bwbps_specgals">Special Galleries</a></li>
+		<li><a href="#bwbps_specgals">Spec. Galleries</a></li>
+		<li><a href="#bwbps_maps">Maps</a></li>
 
 	</ul>
 	<div id='bwbps_galleryoptions'>
@@ -1981,6 +2013,89 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		</table>
 	</div>
 	
+	<div id="bwbps_maps">
+		<table class="form-table">
+			<tr>
+				<th>Auto-map to Widget:</th>
+				<td>
+					<input type="checkbox" name="ps_auto_maptowidget" <?php if($psOptions['auto_maptowidget'] == 1) echo 'checked'; ?>> will display all images to the Widget map with map ID: 'gmap_widget'<br/>Note: you have to add a PhotoSmash Map Widget in your Appearance / Widgets settings.  The map must have the ID 'gmap_widget'
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Map ID for Tag Galleries:</th>
+				<td>
+					<input type='text' name="ps_tags_mapid" value='<?php echo $psOptions['tags_mapid'];?>'/> if you want to map Tag Galleries, supply a Map ID.  Use 'true' or 'post' to automatically add a DIV with a proper ID.  Use 'gmap_widget' if you have a Widget with that map ID. If you use something else, you'll need to manually place a DIV with the ID where you need it.
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Google Maps Size:</th>
+				<td>
+					<?php 
+						if(!(int)$psOptions['gmap_width']){ $psOptions['gmap_width'] = 400; }
+						if(!(int)$psOptions['gmap_height']){ $psOptions['gmap_height'] = 300; }
+					?>
+					<label>Width</label>
+					<input type='text' class='small-text' name="ps_gmap_width" value='<?php echo (int)$psOptions['gmap_width'];?>'/>
+					<label>Height</label>
+					<input type='text' class='small-text' name="ps_gmap_height" value='<?php echo (int)$psOptions['gmap_height'];?>'/>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Layout for map popups:</th>
+				<td>
+					Enter HTML code like you would in Edit Layouts<br/>
+					<textarea id="ps_gmap_layout" name="ps_gmap_layout" cols="60" rows="4"><?php esc_html_e($psOptions['gmap_layout']);?></textarea>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Geocode label:</th>
+				<td>
+					<input type="text" id='ps_geocode' name="ps_geocode_label" value='<?php echo esc_attr($psOptions['geocode_label']);?>'> label for Geocode block in upload form (default: Geocode)
+					<br/>
+					To add Lat/Lng boxes + a geocoder to your upload form, include 'geocode=true' in your shortcode.
+					<br/>
+					To add the Lat/Lng boxes + a geocoder that uses the following custom fields for the address that gets geocoded:<br/>
+					address, locality, region, postal_code, country
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Geocode description:</th>
+				<td>
+					<input type="text" id='ps_geocode_description' name="ps_geocode_description" value='<?php echo esc_attr($psOptions['geocode_description']);?>'> tells the user what's going on (has a default)
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Latitude label:</th>
+				<td>
+					<input type="text" id='ps_latitude_label' name="ps_latitude_label" value='<?php echo esc_attr($psOptions['latitude_label']);?>'> how you want to say 'Latitude' (default: Latitude)
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Longitude label:</th>
+				<td>
+					<input type="text" id='ps_longitude_label' name="ps_longitude_label" value='<?php echo esc_attr($psOptions['longitude_label']);?>'> how you want to say 'Longitude' (default: Longitude)
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Google Maps Javascript to load:</th>
+				<td>
+					You probably DON'T need this.<br/>Leave this blank to use Google Maps JavaScript API V3.<br/>
+					Enter 'none' to skip loading the Google Maps Javascript (only needed if you have another plugin already loading it)<br/>
+					PhotoSmash will only load the GMaps Javascript if needed<br/>
+					<textarea id="ps_gmap_js" name="ps_gmap_js" cols="60" rows="4"><?php esc_html_e($psOptions['gmap_js']);?></textarea>
+				</td>
+			</tr>
+		</table>
+	</div>
+	
 	</div>
 	<p class="submit">
 		<input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" /> &nbsp; &nbsp; <input type="submit" name="reset_bwbPSDefaults" onclick="return bwbpsConfirmResetDefaults();" class="button-primary" value="<?php _e('Reset Defaults', 'bwbPS') ?>" /> &nbsp; &nbsp; <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a>
@@ -1999,6 +2114,68 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	}
 	
+	
+	// Get Form for Update Lat and Lng by clicking Google Map
+	function getMapForm(){
+		
+		?>
+		<script type="text/javascript">
+		//<![CDATA[
+		
+			jQuery(document).ready(function() {
+				bwbmap_post_map = bwb_gmap.showMap( "bwbps_post_map", 38, -60, 2);
+				
+				bwbmap_post_map.setZoom(2);
+				
+				google.maps.event.addListener(bwbmap_post_map, 'click', function(event) {
+					if(typeof(bwb_marker) == "object"){ bwb_marker.setMap(null); }
+				    bwb_marker = bwb_gmap.addMarker(bwbmap_post_map, event.latLng);
+					bwbmap_post_map.setCenter(event.latLng);
+				    photosmash.setLatLngEdit(event.latLng);
+				});
+				
+			});
+			
+		
+		//]]>
+		</script>
+		
+
+		<h3>Edit Image Locations</h3>
+		
+		<div style='margin-top: 20px; border: 3px #a0a0a0 solid; background-color: #f0f0f0; padding: 5px; height: 115px; width: 720px;' id='image-loc-editing'>
+			<div style='float:left;'>
+				<div id='bwbmap_image' style='float: left;'></div>
+				<div style='float:left; padding: 0 10px; position: relative;'>
+					<a href='javascript: void(0);' onclick='photosmash.mapEditDone(); return false;'>Back to Images</a>
+					<span class="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px; position: fixed; top: 0; right: 0;">saving...</span>
+					<br/>
+					To set latitude / longitude:
+					<br/><b><span style='color: #cc0000;'>Click Map</span> or use "Mark Address"</b>
+				</div>
+				<div style='clear: both; padding-top: 8px;'>
+					<input id="bwbmap_address" type="textbox" value="St.Louis, MO" size="40">
+					<input type="button" value="Mark Address" onclick="bwb_gmap.codeAddress(bwbmap_post_map, 'bwbmap_address'); return false;">
+				</div>
+			</div>			
+			<div style='float: right; border-left: 1px #999 solid; padding: 0 10px 0 10px; height: 110px;'>
+				<b>Lat/Lng for image: <span id='bwbmap_image_id_disp'></span></b>
+				<p>Lat: <input type='text' class='small-text' name="ps_lat" id='bwbmap_lat' value='0'/>
+				<input class='button-primary' type='button' id='bwbmap_save_btn' value='Save' onclick='bwb_gmap.saveLatLng(jQuery("#bwbmap_image_id").val(), jQuery("#bwbmap_lat").val(), jQuery("#bwbmap_lng").val(), jQuery("#_moderate_nonce").val()  ); return false;' /></p>
+				<p>Lng: <input type='text' class='small-text' name="ps_lng" id='bwbmap_lng' value='0'/>
+				<input type='hidden' class='small-text' name="ps_imgid" id='bwbmap_image_id' value='0'/>
+				<input class='button' type='button' id='bwbmap_set_btn' onclick='bwb_gmap.clearMarker(bwb_marker); bwb_marker = bwb_gmap.simpleMarker(bwbmap_post_map, jQuery("#bwbmap_lat").val(), jQuery("#bwbmap_lng").val()); return false;' value='Set' /></p>
+				
+			</div>
+		</div>	
+		<div id='bwbps_post_map' class='bwbps_gmap bwbps_gmap_ ' style='width: 80%; height: 370px;'></div>
+		
+		</div>
+		<?php
+		
+		return;	
+	
+	}
 	
 	/**
 	 * printManageImages()
@@ -2059,7 +2236,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		if($start > 0){ $start--; }
 		if($limit < 1){ $limit = 50; }
 		
-		$result = $this->getGalleryImages($galleryID, true, $limit, $start);
+		$nonce = wp_create_nonce( 'bwbps_moderate_images' );
+		
+		$result = $this->getGalleryImages($galleryID, true, $limit, $start, $nonce);
 		$galleryDDL = $this->getGalleryDDL($ddlID, "Select", "", "gal_gallery_id", 30, true, true);
 		
 		$start++; //set it up for the form below
@@ -2166,14 +2345,15 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		
 		<?php
 			if($result){
-				$nonce = wp_create_nonce( 'bwbps_moderate_images' );
+				
 				echo '
 				<input type="hidden" id="_moderate_nonce" name="_moderate_nonce" value="'.$nonce.'" />
 				';
 			}
 			echo $result;
-	?>
-	
+			
+			$this->getMapForm();	
+		?>
 
  	</div>
 	
@@ -2218,7 +2398,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	 * @param integer $gallery_id
 	 * @return a table of the images
 	 */
-	function getGalleryImages($gallery_id, $sort_desc=false, $limit=0, $start=0)
+	function getGalleryImages($gallery_id, $sort_desc=false, $limit=0, $start=0, $nonce=false)
 	{
 		global $wpdb;
 		global $bwbPS;
@@ -2301,6 +2481,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th class='' scope='col'>Images</th>
 				</tr>
 			</tfoot>
+			<tbody id='psimage-tbody'>
 			";
 		
 		
@@ -2310,7 +2491,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		foreach($images as $image){
 			
 			if($i==-1){
-				$psTable .= "<tr id='bwbps-img-" . $image->image_id . "' class='iedit $rowstyle' valign='top'>";
+				$psTable .= "<tr id='bwbps-img-" . $image->image_id . "' class='ps-image-row iedit $rowstyle' valign='top'>";
 				$i = 0;
 			}
 		
@@ -2399,7 +2580,10 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				.$image->image_id.");' >delete</a> | <a href='javascript: void(0);' onclick='bwbpsModerateImage(\"remove\", "
 				.$image->image_id.");' >remove</a> | <a href='javascript: void(0);' onclick=\"bwbpsResizeImage('"
 				.$image->image_id."',true); return false;\" >resize</a> | 
-				<a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' >save</a>
+				<a href='javascript: void(0);' onclick='bwbpsSaveCustFldsAdmin(".$image->image_id.", true);' >save</a> | 
+				<a href='javascript: void(0);' title='Click Map to set Coordinates' onclick='photosmash.showMapEdit(" 
+					. $image->image_id . ", jQuery(this).offset().top ); return false;'><img src='" 
+					. BWBPSPLUGINURL . "images/world_edit.png' alt='Find' /></a>
 				</div>
 				";
 				
@@ -2500,6 +2684,28 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						". $termlist ."
 					</td>
 				</tr>
+				<tr>
+					<td>Latitude:</td>
+					<td><input type='text' id='geolat_" 
+						. $image->image_id."' name='geolat"
+						. $image->image_id."' value='"
+						. floatval($image->geolat) . "' style='' />
+						
+						<a href='javascript: void(0);' title='Click Map to set Coordinates' onclick='photosmash.showMapEdit(" . $image->image_id . ", jQuery(this).offset().top - 220 ); return false;'>
+							<img src='" 
+						. BWBPSPLUGINURL . "images/world_edit.png' alt='Find' />
+						</a>
+					</td>
+				</tr>
+				<tr>
+					<td>Longitude:</td>
+					<td><input type='text' id='geolong_" 
+						. $image->image_id."' name='geolong"
+						. $image->image_id."' value='"
+						. floatval($image->geolong). "' style='' />
+					</td>
+				</tr>
+				
 				<tr>
 					<td>Meta Data (exif):</td>
 					<td><input disabled='true' type='text' id='imgmeta_" 
@@ -2626,7 +2832,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		}
 		$wpdb->update(PSIMAGESTABLE, $data, $where);
 		
-		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span>'.$psTableWrap.$psTable.'</table></div>';
+		return '<div>&nbsp;<span id="ps_savemsg" style="display: none; color: #fff; background-color: red; padding:3px;">saving...</span>'.$psTableWrap.$psTable.'</tbody></table></div>';
 	} else {
 		return "<h3>No images in gallery yet...go to post page to load images.</h3>";
 	}

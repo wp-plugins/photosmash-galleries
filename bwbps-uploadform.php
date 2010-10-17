@@ -35,6 +35,8 @@ class BWBPS_UploadForm{
 			, 'post_tags'
 			, 'tag_dropdown'
 			, 'preview_post'
+			, 'geocode'
+			, 'geocode_fields'
 			);
 	}
 	
@@ -47,6 +49,7 @@ class BWBPS_UploadForm{
 		} else {
 
 			//$g['pfx'] = "";
+			
 			$ret = $this->getStandardForm($g, $formName);
 		}
 		
@@ -306,6 +309,35 @@ class BWBPS_UploadForm{
 		if($this->options['use_customfields']){
 			$retForm .= $this->getCustomFieldsForm($g);
 		}
+		
+		// We Want custom fields (address, locality, region, post_code, country) to show up before our Geocode box
+		
+		if($g['geocode']){
+		
+			$retForm .= '<tr><th>' . $g['geocode_label'] . ':</th>
+				<td align="left">
+					';
+			
+			$retForm .= $this->getStandardField("[geocode]", $g);
+			
+			$retForm .='
+				</td>
+				</tr>';
+		}
+		
+		if($g['geocode_fields']){
+		
+			$retForm .= '<tr><th>' . $g['geocode_label'] . ':</th>
+				<td align="left">
+					';
+			
+			$retForm .= $this->getStandardField("[geocode_fields]", $g);
+			
+			$retForm .='
+				</td>
+				</tr>';
+		}
+		
 		
 		//Add Submit Button
 		$retForm .= '	
@@ -624,6 +656,29 @@ class BWBPS_UploadForm{
 				break;
 			case "[message]" :
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_message" class="bwbps_message"></span>';
+				break;
+				
+			case "[geocode]":
+			
+				$ret .= $g['geocode_description'] . '<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_addr" id="' . $g["pfx"] . 'bwbps_addr" class="bwbps_reset" size="20" />
+				<input type="button" value="Geocode" onclick="bwb_gmap.geocodeAddress(jQuery(\'#' . $g["pfx"] . 'bwbps_addr\').val(), \'' . $g["pfx"] 
+				. 'bwbps_lat\',\'' . $g["pfx"] . 'bwbps_lng\'); return false;" class="button">
+				<br/>';
+				
+				$ret .= '<div style="float:left;">' . $g['latitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolat" id="' . $g["pfx"] . 'bwbps_lat" class="bwbps_reset" ' . $value . ' size="10"/></div> ';
+				$ret .= '<div style="float:left; margin-left: 5px;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolong" id="' . $g["pfx"] . 'bwbps_lng" class="bwbps_reset" ' . $value2 . ' size="10" /></div><div style="clear: both;"></div>';
+				
+				break;
+			
+			case "[geocode_fields]":
+			
+				$ret .= $g['geocode_description'] . '
+				<br/>';
+				
+				$ret .= '<div style="float:left;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolat" id="' . $g["pfx"] . 'bwbps_lat" class="bwbps_reset" ' . $value . ' size="10"/></div> ';
+				$ret .= '<div style="float:left; margin-left: 5px;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolong" id="' . $g["pfx"] . 'bwbps_lng" class="bwbps_reset" ' . $value2 . ' size="10" /> <input type="button" value="Get" onclick="bwb_gmap.geocodeAddress(bwb_gmap.getFormAddress(\'' . $g["pfx"] . '\'), \'' . $g["pfx"] 
+				. 'bwbps_lat\',\'' . $g["pfx"] . 'bwbps_lng\'); return false;" class="button"></div><div style="clear: both;"></div>';
+				
 				break;
 				
 			case "[img_attribution]" :

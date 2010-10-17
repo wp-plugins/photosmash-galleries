@@ -587,6 +587,33 @@ class BWBPS_ImageFunc{
 		
 	}
 	
+	
+	// Used to determine number images uploade by user by time by gallery
+	function getUserImageCountByGallery($user_id, $gallery_id = 0, $hours = 0){
+		global $wpdb;
+		
+		if( !(int)$user_id ){ return 0; }
+		
+		if( (int)$user_id ){ $w[] = 'user_id = ' . (int)$user_id; }
+		if( (int)$gallery_id ){ $w[] = 'gallery_id = ' . (int)$gallery_id; }
+		
+		if( (int)$hours ){ 
+			$gmtoffset = get_option( 'gmt_offset' ) * 3600 ;
+			$t = ((int)$hours * 3600) - (int)$gmtoffset;	// get seconds to subtract
+			$t = time() - $t;	// get current time minus all those hours/secs
+			$t = date('Y-m-d H:i:s', $t);	// format the time
+			$w[] = "created_date > '$t'";
+		}
+		
+		$where = implode(" AND ", $w);
+		
+		$sql = "SELECT COUNT(image_id) as cnt FROM " . PSIMAGESTABLE . " WHERE " . $where;
+		
+		$result = $wpdb->get_var($sql);
+		return $result;
+	
+	}
+	
 }	//Closes class
 
 ?>

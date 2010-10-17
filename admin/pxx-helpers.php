@@ -183,13 +183,18 @@ class PixooxHelpers {
 		return $base;
 	}
 	
-	static function alphaNumeric( $string, $spaces = true )
+	static function alphaNumeric( $string, $spaces = true, $under = false )
     {
+		// Format for element IDs and table names
+		if($under){
+			return preg_replace('/[^a-zA-Z0-9_]/', '', $string);
+		}
+				
     	if($spaces){
 	        return preg_replace('/[^a-zA-Z0-9\s]/', '', $string);
-	    } else {
-	        return preg_replace('/[^a-zA-Z0-9]/', '', $string);
 	    }
+				
+	    return preg_replace('/[^a-zA-Z0-9]/', '', $string);
     }
 
 }

@@ -137,9 +137,25 @@ class BWBPS_GalleryFunc{
 						} else {
 							
 							//Get gallery params based on Post_ID
-							$gquery = $wpdb->get_row(
-								$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
-									." WHERE post_id = %d",$post->ID),ARRAY_A);
+							
+							if( is_array($bwbPS->postGalleries) && 
+								!empty($bwbPS->postGalleries[(int)$post->ID]) &&
+								(int)$bwbPS->postGalleries[(int)$post->ID]
+								){
+							
+								$gid = (int)$bwbPS->postGalleries[(int)$post->ID];
+								if(!empty($bwbPS->galleries) && is_array($bwbPS->galleries) 
+									&& !empty($bwbPS->galleries[$gid])){
+									$gquery = $bwbPS->galleries[$gid];
+								}
+							
+							}
+							
+							if( empty($gquery) ){
+								$gquery = $wpdb->get_row(
+									$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+										." WHERE post_id = %d",$post->ID),ARRAY_A);
+							}
 						}
 							
 					}

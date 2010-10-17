@@ -174,6 +174,8 @@ class BWBPS_Init{
 				poll_id INT(4),
 				rating_position INT(4),
 				pext_insert_setid INT(4),
+				max_user_uploads INT(4),
+				uploads_period INT(4),
 				PRIMARY KEY  (gallery_id)) $charset_collate;";
 			dbDelta($sql);
 					

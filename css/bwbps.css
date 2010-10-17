@@ -620,3 +620,7 @@ tr.pxx-not-applied { background-color: #fff; }
 .bwbps-toggle-ratings-clear, .bwbps-insert-box, .bwbps-piclens-clear {
 	clear: both;
 }
+
+.bwbps_gmap {
+	line-height: normal !important;
+}

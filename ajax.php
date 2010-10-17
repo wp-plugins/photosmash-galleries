@@ -58,8 +58,8 @@ class BWBPS_AJAX{
 				
 		//$this->img_funcs = new BWBPS_ImageFunc($this->psOptions);
 		
-		if(isset($_POST['action']) && $_POST['action']){
-			$action = $_POST['action'];
+		if((isset($_POST['action']) && $_POST['action']) || (isset($_REQUEST['action']) && $_REQUEST['action'] == 'getmapform')){
+			$action = $_REQUEST['action'];
 		} else {
 			die(-1);
 		}
@@ -142,10 +142,116 @@ class BWBPS_AJAX{
 			case 'resizeimage' :
 				$this->updateImageSizes();
 				break;
+				
+			case 'getmapform' :
+				$this->getMapForm();
+				break;
+				
+			case 'savelatlng' :
+				$this->saveLatLng();
+				break;
 		
 			default :
 				break;
 		}
+	}
+	
+	
+	function saveLatLng(){
+		global $wpdb;
+				
+		$image_id = (int)$_POST['image_id'];
+		
+		if(!current_user_can('level_10')){
+			$json['message'] = 'Must be an Admin to set Lat/Lng.';
+			$json['status'] = 0;
+			echo json_encode($json);
+			return;	
+		}
+		
+		if(!$image_id){
+			$json['message'] = 'Invalid image id.';
+			$json['status'] = 0;
+			echo json_encode($json);
+			return;	
+		}
+		
+		
+		$data['geolat'] = round(floatval($_POST['lat']),10);
+		$data['geolong'] = round(floatval($_POST['lng']),10);
+		
+		$where['image_id'] = $image_id;
+		
+		$upd = $wpdb->update(PSIMAGESTABLE, $data, $where);
+		
+		if($upd){
+			$json['message'] = 'updated';
+			$json['lat'] = $data['geolat'];
+			$json['lng'] = $data['geolong'];
+			$json['status'] = 1;
+		} else {
+			$json['message'] = 'update failed';
+			$json['status'] = 0;
+		}			
+			
+		echo json_encode($json);
+		return;	
+	
+	}
+	
+	// Get Form for Update Lat and Lng by clicking Google Map
+	function getMapForm(){
+			
+		$image_id = (int)$_REQUEST["image_id"];
+		
+		// Output form straight to client
+		?>
+		<script type="text/javascript">
+		//<![CDATA[
+		var ps_imgid = <?php echo (int)$image_id; ?>;
+		//]]>
+		</script>
+		
+		<script type="text/javascript">
+		//<![CDATA[
+		<?php
+		
+		echo '
+					
+			bwbmap_post_map_249 = bwb_gmap.showMap( "post_map_249", 38.59255, -90.35734);
+			
+			if( bwbmarkers_post_map ){ bwbmarkers_post_map.setMap(); bwbmarkers_post_map = new Object();}
+			
+			bwbmarkers_post_map_249 = [
+					["bear", 38.59255, -90.35734, "<div style=\"margin: 10px 5px;\"><a href=\'http://pixoox.com/wp-content/uploads/2010/09/bear14.jpg\' rel=\'lightbox[album_24]\' title=\'bear\'  class=\'thickbox\'><img src=\'http://pixoox.com/wp-content/uploads/2010/09/bear14-125x125.jpg\' class=\'ps_images\' alt=\'bear\'  height=\'125\' width=\'125\' /></a><br/>bear</div>"]
+				];
+			//bwb_gmap.setMarkers(bwbmap_post_map_249, bwbmarkers_post_map_249 );
+			
+			
+			if(bwb_first){
+				bwb_bounds = bwbmap_post_map_249.getBounds();
+			} else {
+				bwbmap_post_map_249.fitBounds(bwb_bounds);
+			}
+		
+		';
+		
+		?>
+		
+		
+		//]]>
+		</script>
+		
+		<div>
+			<input id="address" type="textbox" value="St.Louis, MO" size="80">
+			<input type="button" value="Geocode" onclick="bwb_gmap.codeAddress(bwbmap_post_map_249, 'address'); return false;">
+		</div>
+	
+		<div id='post_map_249' class='bwbps_gmap bwbps_gmap_ ' style='width: 500px; height: 370px;'></div>
+		<?php
+		
+		return;	
+	
 	}
 	
 	function fetchMeta(){
@@ -514,6 +620,8 @@ class BWBPS_AJAX{
 			$data['seq'] = (int)$_POST['seq'];
 			$data['file_url'] = esc_url_raw(stripslashes($_POST['file_url']));	
 			$data['meta_data'] = stripslashes($_POST['meta_data']);
+			$data['geolat'] = floatval($_POST['image_geolat']);
+			$data['geolong'] = floatval($_POST['image_geolong']);
 			
 			$where['image_id'] = (int)$_POST['image_id'];
 			

@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.8.04
+Version: 0.8.05
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -230,6 +230,7 @@ class BWB_PhotoSmash{
 	var $psImporter;	//Importer object
 	var $img_funcs;	//Image Functions
 	var $gal_funcs;	//Gallery Functions
+	var $h;	//Helpers
 	
 		
 	var $psOptions;
@@ -262,6 +263,13 @@ class BWB_PhotoSmash{
 	
 	var $galViewerCount = 0;
 	
+	var $postGalleries;
+	
+	var $loadGoogleMaps = false;
+	var $skipGoogleAPI = false;
+	var $gmaps;
+	var $placedMaps;	// Array that stores list of map DIV IDs already placed...to prevent duplicates
+	
 	//Constructor
 	function BWB_PhotoSmash(){
 		
@@ -278,6 +286,13 @@ class BWB_PhotoSmash{
 		}
 		*
 		*/
+		
+		//Helpers
+		if(!class_exists(PixooxHelpers))
+		{
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/pxx-helpers.php");
+		}
+		$this->h = new PixooxHelpers();
 		
 		//Add actions for Contributor Gallery
 		if( $this->psOptions['contrib_gal_on'] ){
@@ -454,7 +469,13 @@ class BWB_PhotoSmash{
 				'mod_reject_message' => "Sorry, the image you submitted to [blogname] has been reviewed, but did not meet our submission guidelines.  Please review our guidelines to see what types of images we accept.  We look forward to your future submissions.",
 				'version' => PHOTOSMASHVERSION,
 				'tb_height' => 390,
-				'tb_width' => 545
+				'tb_width' => 545,
+				'gmap_width' => 450,
+				'gmap_height' => 350,
+				'gmap_js' => false,
+				'gmap_layout' => '',
+				'auto_maptowidget' => 0,
+				'tags_mapid' => false
 		);
 	
 	}
@@ -706,6 +727,13 @@ function autoAddGallery($content='')
 	//Determine if Auto-add is set up...add it to top or bottom if so
 	$psoptions = $this->psOptions;// Get PhotoSmash defaults
 	if($psoptions['auto_add']){
+	
+		//Give a hook so people can check categories or tags, etc and skip the gallery if desired
+		$display_gallery = apply_filters('bwbps_gallery_exit', true);
+		
+		if(!$display_gallery){ return $content; }
+	
+	
 		//Auto-add is set..but first, see if there is a skip tag:  [ps-skip]
 		if(strpos($content, "[ps-skip]") === false){}else{return str_replace("[ps-skip]","",$content);}
 		$galparms = array("gallery_id" => false);
@@ -804,6 +832,7 @@ function shortCodeGallery($atts, $content=null){
 			'name' => false,	// Uses the Gallery's Name to retrieve the Gallery
 			'use_post_id' => false,	// Uses the post ID from the loop instead of the Post ID from the Gallery
 			'form' => false,
+			'max_user_uploads' => 0,	// Limits the # of uploads to gallery by users
 			'sort_field' => false,
 			'sort_order' => false,
 			'no_gallery_header' => false,
@@ -836,7 +865,7 @@ function shortCodeGallery($atts, $content=null){
 			'create_post' => false,	// Give a Custom Layout name to turn on creating new posts with PExt
 			'preview_post' => false,
 			'cat_layout' => false,	// Give a prefix to be used with the first Category ID to determine what layout should be used...it will default back to the layout specified in create_post if Cat Layout is not found...e.g.  cat_layout='postcat' ...it will look for a custom layout called postcat_##  where ## is the id of the first category in the upload
-			'post_cat_child_of' => false,
+			'post_cat_child_of' => false,  // Only include categories that are children of ## category
 			'post_cat_exclude' => false,
 			'post_cat_show' => false,	// Supply this with a value that evaluates to true (e.g. something other than 0 or false or '') and it turns on the post categories selection box and is used as the LABEL for the field
 			'post_cat_depth' => 0,
@@ -850,14 +879,29 @@ function shortCodeGallery($atts, $content=null){
 			'tags_has_all' => false,	// Enter true to display only images have all tags
 			'piclens' => false, 	// Enter true to include a link to a piclens slideshow
 			'piclens_link' => '',	// Defaults to "Start Slideshow " with a little icon
-			'piclens_class' => ''	// Defaults to "alignright"
+			'piclens_class' => '',	// Defaults to "alignright"
+			'gmap' => false,		// Provide a map ID to attach geocoded images to -- use 'post' for a 'postmap_##' where ## is post ID -- use the 'post' option if you're manually placing the DIV with [photosmash_map id='post']; use 'widget' for a map that will be specified in a widget; you also use Mappress provided maps, just use the same ID for both; you can place a map DIV with [photosmash_map id='mymap'], just match the id up with what you use in that shortcode; set to 'true' to use the Gallery specific map (cannot place map with [photosmash_map] under this option
+			'gmap_div' => false,	// use this to specify that you want to automatically add the gmap div before or after values can be 'before' or 'after' as in before or after the gallery
+			'gmap_div_height' => 0, 
+			'gmap_div_width' => 0,
+			'gmap_skip_api' => false, // skip loading the Google API
+			'geocode' => false, // set to 'true' to add Geocode block to your Standard Form
+			'geocode_fields' => false, // set to 'true' to add Geocode block to your Standard Form - this block will use address, locality, region, postal_code, country (custom fields) in the geocoding
+			'geocode_label' => false,
+			'geocode_description' => false,
+			'latitude_label' => false,
+			'longitude_label' => false
+			
 		),$atts));
+		
+		if($this->psOptions['auto_maptowidget']){ $gmap = 'gmap_widget'; }
+		if($gmap == 'widget'){ $gmap = 'gmap_widget'; }
+		$gmap_id = $gmap;
 		
 		//Special kind of gallery...the Gallery Viewer...Ooooo
 		if($gallery_viewer ){
 			$gallery_type = 100;
 		}
-		
 		
 		//These galleries are 
 		if( $gallery_type == 9 || $gallery_type == 'post_author' ){
@@ -996,14 +1040,18 @@ function shortCodeGallery($atts, $content=null){
 				
 					$ret = do_shortcode("[psmash id=" . (int)$_REQUEST['psmash-image']
 						. " layout='$image_layout']");
-						
+					
 					return $ret;
 				
 				}
 				
 				if((int)$_REQUEST['psmash-gallery']){
+				
+					if(!$before_gallery){
 					
 					$before_gallery = "<h1 class='bwbps_h1 gallery_viewer_head'> <a href='" . $galviewerurl . "'>Back to " . get_bloginfo('name') . " - Gallery Viewer</a></h1>";
+					
+					}
 					
 					$galparms['gallery_id'] = (int)$_REQUEST['psmash-gallery'];
 					
@@ -1017,7 +1065,10 @@ function shortCodeGallery($atts, $content=null){
 				
 				} else {
 					
+					if(!$before_gallery){
+					
 					$before_gallery = "<h1 class='bwbps_h1 gallery_viewer_head'>" .get_bloginfo('name') . " - <a href='" . $galviewerurl . "'>Gallery Viewer</a></h1>";
+					}
 					
 					$galparms['gallery_type'] = 100;
 					$no_form = true;
@@ -1045,7 +1096,35 @@ function shortCodeGallery($atts, $content=null){
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 		
-		//These galleries are 
+		
+		if( intval($max_user_uploads) ){
+			$g['max_user_uploads'] = intval($max_user_uploads);
+		}
+		
+		//Calculate GMap ID for Maps
+		if( $gmap ){
+		
+			if($gmap_id == 'true' && !$gmap_div){ $gmap_div = 'after'; }
+		
+			$gmap_id = $this->calculateGMapID($gmap_id, $g['gallery_id']);
+			$g['gmap_id'] = $gmap_id;
+			
+		}
+		
+		//Set Geocode for Upload form
+		$g['geocode'] = $geocode ? true : false;
+		$g['geocode_fields'] = $geocode_fields ? true : false;
+		$g['geocode_label'] = $geocode_label ? $geocode_label : 
+			($this->psOptions['geocode_label'] ? $this->psOptions['geocode_label'] : 'Geocode');
+		$g['geocode_description'] = $geocode_description ? $geocode_description : 
+			($this->psOptions['geocode_description'] ? $this->psOptions['geocode_description'] : 'Use address field(s) for geocode lookup');
+		$g['latitude_label'] = $latitude_label ? $latitude_label : 
+			($this->psOptions['latitude_label'] ? $this->psOptions['latitude_label'] : 'Latitude');
+		$g['longitude_label'] = $longitude_label ? $longitude_label : 
+			($this->psOptions['longitude_label'] ? $this->psOptions['longitude_label'] : 'Longitude');
+			
+		
+		//These galleries are Author Posts
 		if( $g['gallery_type'] == 9 ){
 			if( !current_user_can('level_10') && $current_user->ID != $post->post_author ){
 				$no_form=true;
@@ -1311,21 +1390,83 @@ function shortCodeGallery($atts, $content=null){
 */
 		
 		unset($galparms);
+		
+	$ret = $before_gallery . $ret . $after_gallery;
+		
+	/* Set up Map Code */
+	
+	if( $gmap_id ){
+		
+		// Tell PhotoSmash to load the Google Maps Javascript in the Footer
+		
+		$this->loadGoogleMaps = true;
+		
+		if( $gmap_skip_api ){
+			$this->skipGoogleAPI = true;
+		}
+		
+		
+	
+		if( $gmap_div && (!is_array($this->placedMaps) || empty($this->placedMaps[$gmap_id])) ){
+		
+			$gmap_width = (int)$gmap_width ? (int)$gmap_width : 
+				((int)$this->psOptions['gmap_width'] ? (int)$this->psOptions['gmap_width'] : 350);
+			$gmap_height = (int)$gmap_height ? (int)$gmap_height : 
+				((int)$this->psOptions['gmap_height'] ? (int)$this->psOptions['gmap_height'] : 300);
+			
+			$gmap_div_code = "<div id='" . $gmap_id . "' class='bwbps_gmap bwbps_gmap_" . $g['gallery_id'] 
+					. "' style='width: " . $gmap_width . "px; height: " . $gmap_height . "px;'></div>";
+		
+			if( $gmap_div && $gmap_div != 'before' ){ $gmap_div = 'after'; }
+			
+			if( $gmap_div == 'before' ){
+			
+				$ret = $gmap_div_code . $ret;	
+			
+			}
+			
+			if( $gmap_div == 'after' ){
+			
+				$ret .= $gmap_div_code;	
+			
+			}
 
-	return $before_gallery . $ret . $after_gallery;
+			$this->placedMaps[$gmap_id] = true;		// Set this to prevent duplicate divs
+		}
+	
+	}
+	
+	return $ret; 
 }
+
+
 function getGallery($g){
 	
 	$g = $this->gal_funcs->getGallery($g);
 	
 	//Cache the new gallery
 	$this->galleries[$g['gallery_id']] = $g;
+	
+	// Set PostGalleries ID
+	if( (int)$g['gallery_type'] < 10 ){
+		$gal_post_id = (int)$g['post_id'];
+		if($gal_post_id){ $this->postGalleries[$gal_post_id] = $g['gallery_id']; }	
+	}
+	
 	return $g;
 }
 
 function getAddPhotosLink(&$g, $blogname, &$formname){
 	
 	global $post;
+	global $current_user;
+	
+	if($g['max_user_uploads']){
+		// This limits the number of uploads a user can make to a specific gallery
+		$icnt = $this->img_funcs->getUserImageCountByGallery((int)$current_user->ID, $g['gallery_id'], $g['uploads_period']);
+		
+		if( $icnt >= $g['max_user_uploads'] ){ return (string)$g['max_uploads_msg']; }
+	}
 	
 	$use_tb = (int)$this->psOptions['use_thickbox'];
 	$use_tb = $g['use_thickbox'] == 'false' ? false : $use_tb;
@@ -1624,6 +1765,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		wp_enqueue_script( 'jquery-ui-tabs' );
 		wp_enqueue_script( 'thickbox' );
 		
+		wp_register_script('google_maps_v3', "http://maps.google.com/maps/api/js?sensor=false", array('jquery', 'thickbox'), '3.0');
+		wp_enqueue_script('google_maps_v3');
+		
 		wp_register_script('bwbps_admin_js', plugins_url('/photosmash-galleries/js/bwbps-admin.js'), array('jquery', 'thickbox'), '1.0');
 		wp_enqueue_script('bwbps_admin_js');
 		
@@ -1638,7 +1782,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 			var bwbpsPhotoSmashURL = "<?php echo plugins_url(); ?>/photosmash-galleries/";
 		//]]>
 		</script>
+		
 		<?php	
+		
+		wp_register_script('bwbps_maps_js', plugins_url('/photosmash-galleries/js/bwbps-maps.js'), array('jquery', 'thickbox'), '1.0');
+		wp_enqueue_script('bwbps_maps_js');	
+		
 	}
 	
 	function injectAdminStyles()
@@ -2008,13 +2157,15 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		
 		$d = date( 'Y-m-d H:i:s' );
 		
+		if($this->psOptions['tags_mapid']){ $gmap_id = " gmap='". $this->psOptions['tags_mapid'] . "' "; }
+		
 		//Create an object for a new post to un_shift onto the posts array
 			$newpost->ID = -1;
 			$newpost->post_author = $author;
 			$newpost->post_date = $d;
 			$newpost->post_date_gmt = $d;
 			$newpost->post_content = "[photosmash gallery_type=tags tags='". esc_attr($tag)
-				."' no_form=true]";
+				."'" . $gmap_id . " no_form=true]";
 			$newpost->post_title = 'Images tagged ' . $tag; 
 			$newpost->post_category = 0;
 			$newpost->post_excerpt = '';
@@ -2262,6 +2413,120 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 
 	}
 	
+	function addMap($map, $lat = 0, $lng = 0){
+		
+		if( !is_array($this->gmaps) || empty($this->gmaps[ $map]) ){
+		
+			$this->gmaps[$map]['map_id'] = $map;
+		
+			if( $lat && $lng){
+				$this->gmaps[$map]['init'] = "\nbwb_maps.push( bwb_gmap.showMap( '" 
+					. $map . "', " .  floatval($lat) . ", " . floatval($lng) . ") );\n"
+					. "bwb_markers.push( [] );\n"
+					. "bwb_infowindows.push( [] );\n";
+					
+			}
+			
+		} else {
+			if( empty($this->gmaps[ $map ]['init'] ) && floatval($lat) && floatval($lng) ){
+				$this->gmaps[$map]['init'] = "\nbwb_maps.push( bwb_gmap.showMap( '" 
+					. $map . "', " 
+					.  floatval($lat) . ", " . floatval($lng) . ") );\n" 
+					. "bwb_markers.push( [] );\n"
+					. "bwb_infowindows.push( [] );\n";
+			}
+		}
+	
+	}
+	
+	function injectGMapFooterCodes(){
+	
+		if( !$this->skipGoogleAPI && trim($this->psOptions['gmap_js']) != 'none' ){
+			
+			if( $this->psOptions['gmap_js'] ){
+				
+			echo '
+			<!-- Google Maps loaded by PhotoSmash (customized by admin) -->
+			' . $this->psOptions['gmap_js'] . '
+			';
+				
+			} else {
+					
+				echo '
+				<!-- Google Maps API V3 loaded by PhotoSmash  -->
+					<!-- Go to PhotoSmash Settings and enter "none" on the maps page to turn it off -->
+					<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+					';
+					
+			}
+		
+		}	
+		
+		if($this->loadGoogleMaps){
+			echo '
+			<!-- PhotoSmash class for Google Maps  -->
+			<script type="text/javascript" src="' .
+			plugins_url("/photosmash-galleries/js/bwbps-maps.js" )
+			. '"></script>';
+			
+			//Insert the code for Creating the Map Instances
+			if( is_array($this->gmaps) ){
+			
+				echo "
+			<!-- PhotoSmash JavaScript  -->
+			<script type='text/javascript'>
+						
+			// On Document Ready
+			jQuery(document).ready(function() {
+						
+				";
+				
+				// Load Map Instances - this comes from the bwbps-layout.php function addGoogleMapMarker()
+				$imap_cnt = -1;
+				foreach( $this->gmaps as $gmap ){
+
+					$imap_cnt++;
+					$map_id = 'bwb_maps[' . $imap_cnt . ']';
+					
+					if( !empty( $gmap["init"] ) ){
+						
+						// New Map starts here
+						echo "\n// New Map starts here\n" . $gmap['init'];
+						
+					} else {
+					
+						// New Map...No markers
+						echo "\n// New Map starts here\nbwb_maps.push( bwb_gmap.showMap( '" 
+							. $gmap['map_id'] . "', 38, -60) );\nbwbcnt = bwb_maps.length - 1;\nbwb_maps[bwbcnt].setZoom(1);\n";
+						
+					}
+					
+					
+					if( is_array( $gmap['markers'] ) ){
+						// Set up Vars for Bounds and Markers array
+						echo "\n// Set up Var for Bounds\nvar bwbbound_" . $gmap['map_id'] 
+							. " = new google.maps.LatLngBounds();\n";
+						
+						// Echo the marker adding code
+						echo implode("\n", $gmap['markers']);
+						
+						// FitBounds
+						echo "\n //FitBounds\nif( bwb_markers[" . $imap_cnt . "].length > 1 ){" . $map_id . ".fitBounds(bwbbound_" 
+							. $gmap["map_id"] . ");}\n\n// Map ends";
+					}
+				}
+					
+				echo "
+				});
+				</script>
+					";
+				
+				}
+				
+		}
+	
+	} //Closes injectGMapFooterCodes Function
+	
 	
 	/**
 	 * Injects JavaScript into the Footer - called by PhotoSmash through wp_footer hook
@@ -2270,7 +2535,10 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	 */
 	function injectFooterJavaScript(){
 	
-		if( !$this->footerJS && !$this->footerReady && !is_array($this->footerJSArray) ){ return; }
+		$this->injectGMapFooterCodes();	// Load the Google Map codes
+	
+		if( !$this->footerJS && !$this->footerReady && !is_array($this->footerJSArray) 
+			&& !is_array($this->footerJSReadyArray) ){ return; }
 	
 		$ret = "
 		<!-- PhotoSmash JavaScript  -->
@@ -2292,7 +2560,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		}
 		
 		if(is_array($this->footerJSReadyArray)){
-			
+					
 			$ret .= "
 			// On Document Ready
 			jQuery(document).ready(function() {
@@ -2358,17 +2626,17 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	 * Think google maps, etc.
 	 * 
 	 */
-	function addFooterJSArray($js, $key){
+	function addFooterJSArray($js, $key=false){
 		
 		if($js){
 		
 			if($key){
-			$this->footerJSArray[$key] .= "
+			$this->footerJSArray[$key] = "
 			
 			".$js;
 			
 			} else {
-			$this->footerJSArray[] .= "
+			$this->footerJSArray[] = "
 			
 			".$js;
 			}
@@ -2376,17 +2644,17 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		}
 	}
 	
-	function addFooterJSReadyArray($js, $key){
+	function addFooterJSReadyArray($js, $key=false){
 		
 		if($js){
 		
 			if($key){
-			$this->footerJSReadyArray[$key] .= "
+			$this->footerJSReadyArray[$key] = "
 			
 			".$js;
 			
 			} else {
-			$this->footerJSReadyArray[] .= "
+			$this->footerJSReadyArray[] = "
 			
 			".$js;
 			}
@@ -2419,6 +2687,9 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		
 		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/widgets/bwbps-tagcloud.php");
 		register_widget( 'PhotoSmash_TagCloud' );
+		
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/widgets/bwbps-mapwidget.php");
+		register_widget( 'PhotoSmash_Map_Widget' );
 	
 	}
 	
@@ -2828,6 +3099,84 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		return;
 		
 	}
+	
+	
+	/* Google Maps Shortcode
+	 * Adds a Google Map for a gallery
+	 * Grabs $this->lastGalleryID if none given
+	*/
+	function gmapShortCode($atts, $content=null){
+		
+		if(!is_array($atts)){
+			$atts = array();
+		}
+		extract(shortcode_atts(array(
+			'id' => false,
+			'width' => 0,
+			'height' => 0,
+			'class' => '',
+			'gmap_skip_api' => false
+			
+		),$atts));
+		
+		if( $gmap_skip_api ){
+			$this->skipGoogleAPI = true;
+		}
+		
+		$this->loadGoogleMaps = true;
+		
+		$gallery_id = false;
+		
+		if( $id == 'gallery' || strpos($id, '[gallery_id]') !== false ){
+			$g = $this->getGallery();
+			$gallery_id = $g['gallery_id'];
+		}
+		
+		$gmap_id = $this->calculateGMapID($id, $gallery_id);
+;
+		if( !is_array($this->placedMaps) || empty($this->placedMaps[$gmap_id]) ){
+			$width = (int)$width ? (int)$width : 
+				((int)$this->psOptions['gmap_width'] ? (int)$this->psOptions['gmap_width'] : 350);
+			$height = (int)$height ? (int)$height : 
+				((int)$this->psOptions['gmap_height'] ? (int)$this->psOptions['gmap_height'] : 300);
+			
+			$content = "<div id='" . $gmap_id . "' class='bwbps_gmap bwbps_gmap_" . $g['gallery_id'] 
+					. " " . $this->h->alphaNumeric($class) 
+					. "' style='width: " . $width . "px; height: " . $height . "px;'></div>";
+					
+			$this->placedMaps[$gmap_id] = true;		// Set this to prevent duplicate divs
+			
+		}
+		
+		return $content;
+	}
+	
+	function calculateGMapID($id = false, $gallery_id = 0){
+		global $post;
+		
+		if(!$id || $id == 'post' || $id == 'true'){
+			$id = 'post_map_' . (int)$post->ID;
+		}
+		
+		if( $gallery_id && strpos($id, "[gallery_id]") !== false ){
+			$id = str_replace("[gallery_id]", $gallery_id, $id);
+		}
+		
+		if( (int)$id ){
+			$id = 'gmap_id_' . (int)$id;
+		}
+		
+		if( $id == 'gallery' ){
+			$id = 'post_map_' . (int)$post->ID . "_" . $gallery_id;
+		}
+		
+		$id = str_replace("-", "_", $id);
+		
+		$id = $this->h->alphaNumeric( $id, false, true );
+		
+		return $id;
+	
+	}
 
 	
 } //End of BWB_PhotoSmash Class
@@ -2921,6 +3270,8 @@ add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
 add_shortcode('photosmash', array(&$bwbPS, 'shortCodeGallery'));
 
 add_shortcode('psmash', array(&$bwbPS, 'shortCodes'));
+
+add_shortcode('photosmash_gmap', array(&$bwbPS, 'gmapShortCode'));
 
 add_filter('plugin_action_links', array(&$bwbPS, 'add_settings_link'), 10, 2 );
 
