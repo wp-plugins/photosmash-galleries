@@ -38,9 +38,9 @@ class BWBPS_Uploader{
 		if( !$no_referer && function_exists('check_ajax_referer') 
 			&& !check_ajax_referer( "bwb_upload_photos" )){
 			
-			$json['message']= "Invalid authorization...nonce field missing.";
-			$json['succeed'] = 'false'; 
-			echo json_encode($json);
+			$this->json['message']= "Invalid authorization...nonce field missing.";
+			$this->json['succeed'] = 'false'; 
+			$this->echoJSON();
 			exit();
 			
 		};
@@ -66,9 +66,9 @@ class BWBPS_Uploader{
 				$this->g['gallery_id'], $this->g['uploads_period']);
 			
 			if( $icnt >= $this->g['max_user_uploads'] ){
-				$json['message']= "Maximum allowable uploads reached";
-				$json['succeed'] = 'false'; 
-				echo json_encode($json);
+				$this->json['message']= "Maximum allowable uploads reached";
+				$this->json['succeed'] = 'false'; 
+				$this->echoJSON();
 				exit();
 			}
 		}

@@ -436,12 +436,32 @@ class BWBPS_Layout{
 				if( $image['pext_insert'] ){
 				
 					if(!$layout){
-						$imageTemp .= $this->getStandardLayout($g, $image);
+						$imageTemp .= $image['pext_insert'];
+						
+						$psTable .= apply_filters('bwbps_image', $imageTemp);
+						unset($imageTemp);
+						
 					} else {
 						$imageTemp .= $image['pext_insert'];
+						
+						if($layout->cells_perrow){
+		
+							$cellsInRow++;
+			
+							if($cellsInRow % $layout->cells_perrow == 0){
+								$psTable .="<tr>".$imageTemp."</tr>";					
+								$cellsInRow = 0;
+								unset($imageTemp);
+							}
+						
+						} else {
+							$psTable .= $imageTemp;
+							unset($imageTemp);	// Need to call separately because it needs to stay alive for CellsInRow above
+						}
+						
+						
+						
 					}
-					
-					$psTable .= apply_filters('bwbps_image', $imageTemp);
 					
 					continue;
 				
