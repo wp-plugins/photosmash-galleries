@@ -743,7 +743,7 @@ class BWBPS_UploadForm{
 							if($t == $atts['selected']){ $selattr = "selected=selected"; $selmarked=true;}
 							
 							$r .= "<option value='" . esc_attr($t) . "' $selattr>"
-								. $t . "</option
+								. $t . "</option>
 								";
 							$selattr = "";
 						}
@@ -1235,6 +1235,7 @@ class BWBPS_UploadForm{
 	
 	//BUILD THE FORM FIELD
 	function getField($g, $f, $tabindex=false, $the_value=false, $txtarea_width=false, $atts=false){
+		global $wpdb;
 		
 		if( $the_value !== false ){
 			$val = $the_value;
@@ -1283,8 +1284,10 @@ class BWBPS_UploadForm{
 				$ret = "<textarea tabindex='".$tabindex."' ".$id
 					." ".$ele_name . " rows=". $textarea_rows ." ";
 					
-				if(!$txtarea_width){
+				if(!$txtarea_width && !$atts['textarea_cols']){
 					$ret .= " cols=40 ";
+				} else {
+					if((int)$atts['textarea_cols']){ $ret .= " cols=" . (int)$atts['textarea_cols']; }
 				}
 				$ret .= " class='bwbps_reset bwbps_textarea' />"
 					.esc_attr($val)."</textarea>
@@ -1321,17 +1324,19 @@ class BWBPS_UploadForm{
 				
 				break;
 			case 4 :	//checkboxes
-				$opts['opentag'] = "input tabindex=".$tabindex ;	//opening tag
-				$opts['closetag'] = "<br/>";	//closing tag
-				$opts['selected'] = 'checked="checked"';  // indicator for selected value
-				$opts['defval'] = $val;
-				$opts['type'] = "type='checkbox'";	// input type (e.g. type='text')
-				$opts['multi_select'] = true;
-				$opts['style'] = "style='width:auto;'";
-				$opts['name'] = "name='"."bwbps_".$blank.$f->field_name."[]'";  //form field name
 				
-				$ret = $this->getFieldValueOptions($f->field_id, $opts);
-				$ret .= "<input type='hidden' name='subtle_nonsense'/>";
+				$sql = "SELECT value FROM ".PSLOOKUPTABLE." WHERE field_id = "
+					.(int)$f->field_id. " ORDER BY seq";
+					
+				$cbx_value = $wpdb->get_var($sql);
+				
+				$checked = $the_value ? " checked='checked' " : "";
+			
+				$ret = "<input tabindex=".$tabindex. $checked . " type='checkbox' value='" 
+					. $cbx_value . "' "
+					. "name='"."bwbps_".$blank.$f->field_name."' />";
+				
+				
 				break;
 			case 5 :	//date picker
 				if($val){

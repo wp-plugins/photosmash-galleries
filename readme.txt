@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 3.0.1
-Stable tag: 0.8.04
+Stable tag: 0.9.00
  
 PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
 
@@ -22,7 +22,8 @@ PhotoSmash Galleries makes it easy to create photo galleries in posts or pages t
 For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
 *   User contributable photo galleries - allow your users to upload images to galleries
-*	NEW! Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
+*   Map your images using Google Maps API V.3 - simple to use (see Changelog for details)
+*	Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
 *	Link gallery thumbnails to various destinations including full-size image, related post, and WP Attachment Page when using Media Library integration
 *	Add images to the WordPress Media Library so you can use them in blog posts and even the Standard WordPress Image Gallery features
 *	Multiple simultaneous image uploads in Admin, using the WordPress Media Library, then import images to PhotoSmash!
@@ -85,8 +86,10 @@ You can also exclude the standard css file and include your own through options 
 
 == Changelog ==
 
-= 0.9.00 - Not Yet Released =
+= 0.9.00 - 11/8/2010 =
 
+    * Added ability to run a Shortcode in Text Inserts (PhotoSmash Extend) - here is an example of running the photosmash shortcode as a text insert: [shortcode text='photosmash id=2 no_gallery=true form=std']  That will essentially show the PhotoSmash upload form as the insert, uploading to gallery 2.
+    * Fixed display of checkbox custom fields values in Photo Manager. Will no properly show as checked or unchecked.
     * Fixed some logic in the displaying of PhotoSmash Extend Ad Inserts - there was a logic problem in bwbps-layout.php.
     * Added ability to limit # images a user can upload - go to Gallery Settings, Edit your desired gallery, then go to the Uploading tab to set the  Maximum number of images you want a user to be able to upload to the gallery (set to 0 for unlimited uploads by user), and set the time frame that the restriction applies to: forever (ie. the user can only upload the max # images ever), per hour (ie. they can upload X number of images per hour), per day, and per week.  Note that these times are calculated by taking the number of hours specified and subtracting from the current time - so this means that max per day is really max per 24 hours, and max per week is really max per any given 168 hours regardless of the calendar.
     * Google Map integration - show a google map of images in a gallery that have latitude and longitude specified. To turn on a map, add this to your  shortcode: gmap='map_id'.  The 'map_id' will be the ID of the DIV that you want to contain your map.  It will also become the Map's Javascript ID, so you can do other things in Javascript with the ID, basically anything allowed by the Google Maps API V3.  This uses the Google Maps API V3, so you don't need an API key.  If you are using another plugin that already loads that API, you can tell PhotoSmash to skip loading it by adding to the shortcode:  gmap_skip_api=true.  You can manually place the DIV to hold the map (be sure to give it the same id as specified in your shortcode).  You can place the div in your page or post with this shortcode (remove the space after the "["):  [ photosmash_gmap id='map_id'].  I'll have to do a tutorial on map integration since there are more features than can be explained here.  But this is enough to get you started.  Note: the most basic way to get a map going is to just say: [ photosmash gmap='true']  This will automatically add the map after your gallery.  Also, note that in PhotoSmash Settings, a new tab (Maps) has been added that will let you set a layout for the marker popup infowindows in your map, as well as set the size of your maps.

@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.8.05
+Version: 0.9.00
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -37,8 +37,8 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.8.00');
-define('PHOTOSMASHEXTVERSION', '0.2.10');
+define('PHOTOSMASHVERSION', '0.9.00');
+define('PHOTOSMASHEXTVERSION', '0.2.20');
 
 define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
 
@@ -270,6 +270,8 @@ class BWB_PhotoSmash{
 	var $gmaps;
 	var $placedMaps;	// Array that stores list of map DIV IDs already placed...to prevent duplicates
 	
+	var $api;	// Holds the Mobile API object
+	
 	//Constructor
 	function BWB_PhotoSmash(){
 		
@@ -320,7 +322,25 @@ class BWB_PhotoSmash{
 		}	
 		
 		*/
+		
+		// PhotoSmash API
+		if( is_admin() ){
+			add_action( 'wp_ajax_photosmash_api', array($this,'loadAPI') );
+			add_action( 'wp_ajax_nopriv_photosmash_api', array($this, 'loadAPI') );
+		}
 
+	}
+	
+	/*
+	 * Loads the PhotoSmash API - primarily for uploads and other actions from Mobile Devices
+	*/
+	function loadAPI(){
+		if(!isset($this->api)){
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/api-mobile.php");
+			$this->api = new PhotoSmash_Mobile_API();
+		}	
+		
+		die("api problem...");
 	}
 	
 	/**
@@ -393,6 +413,10 @@ class BWB_PhotoSmash{
 		
 		if($runUpdate){
 				update_option($this->adminOptionsName, $psAdminOptions);
+		}
+		
+		if( !$ps['api_url'] ){
+			$ps['api_url'] = admin_url('admin-ajax.php');
 		}
 		
 		return $psAdminOptions;
@@ -1088,7 +1112,9 @@ function shortCodeGallery($atts, $content=null){
 			
 				break;	
 		
-		}	
+		}
+		
+		if($before_gallery='none'){ $before_gallery = ''; }
 		
 		
 		$galparms['no_signin_msg'] = $no_signin_msg;	//used with $psOptions['upload_authmessage'] to not show signin message if this is true in shortcode

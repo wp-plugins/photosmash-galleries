@@ -352,6 +352,8 @@ class BWBPS_LayoutsEditor{
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[blog_name] - <span style='font-size: 9px;'>Blog's name</span></li>
 						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gdsr shortcode='??'] - <span style='font-size: 9px;'>Adds a GD Star Rating block for an image. Uses the standard GDSR shortcodes (starrater, starthumbsblock, starratingblock, starrating, starcomments, starreview, starreviewmulti, starratingmulti). <b>This feature is experimental and does not fully work.</b> GDSR does not count Attachments as fully qualified posts - GDSR widgets do not incorporate ratings properly</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[bloginfo field='??'] - <span style='font-size: 9px;'>displays field as delivered by the WP <a href='http://codex.wordpress.org/Function_Reference/get_bloginfo'>get_bloginfo()</a> function</span></li>												
 						<?php echo $customfieldlist;?>
 						

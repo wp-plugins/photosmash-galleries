@@ -26,6 +26,8 @@ class BWBPS_Uploader{
 	
 	var $sharing_options;
 	
+	var $jquery_forms_hack = true;
+	
 	/* 
 	 * Constructor
 	 *
@@ -375,7 +377,6 @@ class BWBPS_Uploader{
 			$this->exitUpload("Uploads path is not writable: " . $uploads['path']);
 			return;
 		}
-		
 		
 		$upload = $_FILES[$filesPostName.$fileFieldNumber];
 		
@@ -1092,7 +1093,11 @@ class BWBPS_Uploader{
 		$this->json = $this->cleanJS($this->json);
 		
 		//Echoes back the JSON Array for an Ajax Call
-		echo "<textarea>" . json_encode($this->json) . "</textarea>";
+		if($this->jquery_forms_hack){
+			echo "<textarea>" . json_encode($this->json) . "</textarea>";
+		} else {
+			echo json_encode($this->json);
+		}
 	}
 	
 	function cleanJS($arr){

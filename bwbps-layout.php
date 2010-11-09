@@ -91,6 +91,7 @@ class BWBPS_Layout{
 			, 'gallery_image_count'
 			, 'comments_count'
 			, 'infowindow_link'
+			, 'gdsr'
 		);
 	}
 	
@@ -236,7 +237,13 @@ class BWBPS_Layout{
 			//Set to page 1 if not supplied in Get or Post
 	
 			if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
-				$pagenum[$g['gallery_id']] = 1;
+			
+				//check if Universal Paging is in effect
+				if((int)$pagenum['uni']){
+					$pagenum[$g['gallery_id']] = (int)$pagenum['uni'];
+				} else {
+					$pagenum[$g['gallery_id']] = 1;
+				}
 			}	
 		
 			//get the pagination navigation
@@ -412,6 +419,7 @@ class BWBPS_Layout{
 			}
 					
 			foreach($images as $image){
+			
 				
 				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 				
@@ -632,15 +640,17 @@ class BWBPS_Layout{
 		
 		//If using Cells Per Row (for tables in Custom Forms..a setting Advanced)
 		//then clean up any left over $psTableRows
-		if($layout->cells_perrow && $psTableRow){
-			
-			$remaining =  $layout->cells_perrow - $imgNum;
+		
+		
+		//if($layout->cells_perrow && $psTableRow){
+		if($layout->cells_perrow > 0 && $cellsInRow % $layout->cells_perrow > 0){	
+			$remaining =  $cellsInRow % $layout->cells_perrow;
 			if($remaining > 0){
 				for($i =0; $i < $remaining; $i++){
-					$psTableRow .= "<td></td>";
+					$imageTemp .= "<td></td>";
 				}
 			}
-			$psTable .="<tr>".$psTableRow."</tr>";
+			$psTable .="<tr>".$imageTemp."</tr>";
 		}
 		
 		//Gallery Wrapper
@@ -729,12 +739,26 @@ class BWBPS_Layout{
 	 * @param none
 	 */
 	function getPageNumbers(){
+	
+		//Check to see if Universal paging is in effect
+		if($this->psOptions['uni_paging']){
+			$pgal = 'uni';
+		} else {
+			$uline = "_";
+		}
+		
+		$pname = trim($this->psOptions['alt_paging']) ? trim($this->psOptions['alt_paging']) 
+				: 'bwbps_page';
+		
+		$pname .= $uline;
+				
+	
 		if(is_array($_REQUEST)){
 			foreach( $_REQUEST as $key => $option ){
 			
-				if( strpos($key, 'bwbps_page_' ) !== false ){
+				if( strpos($key, $pname ) !== false ){
 					
-					$pg_gal = ( str_replace('bwbps_page_',"", $key ));
+					$pg_gal = $pgal ? $pgal : ( str_replace($pname,"", $key ));	// Set the index to 'uni' if Universal paging is in effect
 					$pagenum[$pg_gal] = (int)$option;
 				
 				}
@@ -1058,6 +1082,7 @@ class BWBPS_Layout{
 									$tempval = "";
 								}
 							}
+							
 							if( !$tempval ) { $tempval = $atts['if_blank']; }
 								
 							$m = $atts['bwbps_match'];
@@ -1433,6 +1458,40 @@ class BWBPS_Layout{
 						. $image['gmap_marker'] . "); return false;' $class >$name</a>";
 				}
 				break;
+				
+			case '[gdsr]' :	//Yep, that's right GD Star Rating integration right here!
+			
+				if(is_array($atts)){
+					
+					//See if they're specifying something other than standard Shortcode
+					if($atts['shortcode']){ $shortcode = $atts['shortcode']; }
+					//See if they're using something other than double quotes for the separators in the shortcode
+					if($atts['quote_char']){$quote_char = $atts['quote_char']; }else{ $quote_char='"';}
+					
+					foreach($atts as $key => $value){
+						if( $key != 'shortcode' && $key != 'quote_char' && $key != 'bwbps_match' && $key != 'match_num'){
+							$sc_atts[] = $key . "=" . $quote_char . $value . $quote_char;
+						}
+					}
+					
+					if( is_array($sc_atts)){
+						$sc_att_str = implode(" ", $sc_atts);
+					}
+				}
+				
+				if( !$shortcode ){ $shortcode = 'starratingblock'; } else {
+				
+					$valid_scs = 'starrater,starthumbsblock,starratingblock,starrating,starcomments,starreview,starreviewmulti,starratingmulti';
+					
+					if( strpos($valid_scs, $shortcode) === false ){ $shortcode = 'starratingblock';}
+				
+				}
+				
+				$sc = '['. trim($shortcode) . ' post=' . $image['wp_attach_id'] . ' ' . $sc_att_str . ']';
+				
+				$ret = do_shortcode($sc);
+				
+				break;			
 			
 			case '[blog_name]' :
 				$ret = get_bloginfo('name');
@@ -2150,6 +2209,12 @@ class BWBPS_Layout{
 			}
 		}
 		
+		if( $atts['if_not_field'] ){
+			if($image[$atts['if_not_field']]){
+				$ret = "";
+			}
+		}
+		
 		if( !$ret ) { $ret = $atts['if_blank']; }
 		
 		return $ret;
@@ -2682,7 +2747,10 @@ class BWBPS_Layout{
 			$url .= "?";
 		}
 		
-		$othergals = $this->getPagingForOtherGalleries($pagenum, (int)$g['gallery_id']);
+		
+		if(!$this->psOptions['alt_paging'] && !$this->psOptions->uni_paging){
+			$othergals = $this->getPagingForOtherGalleries($pagenum, (int)$g['gallery_id']);
+		}
 				
 		$page_numstop = $total_pages;
 		$page_numstart = 1;
@@ -2786,8 +2854,20 @@ class BWBPS_Layout{
 	}
 	
 	function getPagingURLArgs($gallery_id, $page, $viewerargs, $othergals){
-		$urlargs["bwbps_page_".$gallery_id ] = (int)$page;
-		$urlargs = array_merge($viewerargs, $urlargs, $othergals );
+	
+		if( !$this->psOptions['uni_paging'] ){ $gid = '_' . $gallery_id; }
+		
+		$pname = trim($this->psOptions['alt_paging']) ? 
+			trim($this->psOptions['alt_paging']) . $gid : "bwbps_page".$gid;
+
+		$urlargs[ $pname ] = (int)$page;
+		
+		
+		if(is_array($othergals)){
+			$urlargs = array_merge($viewerargs, $urlargs, $othergals );
+		} else {
+			$urlargs = array_merge($viewerargs, $urlargs);
+		}
 			
 		return add_query_arg($urlargs);	//was $url
 	}

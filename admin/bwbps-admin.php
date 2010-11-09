@@ -269,6 +269,7 @@ class BWBPS_Admin{
 	//Checks to see if we're saving options
 	function saveGeneralSettings($ps){
 		global $wpdb;
+		global $bwbPS;
 		
 		//This section Saves the overall PhotoSmash defaults
 		
@@ -384,6 +385,11 @@ class BWBPS_Admin{
 				
 			$ps['alt_javascript'] = 
 				$this->cleanSlashes($_POST['ps_alt_javascript']);
+				
+			$ps['alt_paging'] = 
+				trim($this->cleanSlashes($_POST['ps_alt_paging']));
+				
+			$ps['uni_paging'] = isset($_POST['ps_uni_paging']) ? 1 : 0;	
 			
 			
 			if($ps['use_thickbox']){
@@ -434,6 +440,15 @@ class BWBPS_Admin{
 			$ps['mod_approve_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_approve_msg'])));
 			$ps['mod_reject_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_reject_msg'])));
 			$ps['mod_send_msg'] = isset($_POST['ps_mod_send_msg']) ? 1 : 0;
+			
+			$ps['api_upload_gallery'] = (int)$_POST['ps_api_upload_gallery'];
+			$ps['api_post_layout'] = (int)$_POST['ps_api_post_layout'];
+			$ps['api_url'] = $bwbPS->h->validURL( $_POST['ps_api_url'] );
+			
+			if( !$ps['api_url'] ){
+				$ps['api_url'] = admin_url('admin-ajax.php');
+			}
+			
 
 			//Update the PS Defaults
 			update_option('BWBPhotosmashAdminOptions', $ps);
@@ -812,10 +827,10 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				</td>
 			</tr>
 			<tr>
-				<th>Images per row in gallery:</th>
+				<th>Images per row (Standard Layout):</th>
 				<td>
 					<input type='text' name="gal_img_perrow" value='<?php echo (int)$galOptions['img_perrow'];?>' style='width: 40px !important;'/>
-					 <em>0 places as many images per row as theme's width allows</em>
+					 <em>0 places as many images per row as theme's width allows when you are using the Standard Layout</em>
 				</td>
 			</tr>
 			
@@ -1196,10 +1211,10 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				</td>
 			</tr>
 			<tr>
-				<th>Images per row in gallery:</th>
+				<th>Images per row (Standard Layout):</th>
 				<td>
 					<input type='text' name="gal_img_perrow" value='<?php echo (int)$galOptions['img_perrow'];?>' style='width: 40px !important;'/>
-					 <em>0 - as many images/row as theme's width allows</em>
+					 <em>0 - as many images/row as theme's width allows (Standard Layout only)</em>
 				</td>
 			</tr>
 			
@@ -1410,6 +1425,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		<li><a href="#bwbps_advanced">Advanced</a></li>
 		<li><a href="#bwbps_specgals">Spec. Galleries</a></li>
 		<li><a href="#bwbps_maps">Maps</a></li>
+		<li><a href="#bwbps_api">API</a></li>
 
 	</ul>
 	<div id='bwbps_galleryoptions'>
@@ -1504,10 +1520,10 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				</td>
 			</tr>
 			<tr>
-				<th>Default Images per row in galleries:</th>
+				<th>Default Images per row (Standard Layout):</th>
 				<td>
 					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perrow' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
-					 <em>0 places as many images per row as theme's width allows</em>
+					 <em>0 places as many images per row as theme's width allows when using the Standard Layout</em>
 				</td>
 			</tr>
 			
@@ -1910,6 +1926,16 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			</tr>
 			
 			<tr>
+				<th>Customized Paging:</th>
+				<td>
+					Alternative paging parameter name (default is: bwbps_page_[gallery_id])<br/>
+					<input type='text'  style='width: 300px;' name="ps_alt_paging" value='<?php echo $psOptions['alt_paging'];?>'/> 
+					<br/>
+					<input type="checkbox" name="ps_uni_paging" <?php if($psOptions['uni_paging'] == 1) echo 'checked'; ?>> Do not specify gallery ID in paging
+				</td>
+			</tr>
+			
+			<tr>
 				<th>Alternate Ajax Upload Script:</th>
 				<td>
 					<input type="checkbox" name="ps_use_alt_ajaxscript" <?php if($psOptions['use_alt_ajaxscript'] == 1) echo 'checked'; ?>>
@@ -1963,7 +1989,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Msg - No Authorization for Uploading:</th>
 				<td>
-					<input type='text' style='width: 300px;' name="ps_upload_authmessage" value='<?php echo trim($psOptions['upload_authmessage']);?>'/> Message to display when user does not have enough Authorization to upload images to a gallery.  Use normal HTML for this message.<br/>To display a link the login page, use:  [login]<br/>Leave blank to not display any message. 
+					<input type='text' style='width: 300px;' name="ps_upload_authmessage" value='<?php echo trim($psOptions['upload_authmessage']);?>'/> Message to display when user does not have enough Authorization to upload images to a gallery.  Use normal HTML for this message.<br/>To display a link the login page, use:  [login]<br/>Leave blank to not display any message. </br>
+					Note, you must have a Form Name in your shortcode for the message to be displayed.  If you're using the standard upload form, you can simply add 'form=std' to your shortcode, e.g. [photosmash form=std]<br/>
+					If you want to NOT show the upload message on a certain gallery, you can add this to your shortcode:  'no_signin_msg=true', e.g. [photosmash form=std no_signin_msg=true]
 				</td>
 			</tr>
 			
@@ -2093,6 +2121,47 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					<textarea id="ps_gmap_js" name="ps_gmap_js" cols="60" rows="4"><?php esc_html_e($psOptions['gmap_js']);?></textarea>
 				</td>
 			</tr>
+		</table>
+	</div>
+	
+	<div id="bwbps_api">
+		<h2>Note: this API is under development and will be used with the upcoming iPhone App for PhotoSmash.</h2>
+		<table class="form-table">
+		
+			<tr>
+				<th>API URL:</th>
+				<td>
+					<?php
+					if( !$psOptions['api_url'] ){
+						$psOptions['api_url'] = admin_url('admin-ajax.php');
+					}
+					?>
+				
+					<input type="text" id='ps_api_url' name="ps_api_url" value='<?php echo esc_attr($psOptions['api_url']);?>'> Should point to your WP-Admin.  Only change this if you're using MOD rewrite in your .htaccess.  It's not really necessary to change this, so feel free to leave it as is.
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Upload Gallery:</th>
+				<td>
+					<?php 
+						$api_upgal = (int)$psOptions['api_upload_gallery'];
+						echo $this->getGalleryDDL($api_upgal, "Select", "", "ps_api_upload_gallery", 40, true, true);
+						
+					?>
+					
+				</td>
+			</tr>
+			
+			<tr>
+				<th>New Post Layout:</th>
+				<td>
+					<?php 
+						echo $this->getLayoutsDDL((int)$psOptions['api_post_layout'], false, 0, 'ps_api_post_layout');
+					?> (Requires PhotoSmash Extend)
+				</td>
+			</tr>
+			
 		</table>
 	</div>
 	
@@ -3125,7 +3194,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	
 	//Get Layouts DDL
-	function getLayoutsDDL($selected_layout,$psDefault, $type=false){
+	function getLayoutsDDL($selected_layout,$psDefault, $type=false, $ele_name=false){
 		
  		global $wpdb;
  		
@@ -3154,10 +3223,14 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		
 			}
 		}
-		if(!$psDefault){
-			$ret ="<select name='gal_layout_id'>".$ret."</select>";
+		if(!$ele_name){
+			if(!$psDefault){
+				$ret ="<select name='gal_layout_id'>".$ret."</select>";
+			} else {
+				$ret ="<select name='ps_layout_id'>".$ret."</select>";
+			}
 		} else {
-			$ret ="<select name='ps_layout_id'>".$ret."</select>";
+			$ret ="<select name='$ele_name'>".$ret."</select>";
 		}
 		return $ret;
 	}
