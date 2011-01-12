@@ -101,6 +101,7 @@ class BWBPS_AJAX{
 					
 				if(!$row){
 					//Bomb out if no row returned
+					$json['message'] = 'Unable to delete approved images.';
 					$json['status'] = 0;
 					echo json_encode($json);
 					return;
@@ -136,11 +137,21 @@ class BWBPS_AJAX{
 				}
 
 				
-			
+				
+				//Delete the Image Record
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
 					PSIMAGESTABLE.' WHERE image_id = %d AND user_ID = %d AND status < '
 					. $status, $imgid, $user_ID ));
 					
+				
+				//Delete Tags
+				wp_set_object_terms($imgid, '', 'photosmash', false);
+				wp_delete_object_term_relationships( $imgid, 'photosmash' );
+				
+				wp_set_object_terms($imgid, '', 'photosmash_contributors', false);	
+				wp_delete_object_term_relationships( $imgid, 'photosmash_contributors' );
+					
+				//Delete Custom data, Ratings, and Categories
 				if($json['status']){
 					$wpdb->query($wpdb->prepare('DELETE FROM '. PSCUSTOMDATATABLE
 						.' WHERE image_id = %d', $imgid));

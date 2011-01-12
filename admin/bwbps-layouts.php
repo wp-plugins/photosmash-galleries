@@ -210,9 +210,17 @@ class BWBPS_LayoutsEditor{
 	<td>
 		<textarea name="bwbps_wrapper" cols="43" rows="6"><?php echo htmlentities($layoutOptions['wrapper']);?></textarea>
 		<br/>- Wrapper allows you to put HTML around the gallery of images after it's complete.  You'd need it for ol, ul, and table tags, but it could be used for all kinds of style the overall gallery.<br/><br/>- Use [gallery] to set where in the wrapper the images should go.  Example:<br/>
-		&lt;h2&gt;This is My Gallery&lt;/h2&gt;<br/>
+		&lt;h2&gt;Gallery - [gallery_name]&lt;/h2&gt;<br/>
 		&lt;div class='my_gallery'&gt;<br/>&nbsp;&nbsp;&nbsp;&lt;ul&gt; [gallery] &lt;/ul&gt;
 		<br/>&lt;/div&gt;
+		<p><b>Fields you can use</b> in the wrapper are:
+		<ul>
+		<li> - [gallery] - (optional) displays the actual images...will be added to bottom of wrapper if not specified</li>
+		<li> - [gallery_name]</li>
+		<li> - [gallery_description]</li>
+		<li> - [ratings_toggle] - you'll want to turn off the default toggle in Gallery Settings</li>
+		<li> - [gallery_id]</li>
+		</ul></p>
 	</td>
 </tr>
 
@@ -277,15 +285,35 @@ class BWBPS_LayoutsEditor{
 					<h4>Available fields:</h4>					
 					<ul style='padding: 6px; background-color: #fff; border: 1px solid #d8e9ec;'>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_name]<span style='font-size: 9px;'></span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_description]<span style='font-size: 9px;'></span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[gallery_id]<span style='font-size: 9px;'></span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[date_added] - <span style='font-size: 9px;'>date image was added</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[linked_image] - <span style='font-size: 9px;'>image with link to itself -- not sure why, but there it is ;-)</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_id] - <span style='font-size: 9px;'>image id - for building shortcodes in new posts</span></li>
+						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image] - <span style='font-size: 9px;'>image</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_url] - <span style='font-size: 9px;'>image url - for building a link</span></li>
 						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[linked_image] - <span style='font-size: 9px;'>image with link to itself</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb] - <span style='font-size: 9px;'>displays the returned thumbnail with appropriate link</span></li>
 						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[image_id] - <span style='font-size: 9px;'>image id - for building shortcodes in new posts</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail] - <span style='font-size: 9px;'>same as thumb</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_image] - <span style='font-size: 9px;'>just the thumb image</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_linktoimage] - <span style='font-size: 9px;'>the thumb linking to image (always)</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_url] - <span style='font-size: 9px;'>just the thumb url - no tags</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[mini] - <span style='font-size: 9px;'>displays the returned mini image with appropriate link</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[mini_url] - <span style='font-size: 9px;'>just the mini sized image url - no tags</span></li>					
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium] - <span style='font-size: 9px;'>displays the medium sized thumbnail</span></li>
+						
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium_url] - <span style='font-size: 9px;'>displays the medium sized image's url</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption] - <span style='font-size: 9px;'>use length and more attributes like this: [caption length=20 more='see more'] </span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[caption_escaped] - <span style='font-size: 9px;'>same as above...escaped for use in title or alt attributes</span></li>
@@ -307,20 +335,6 @@ class BWBPS_LayoutsEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[img_attribution] - <span style='font-size: 9px;'>attributed to?</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[img_license] - <span style='font-size: 9px;'>image license</span></li>
-												
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb] - <span style='font-size: 9px;'>displays the returned thumbnail</span></li>
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumbnail] - <span style='font-size: 9px;'>same as thumb</span></li>
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_image] - <span style='font-size: 9px;'>just the thumb image</span></li>
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_linktoimage] - <span style='font-size: 9px;'>the thumb linking to image (always)</span></li>
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[thumb_url] - <span style='font-size: 9px;'>just the thumb url - no tags</span></li>					
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium] - <span style='font-size: 9px;'>displays the medium sized thumbnail</span></li>
-						
-						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[medium_url] - <span style='font-size: 9px;'>displays the medium sized image's url</span></li>
 						
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[file_name] - <span style='font-size: 9px;'>image's file name</span></li>
 						

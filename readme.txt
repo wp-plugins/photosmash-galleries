@@ -1,26 +1,29 @@
 ﻿=== PhotoSmash Galleries ===
 Contributors: bennebw
 Donate link: http://smashly.net/photosmash-galleries/#donate
-Tags: images, photos, picture, gallery, social, community, posts, admin, pictures, media, galleries
+Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 3.0.1
-Stable tag: 0.9.00
+Tested up to: 3.0.4
+Stable tag: 0.9.02
  
-PhotoSmash - user contributable photo galleries for WordPress pages and posts with options.  Auto-add galleries or specify.
+PhotoSmash - photo gallery plugin that integrates with built-in WordPress gallery functionality and lets you allow your users to upload images.
 
 == Description ==
 
-PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  PhotoSmash has incredibly flexible and simple models for designing custom gallery and form layouts, utilizing your own custom database fields, html, and css, or just use the standard.
+PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  PhotoSmash has incredibly flexible and simple models for designing custom photo gallery and form layouts, utilizing your own custom database fields, html, and css, or just use the standard.
 
 = Links =
 
-* <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Forum</a>
+* <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Help Forum</a>
+* <a href="http://smashly.net/photosmash-galleries/tutorials/" title="Help Videos">Help Videos</a>
 * <a href="http://smashly.net/photosmash-galleries/photosmash-demo/" title="Demo Gallery">Demo Gallery</a>
+
 
 = Features =
 
 For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
+*   iPhone App - coming soon!  Will let you and your site's users browse your images and upload images to galleries using your custom fields, tags, etc
 *   User contributable photo galleries - allow your users to upload images to galleries
 *   Map your images using Google Maps API V.3 - simple to use (see Changelog for details)
 *	Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
@@ -85,6 +88,13 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 0.9.02 – 1/11/2011 =
+
+    * iPhone/Mobile API completed
+    * Added ability to turn off ‘Toggle Ratings’ link
+    * Added [gallery_description] to Gallery Settings and Custom Layouts
+    * Added ability to turn off Pagination in Widgets
 
 = 0.9.00 - 11/8/2010 =
 

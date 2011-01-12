@@ -52,12 +52,15 @@ class BWBPS_Layout{
 			, 'medium_url'
 			, 'gallery_id'
 			, 'gallery_name'
+			, 'gallery_description'
 			, 'user_name'
 			, 'user_url'
 			, 'user_link'
+			, 'user_login'
 			, 'author_link'
 			, 'author'
 			, 'contributor'
+			, 'contributor_link'
 			, 'date_added'
 			, 'meta_data'
 			, 'exif_table'
@@ -390,11 +393,14 @@ class BWBPS_Layout{
 			}
 		
 			//Add SetID and Layout ID for use Insert Sets - PhotoSmash Extend
-			$images[0]['pext_insert_setid'] = (int)$g['pext_insert_setid'];
-			$images[0]['pext_layout_id'] = ($layout ? $layout->layout_id : false);
-			$images[0]['pext_start_image'] = 1;
-			$images[0]['pext_imgs_perpage'] = $g['img_perpage'];
-			$images[0]['pext_page_number'] = 1;
+			
+			if(!$g['no_inserts']){
+				$images[0]['pext_insert_setid'] = (int)$g['pext_insert_setid'];
+				$images[0]['pext_layout_id'] = ($layout ? $layout->layout_id : false);
+				$images[0]['pext_start_image'] = 1;
+				$images[0]['pext_imgs_perpage'] = $g['img_perpage'];
+				$images[0]['pext_page_number'] = 1;
+			}
 			
 			$images = apply_filters('bwbps_gallery_loop', $images);
 						
@@ -656,9 +662,11 @@ class BWBPS_Layout{
 		//Gallery Wrapper
 		
 		if($rate){
-				$ratetoggle = "<span class='bwbps-rating-toggle'><a href='javascript: void(0);'"
+				$ratings_toggle = "<a href='javascript: void(0);'"
 					. " onclick='bwbpsToggleRatings(". $g['gallery_id'] 
-					. "); return false;' title='Toggle image ratings'>Toggle ratings</a></span><div class='bwbps-toggle-ratings-clear' style=' margin: 0; padding: 0;'></div>";			
+					. "); return false;' title='Toggle image ratings'>Toggle ratings</a>";
+					
+				$ratetoggle = "<span class='bwbps-rating-toggle'>$ratings_toggle</span><div class='bwbps-toggle-ratings-clear' style=' margin: 0; padding: 0;'></div>";			
 		}
 		
 		if(!$layout){
@@ -679,6 +687,12 @@ class BWBPS_Layout{
 				$ret = $layout->wrapper;
 				$ret = str_replace('[gallery_id]',$g['gallery_id'], $ret);
 				$ret = str_replace('[gallery_name]',$g['gallery_name'], $ret);
+				$ret = str_replace('[gallery_description]', $g['gallery_description'], $ret);
+				$ret = str_replace('[ratings_toggle]', $ratings_toggle, $ret);
+				
+				if($g['hide_toggle_ratings']){
+					$ratetoggle = '';
+				}
 				
 				$psTable = $ratetoggle . $psTable;
 				
@@ -1079,6 +1093,12 @@ class BWBPS_Layout{
 							// Allows you to specify a field to test if it has a value...if not, then it returns ""
 							if( $atts['if_field'] ){
 								if(!$image[$atts['if_field']]){
+									$tempval = "";
+								}
+							}
+							
+							if( $atts['if_not_field'] ){
+								if($image[$atts['if_not_field']]){
 									$tempval = "";
 								}
 							}
@@ -1582,6 +1602,10 @@ class BWBPS_Layout{
 				$ret = $g['gallery_name'];
 				break;
 				
+			case '[gallery_description]' :
+				$ret = $g['gallery_description'];
+				break;
+				
 			case '[image_gallery_name]' :
 				$ret = esc_attr($image['image_gallery_name']);
 				
@@ -1802,6 +1826,14 @@ class BWBPS_Layout{
 					}
 				}
 				
+				break;
+			
+			case '[contributor_link]' :
+			
+				break;
+				
+			case '[user_login]' :
+				$ret = $image['user_login'];
 				break;
 						
 			case '[user_link]' :
@@ -2768,8 +2800,13 @@ class BWBPS_Layout{
 			
 			$ptemp = 1;
 			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);
-			$nav[] = "<a href='$urltemp'>first</a>";
-			$frontellip = "&#8230;";
+			
+			if(!$g['page_nofirstlast']){
+				$nav[] = "<a href='$urltemp'>first</a>";
+			}
+			
+			$frontellip = $g['page_noellipses'] ? "" : "&#8230;";
+			
 			
 			
 			if($page > ($total_pages - 3)){
@@ -2784,13 +2821,13 @@ class BWBPS_Layout{
 		
 			if( $page > 3 ){
 				if( $page + 2 < $total_pages){
-					$backellip = "&#8230;";
+					$backellip = $g['page_noellipses'] ? "" : "&#8230;";
 					$page_numstop = $page + 2;
 				}					
 					
 			} else {
 				$page_numstop = 5;
-				$backellip = "&#8230;";
+				$backellip = $g['page_noellipses'] ? "" : "&#8230;";
 
 			}
 		}
@@ -2799,7 +2836,8 @@ class BWBPS_Layout{
 			
 			$ptemp = $page-1;
 			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
-			$nav[] = "<a href='$urltemp'>&#9668;</a>";
+			$prevarrow = $g['page_arrow_left'] ? $g['page_arrow_left'] : "&#9668;";
+			$nav[] = "<a href='$urltemp'>$prevarrow</a>";
 			
 		}
 		
@@ -2827,13 +2865,17 @@ class BWBPS_Layout{
 		if($page < $total_pages){
 			$ptemp = $page+1;
 			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
-			$nav[] = "<a href='$urltemp'>&#9658;</a>";
+			$nextarrow = $g['page_arrow_right'] ? $g['page_arrow_right'] : "&#9658;";
+			$nav[] = "<a href='$urltemp'>$nextarrow</a>";
 		}
 		
 		if($total_pages > 5 && $page < ($total_pages - 2)){
 			$ptemp = $total_pages;
 			$urltemp = $this->getPagingURLArgs($g['gallery_id'], $ptemp, $viewerargs, $othergals);	
-			$nav[] = "<a href='$urltemp'>last</a>";
+			
+			if(!$g['page_nofirstlast']){
+				$nav[] = "<a href='$urltemp'>last</a>";
+			}
 		}
 		
 		$snav = "";
@@ -2934,25 +2976,25 @@ class BWBPS_Layout{
 		$user_id = (int)$current_user->ID;
 				
 		//Set up SQL for Custom Fields
-		$custDataJoin = " LEFT OUTER JOIN ".PSCUSTOMDATATABLE
-				." ON ".PSIMAGESTABLE.".image_id = "
-				.PSCUSTOMDATATABLE.".image_id ";
-			$custdata = ", ".PSCUSTOMDATATABLE.".* ";
-			
+		$custdata = ", ".PSCUSTOMDATATABLE.".* ";
 		
-		$custDataJoin = " LEFT OUTER JOIN ". PSGALLERIESTABLE 
-			. " ON ". PSIMAGESTABLE . ".gallery_id = "
-			. PSGALLERIESTABLE . ".gallery_id " . $custDataJoin;
+		$custDataJoin = " LEFT OUTER JOIN " . PSCUSTOMDATATABLE . " ON "
+			. PSIMAGESTABLE . ".image_id = " . PSCUSTOMDATATABLE . ".image_id ";		
+		
+		$custDataJoin = " LEFT OUTER JOIN ". PSGALLERIESTABLE . " ON "
+			. PSIMAGESTABLE . ".gallery_id = " . PSGALLERIESTABLE . ".gallery_id " 
+			. $custDataJoin;
 			
 		$gallery_selections = ", ". PSGALLERIESTABLE . ".post_id AS gal_post_id, "
 			. PSGALLERIESTABLE . ".poll_id, "
-			. PSGALLERIESTABLE 
-			. ".gallery_name AS image_gallery_name, "
+			. PSGALLERIESTABLE . ".gallery_name AS image_gallery_name, "
 			. PSGALLERIESTABLE . ".caption AS gallery_caption, " 
 			. PSGALLERIESTABLE . ".post_id AS gallery_post_id, " 
 			. PSGALLERIESTABLE . ".img_count AS gallery_image_count ";
 		
+		// Add User Favorites indicator to Query if User is logged in
 		if(current_user_can('level_0') && $user_id){
+		
 			$gallery_selections .= ", " . PSFAVORITESTABLE . ".favorite_id ";
 			
 			$favoriteDataJoin .= " LEFT OUTER JOIN ".PSFAVORITESTABLE
@@ -2961,7 +3003,6 @@ class BWBPS_Layout{
 				." AND " . PSFAVORITESTABLE . ".user_id = " . (int)$user_id . " ";
 			
 		}
-		
 		
 		// Calculate ORDER BY
 		if( strtolower($g['sort_order']) == 'desc' || (int)$g['sort_order'] ){
@@ -2983,9 +3024,9 @@ class BWBPS_Layout{
 		if( (int)$g['sort_field'] == 4 || (string)$g['sort_field'] == 'rank' ){
 		
 			if(!$g['gallery_type'] == 99){
+				// This is not a highest ranked gallery, so limit on Galelry ID
 				$galid_sql = ' AND gallery_id = ' . (int)$g['gallery_id'];
 			}
-		
 		
 			if((int)$g['poll_id'] > -2 || (int)$g['poll_id'] == NULL ){
 				$br_row = $wpdb->get_row('SELECT AVG(avg_rating) as avgrating, 
@@ -3050,7 +3091,6 @@ class BWBPS_Layout{
 				if(!(int)$g['limit_images']){
 					$limitimages = " LIMIT " . $limitpage . "8";
 				}
-			
 				break;
 			
 			case 30:	// Recent
@@ -3058,8 +3098,8 @@ class BWBPS_Layout{
 				if(!(int)$g['limit_images']){
 					$limitimages = " LIMIT " . $limitpage . "8";
 				}
-			
 				break;
+				
 			case 40 :	//tag gallery
 				$g['smart_gallery'] = true;
 				
@@ -3239,8 +3279,12 @@ class BWBPS_Layout{
 			} 
 		}
 		
-		if( $g['img_perpage'] ){
-			$limitimages = ' LIMIT ' . (int)$g['starting_image'] . ", " . $g['img_perpage'];
+		if( (int)$g['limit_images_override'] ){
+				$limitimages = ' LIMIT ' . (int)$g['limit_images_override'];
+		} else {
+			if( $g['img_perpage'] ){
+				$limitimages = ' LIMIT ' . (int)$g['starting_image'] . ", " . $g['img_perpage'];
+			}		
 		}
 		
 		$sqlWhere .= " " . $sqlSpecialWhere;
@@ -3248,15 +3292,18 @@ class BWBPS_Layout{
 		//Admins can see all images
 		if(current_user_can('level_10')){
 			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
-				.PSIMAGESTABLE.'.image_id as psimageID, '
-				.$wpdb->users.'.user_nicename,'
-				.$wpdb->users.'.display_name,'
-				.$wpdb->users.'.user_login,'
-				.$wpdb->users.'.user_url' . $gallery_selections
-				.$custdata.' FROM '
-				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
+				. PSIMAGESTABLE.'.image_id as psimageID, '
+				. $wpdb->users.'.user_nicename,'
+				. $wpdb->users.'.display_name,'
+				. $wpdb->users.'.user_login,'
+				. $wpdb->users.'.user_url' 
+				. $gallery_selections
+				. $custdata
+				. ' FROM ' . PSIMAGESTABLE
+				. ' LEFT OUTER JOIN ' . $wpdb->users . ' ON '
 				. $wpdb->users .'.ID = '. PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
-				. $sqlWhere . ' ORDER BY '.$sortby . $limitimages;	
+				. $sqlWhere 
+				. ' ORDER BY '.$sortby . $limitimages;	
 				
 			$sql_count = 'SELECT DISTINCT '.PSIMAGESTABLE.'.image_id FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
@@ -3268,17 +3315,17 @@ class BWBPS_Layout{
 			//Non-Admins can see their own images and Approved images
 			$uid = (int)$user_id ? (int)$user_id : -1;
 				
-			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
-				.PSIMAGESTABLE.'.image_id as psimageID, '
-				.$wpdb->users.'.user_nicename,'
-				.$wpdb->users.'.display_name,'
-				.$wpdb->users.'.user_login,'
-				.$wpdb->users.'.user_url' . $gallery_selections
-				.$custdata.' FROM '
-				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
+			$sql = 'SELECT DISTINCT ' . PSIMAGESTABLE . '.*, '
+				. PSIMAGESTABLE.'.image_id as psimageID, '
+				. $wpdb->users.'.user_nicename,'
+				. $wpdb->users.'.display_name,'
+				. $wpdb->users.'.user_login,'
+				. $wpdb->users.'.user_url' . $gallery_selections
+				. $custdata.' FROM '
+				. PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
 				. $wpdb->users .'.ID = ' . PSIMAGESTABLE. '.user_id'.$custDataJoin . $favoriteDataJoin
 				. $sqlWhere . ' AND ( ' . PSIMAGESTABLE. '.status > 0 OR ' . PSIMAGESTABLE. '.user_id = '
-				.$uid.')  ORDER BY '.$sortby . $limitimages;			
+				. $uid.')  ORDER BY ' . $sortby . $limitimages;			
 				
 			$sql_count = 'SELECT DISTINCT '.PSIMAGESTABLE.'.image_id FROM '
 				.PSIMAGESTABLE.' LEFT OUTER JOIN '.$wpdb->users.' ON '
@@ -3298,12 +3345,14 @@ class BWBPS_Layout{
 		
 			if($count){				
 				$this->total_records = $wpdb->num_rows;
-				
 				$images = $wpdb->get_results($sql, ARRAY_A);
 			}
+			
 		} else {
+		
 			$images = $wpdb->get_results($sql, ARRAY_A);
 			$this->total_records = $wpdb->num_rows;
+			
 		}
 								
 		return $images;

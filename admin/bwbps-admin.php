@@ -14,6 +14,9 @@ class BWBPS_Admin{
 	//Constructor
 	function BWBPS_Admin(){
 		//Get PS Defaults
+		
+		if(!current_user_can('level_10')){ return; }
+		
 		$this->psOptions = $this->getPSOptions();
 		
 		$this->gallery_id = (int)$_POST['gal_gallery_id'];
@@ -29,6 +32,16 @@ class BWBPS_Admin{
 		 	$slug = $this->psOptions['tag_slug'] ? $this->psOptions['tag_slug'] : "photo-tag";
 	 	
 		 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );
+		 	
+		 	$label = $this->psOptions['contributor_label'] ? esc_attr($this->psOptions['contributor_label']) : "Photo Contributors";
+		 	
+		 	$slug = $this->psOptions['contributor_slug'] ? $this->psOptions['contributor_slug'] : "contributor";
+		 	
+		 	$labels = array(
+			    'name' => $label
+			  ); 	
+	 	
+		 	register_taxonomy( 'photosmash_contributorios', 'post', array( 'hierarchical' => false, 'labels' => $labels, 'query_var' => 'bwbps_contributor', 'rewrite' => array( 'slug' => $slug ) ) );
 			
 		 	global $wp_rewrite;
 			$wp_rewrite->flush_rules();
@@ -59,8 +72,50 @@ class BWBPS_Admin{
 		if(isset($_POST['deletePSGMultipleGalleries'])){
 			check_admin_referer( 'delete-gallery');			
 			$this->deleteMultiGalleries($this->options);
-		}	
+		}
+		
+		if(isset($_POST['ps_update_contribtags']) && $_POST['ps_update_contribtags'] == 'true'){
+			check_admin_referer( 'update-gallery');
+			$this->updateContributorTags();
+		}
 	}
+	
+	function updateContributorTags(){
+		global $wpdb;
+		
+		$sql = "SELECT image_id, user_id FROM " . PSIMAGESTABLE;
+		
+		$images = $wpdb->get_results($sql, ARRAY_A);
+		
+		foreach( $images as $img){
+			
+			$this->saveImageContributorTag( $img['image_id'], $img['user_id'] );
+		
+		}
+	
+	}
+	
+		/*
+	 *	Save contributor tags
+	*/
+	function saveImageContributorTag($image_id, $user_id){
+	
+		global $wpdb;
+		
+		if(!(int)$image_id || !(int)$user_id){ return; }
+		
+		$user_info = get_userdata((int)$user_id);
+		
+		if(!$user_info){ return; }
+		
+		$t = array($user_info->user_login);
+		
+		wp_set_object_terms($image_id, $t, 'photosmash_contributors', false);
+		
+		return;
+		
+	}
+
 	
 	
 	function cleanSlashes($val){
@@ -330,6 +385,8 @@ class BWBPS_Admin{
 			
 			$ps['tag_label'] = esc_attr( $_POST['ps_tag_label'] );
 			$ps['tag_slug'] = sanitize_title( $_POST['ps_tag_slug'] );
+			$ps['contributor_label'] = esc_attr( $_POST['ps_contributor_label'] );
+			$ps['contributor_slug'] = sanitize_title( $_POST['ps_contributor_slug'] );
 			
 			$ps['nofollow_caption'] = isset($_POST['ps_nofollow_caption']) ? 1 : 0;
 			
@@ -437,16 +494,45 @@ class BWBPS_Admin{
 
 			
 			/* Moderation */
+			$ps['mod_msg_subject'] = esc_attr(stripslashes(trim($_POST['ps_mod_msg_subject'])));
+			if(!$ps['mod_msg_subject']){ $ps['mod_msg_subject'] = "Your Uploaded Image has been [status]";}
 			$ps['mod_approve_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_approve_msg'])));
 			$ps['mod_reject_msg'] = esc_attr(stripslashes(trim($_POST['ps_mod_reject_msg'])));
 			$ps['mod_send_msg'] = isset($_POST['ps_mod_send_msg']) ? 1 : 0;
 			
+			$ps['api_enabled'] = isset($_POST['ps_api_enabled']) ? 1 : 0;
 			$ps['api_upload_gallery'] = (int)$_POST['ps_api_upload_gallery'];
 			$ps['api_post_layout'] = (int)$_POST['ps_api_post_layout'];
 			$ps['api_url'] = $bwbPS->h->validURL( $_POST['ps_api_url'] );
+			$ps['api_logging'] = isset($_POST['ps_api_logging']) ? 1 : 0;
 			
 			if( !$ps['api_url'] ){
 				$ps['api_url'] = admin_url('admin-ajax.php');
+			}
+			
+			$ps['api_categories'] = esc_attr(stripslashes(trim($_POST['ps_api_categories'])));
+			$ps['api_tags'] = esc_attr(stripslashes(trim($_POST['ps_api_tags'])));
+			$ps['api_galleries'] = esc_attr(stripslashes(trim($_POST['ps_api_galleries'])));
+			$ps['api_view_galleries'] = esc_attr(stripslashes(trim($_POST['ps_api_view_galleries'])));
+			
+			$ps['api_big_url'] = (int)$_POST['ps_api_big_url'];
+			
+			$ps['api_max_width'] = (int)$_POST['ps_api_max_width'] ? (int)$_POST['ps_api_max_width'] : 1024;
+			
+			if(isset($_POST['ps_api_custom_fields']) && is_array($_POST['ps_api_custom_fields'])){
+			
+				foreach($_POST['ps_api_custom_fields'] as $cfld){
+					$cfarr[] = (int)$cfld;
+				}
+				
+				if(is_array($cfarr)){
+					$ps['api_custom_fields'] = implode(",", $cfarr);
+				} else {
+					$ps['api_custom_fields'] = "";
+				}
+			
+			}else {
+					$ps['api_custom_fields'] = "";
 			}
 			
 
@@ -490,6 +576,8 @@ class BWBPS_Admin{
 			$gallery_id = (int)$this->gallery_id;
 			$d['status'] = isset($_POST['gal_status']) ? 1 : 0;
 			$d['gallery_name'] = $_POST['gal_gallery_name'];
+			
+			$d['gallery_description'] = stripslashes($_POST['gal_gallery_description']);
 			
 			$d['post_id'] = (int)$_POST['gal_post_id'];
 			
@@ -546,7 +634,7 @@ class BWBPS_Admin{
 			
 			$d['poll_id'] = (int)$_POST['gal_poll_id'];
 			$d['rating_position'] = (int)$_POST['gal_rating_position'];
-			
+			$d['hide_toggle_ratings'] = isset($_POST['gal_hide_toggle_ratings']) ? 1 : 0;
 			
 			if($d['thumb_width']==0) $d['thumb_width'] = $psOptions['thumb_width'];
 			if($d['thumb_height']==0) $d['thumb_height'] = $psOptions['thumb_height'];
@@ -697,9 +785,17 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				</td>
 	</tr>
 	<tr>
-				<th>Gallery name:</th>
+				<th>Gallery Name:</th>
 				<td>
 					<input type='text' id='gal_gallery_name' name="gal_gallery_name" value='<?php echo $galOptions['gallery_name'];?>' style="width: 300px;"/>
+				</td>
+	</tr>
+	
+	<tr>
+				<th>Gallery Description:</th>
+				<td>
+					<textarea id='gal_gallery_description' name="gal_gallery_description" cols="43" rows="2"><?php echo htmlentities( $galOptions['gallery_description']);?></textarea>
+					<br/>Use standard HTML.  Show in Custom Layouts via Wrapper field by using the [gallery_description] tag
 				</td>
 	</tr>
 	
@@ -908,6 +1004,14 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					</select>
 				</td>
 			</tr>
+			<tr>
+				<th>Hide 'Toggle Ratings' link:</th>
+				<td>
+					<input type="checkbox" name="gal_hide_toggle_ratings" <?php if($galOptions['hide_toggle_ratings'] == 1) echo 'checked'; ?> /> hide the 'Toggle Ratings' link
+				</td>
+			</tr>
+			
+			
 	</table>
 </div>
 <div id='bwbps_uploading'>
@@ -1389,7 +1493,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		
 		?>
 		<div class=wrap>
-		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>" id='bwbps_form_gensettings'>
 		<input type="hidden" id='bwbps_gen_settingsform' name='bwbps_gen_settingsform' value='1' />
 		<?php bwbps_nonce_field('update-gallery'); ?>
 		
@@ -1669,6 +1773,23 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					<input type='text' name="ps_tag_slug" value='<?php echo esc_attr($psOptions['tag_slug']);?>'/>
 					will default to 'photo-tag'
 				</td>
+			</tr>
+			
+			<tr>
+				<th>Contributor taxonomy Page Title:</th>
+				<td>
+					<input type='text' name="ps_contributor_label" value='<?php echo esc_attr($psOptions['contributor_label']);?>'/>	will default to 'Contributors'.  This is similar to the Contributors page used by the Author's page feature except it uses a Custom Taxonomy for authors.
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Contributor URL Slug:</th>
+				<td>
+					<input type='text' name="ps_contributor_slug" value='<?php echo esc_attr($psOptions['contributor_slug']);?>'/>
+					will default to 'contributor'<br/>
+					<a href='javascript:void(0);' onclick="jQuery('#ps_update_contribs').val('true'); jQuery('#bwbps_form_gensettings').submit(); return false;" title='Update all images in the Contributor taxonomy'>Update All Images</a> - updates the contributor taxonomy for all images (could take a while depending on # of images in database)
+					<input type='hidden' id='ps_update_contribs' name='ps_update_contribtags' value='' />
+				</td>
 			</tr>		
 
 		</table>
@@ -1793,6 +1914,19 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Email contributor on moderation:</th>
 				<td>
 					<input type="checkbox" name='ps_mod_send_msg' <?php if($psOptions['mod_send_msg'] == 1) echo 'checked'; ?>>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Moderation Email Subject:</th>
+				<td>
+				
+				<?php if( !$psOptions['mod_msg_subject'] ){
+					$psOptions['mod_msg_subject'] = "Your Uploaded Image has been [status]";
+				}
+				?>
+				
+					<input type='text' size=80 maxlength="200" name="ps_mod_msg_subject" id="ps_mod_msg_subject" value="<?php esc_html_e($psOptions['mod_msg_subject']);?>" />
 				</td>
 			</tr>
 			
@@ -2125,8 +2259,17 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	</div>
 	
 	<div id="bwbps_api">
-		<h2>Note: this API is under development and will be used with the upcoming iPhone App for PhotoSmash.</h2>
+		<h2>Mobile API Settings</h2>
+		<span style='color: red; font-weight: bold;'>New!</span> Version 1.0 of the PhotoSmash iPhone App is ready for submission to the Apple iTunes App Store!  We'll keep you posted.  In the meantime, read more here: <a href='http://smashly.net/photosmash-galleries/iphone/'>iPhone App info</a>
+		<p><b>PhotoSmash Extend users</b> have a <a href='http://smashly.net/photosmash-galleries/extend/'><span style='text-decoration: underline;'><b>special invitation</b></span></a> here: <a href='http://smashly.net/photosmash-galleries/extend/'>Special Invitation (bottom of page)</a></p>
 		<table class="form-table">
+			
+			<tr>
+				<th>Enable Mobile API:</th>
+				<td>
+					<input type="checkbox" name="ps_api_enabled" <?php if($psOptions['api_enabled']) echo 'checked'; ?> /> turns on ability for mobile Apps to interact with PhotoSmash
+				</td>
+			</tr>
 		
 			<tr>
 				<th>API URL:</th>
@@ -2142,7 +2285,30 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			</tr>
 			
 			<tr>
-				<th>Upload Gallery:</th>
+				<th>Maximum Image Width:</th>
+				<td><em>Max pixels in longest side:</em><br/>
+					<input type="text" id='ps_api_tags' name="ps_api_max_width" value='<?php 
+						echo ((int)$psOptions['api_max_width'] ? (int)$psOptions['api_max_width'] : 1024);
+					?>'> <br/>(the phone will resize the image using this as maximum pixels in longest side - so if you enter 800, then in landscape, the width will be a maximum of 800 pixels...in portrait, the height will be max of 800)
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Use for Large Image Size:</th>
+				<td><em>Size of image to send for view large images Mobile Devices:</em><br/>
+					
+					<select name="ps_api_big_url">
+						<option value="0" <?php if((int)$psOptions['api_big_url'] == 0) echo 'selected=selected'; ?>>Medium image</option>
+						<option value="1" <?php if($psOptions['api_big_url'] == 1) echo 'selected=selected'; ?>>Large/Full image</option>
+						<option value="2" <?php if($psOptions['api_big_url'] == 2) echo 'selected=selected'; ?>>Mini image</option>
+						<option value="3" <?php if($psOptions['api_big_url'] == 3) echo 'selected=selected'; ?>>Thumb image</option>
+					</select>
+				<br/>This is the image size that will be used when the user taps an image in the Photo Viewer to view it's full size.  You want to aim for something 800x600 or less since sending big images takes a while to download on mobile devices.  These are the sizes that you set in Gallery Settings.
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Default Upload Gallery:</th>
 				<td>
 					<?php 
 						$api_upgal = (int)$psOptions['api_upload_gallery'];
@@ -2154,11 +2320,81 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			</tr>
 			
 			<tr>
-				<th>New Post Layout:</th>
+				<th>Upload Gallery List:</th>
+				<td>
+					<em>List of Galleries that user can select from to upload to (gallery names, comma separated):</em><br/>
+					<input type="text" id='ps_api_galleries' name="ps_api_galleries" value='<?php echo esc_attr($psOptions['api_galleries']);?>'> 
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Viewable Gallery List:</th>
+				<td>
+					<em>List of Gallery IDs for images that will be viewable in the Mobile app (Gallery IDs, comma separated):</em><br/>
+					<input type="text" id='ps_api_view_galleries' name="ps_api_view_galleries" value='<?php echo esc_attr($psOptions['api_view_galleries']);?>'> <br/>
+					<em>You can find Gallery IDs in the Drop Down (it's the number right after 'ID:').</em>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Tag List:</th>
+				<td><em>List of Tags that user can select from (comma separated):</em><br/>
+					<input type="text" id='ps_api_tags' name="ps_api_tags" value='<?php echo esc_attr($psOptions['api_tags']);?>'>
+				</td>
+			</tr>
+			
+			<?php
+			
+			$custom_fields_cbx = $this->getCustomFieldsCheckBoxes($psOptions['api_custom_fields']);
+			
+			if($custom_fields_cbx){
+			
+				?>
+			<tr>
+				<th>Custom Fields:</th>
+				<td>
+					<em>Select custom fields for uploads:</em><br/>
+					<?php 
+					echo $custom_fields_cbx;
+					?>
+				</td>
+			</tr>	
+				<?php
+			
+			}
+			?>
+			
+			<tr>
+				<th>Category List:</th>
+				<td>
+					<input type="text" id='ps_api_categories' name="ps_api_categories" value='<?php echo esc_attr($psOptions['api_categories']);?>'> list of Categories that user can select from, comma separated (Requires PhotoSmash Extend...is only used for categories that the New Post will receive).
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Layout for New Posts:</th>
 				<td>
 					<?php 
 						echo $this->getLayoutsDDL((int)$psOptions['api_post_layout'], false, 0, 'ps_api_post_layout');
 					?> (Requires PhotoSmash Extend)
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Enable Mobile Logging:</th>
+				<td>
+					<input type="checkbox" name="ps_api_logging" <?php if($psOptions['api_logging']) echo 'checked'; ?> /> - <b>logging does NOT record phone number, user name, or device ID.</b>  Purpose: aids in detecting use and abuse patterns. How are unique users identified?  The user's phone records the time they first started using PhotoSmash iPhone app.  This time is passed as an identifier - as such, this timestamp doesn't tell you very much, but does allow you to distinguish between different timestamps.  Logging does not help you determine WHO is using or abusing your system, merely whether it is a mobile user or not.
+				</td>
+			</tr>
+			<tr>
+				<th><p class="submit">
+					<input type="submit" name="update_bwbPSDefaults" class="button-primary" value="<?php _e('Update Defaults', 'bwbPS') ?>" />
+					</p>
+				</th>
+				<td>
+					Days to view: <input type="text" name="bwbps_logged_days" value='<?php
+		echo ((int)$_REQUEST['bwbps_logged_days'] ? (int)$_REQUEST['bwbps_logged_days'] : 1);
+		?>' size='5'/> <input type="submit" name="view_log" class="button-primary" value="<?php _e('View Log', 'bwbPS'); ?>" />  (log will appear beneath the form)
 				</td>
 			</tr>
 			
@@ -2178,11 +2414,51 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		});
 
 </script>
+
+<?php
+	if(isset($_REQUEST['view_log'])){
+		$daysback = (int)$_REQUEST['bwbps_logged_days'] ? (int)$_REQUEST['bwbps_logged_days'] : 1;
+		echo  $this->getParamTable($daysback);
+	}
+?>
 </div>
 <?php 
 	
 	}
 	
+	function getParamTable($timeframe){
+		global $wpdb;
+		
+		$sql = "SELECT * FROM " . PSPARAMSTABLE 
+			. " WHERE param_group LIKE 'mob-%' AND updated_date + interval " 
+			. (int)$timeframe . " DAY > now() ORDER BY param_group, updated_date DESC";
+			
+		$res = $wpdb->get_results($sql, ARRAY_A);
+		
+		if(is_array($res)){
+			$i = 1;
+			foreach($res as $row){
+				
+				$retrow = "<td>" . $i++ . "</td>";
+				
+				foreach($row as $r){
+					$retrow .= "<td>" . $r . "</td>";
+				}
+	
+				$ret .= "<tr>" . $retrow . "</tr>";
+				$retrow = '';
+			
+			}
+		}
+		
+		if($ret){
+		
+			$ret = "<thead><tr><th>#</th><th>ID</th><th>Action</th><th><a href='javascript:void(0)' onclick='alert(\"The iPhone App creates a timestamp that when the App is first run.  This lets you discern unique users, but not their identity.\");'>Unique ID</a></th><th>Time of Action</th><th>[blank val]</th><th>[blank text]</th><th>IP Address</th></tr></thead>" . $ret;
+		
+			return "<table class='widefat'> " . $ret . "</table>";
+		}
+	
+	}
 	
 	// Get Form for Update Lat and Lng by clicking Google Map
 	function getMapForm(){
@@ -2364,6 +2640,15 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		<div id='moderationmessages' style='position: relative; display: none; padding: 10px; border: 1px solid #999; background-color: #fff; margin-top: 10px;'>
 		<span style='position: absolute; top: 2px; right: 20px;font-size: 10px;'><a  href='javascript: void(0);' onclick='jQuery("#moderationmessages").toggle("slow"); return false;'>hide</a></span>
 		<b>Send message?</b> <input id="ps_mod_send_msg" type="checkbox" name='ps_mod_send_msg' <?php if($psOptions['mod_send_msg'] == 1) echo 'checked'; ?>>
+		<br/>
+		<b>Message subject:</b><br/>
+		<?php 
+		if(!$psOptions['mod_msg_subject']){ $psOptions['mod_msg_subject'] = "Your Uploaded Image has been [status]";}
+		?>
+		
+		<input type='text' size=80 maxlength="200" name="ps_mod_msg_subject" id="ps_mod_msg_subject" value="<?php 
+			echo esc_attr($psOptions['mod_msg_subject']); 
+			?>" />
 		<br/>
 		<b>Approve message:</b><br/>
 		<textarea id="ps_mod_approve_msg" name="ps_mod_approve_msg" cols="60" rows="4"><?php esc_html_e($psOptions['mod_approve_msg']);?></textarea>
@@ -2702,6 +2987,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			
 			} else { $terms = ''; }
 			
+			$contribtermslist = "";
+			$contribtermslist = get_the_term_list($image->image_id, 'photosmash_contributors', '', ', ');
+			
 			$psTable .= "
 			<div class='bwbps-fields-container' style='$showfields'>								
 			<table class='widefat fixed bwbps_admintable' cellspacing=0>
@@ -2878,7 +3166,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<tr><td>Uploaded by: </td>
 					<td>"
 				. $this->calcUserName($image->user_login, $image->user_nicename
-				, $image->display_name)."
+				, $image->display_name)." - " . $contribtermslist ."
 				</td></tr>
 				<tr><td>Date: </td>
 					<td>".$image->created_date
@@ -3276,6 +3564,34 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		if($nicename) return $nicename;
 		return $loginname;
 	}
+	
+	function getCustomFieldsCheckBoxes($selected=""){
+		global $bwbPS;
+		
+		if(!$bwbPS->stdFieldList || !$bwbPS->cfList){
+			$bwbPS->loadCustomFormOptions();	
+		}
+		
+		$selected = str_replace(" ","", $selected);
+		
+		$sel = explode(",", $selected);
+		
+		if(is_array($bwbPS->cfList)){
+			foreach( $bwbPS->cfList as $f ){
+				if(is_array($sel)){
+					$checked = in_array($f->field_id, $sel) ? " checked=checked " : "";
+				} else {
+					$checked = "";
+				}
+				$cfs .= '<input type="checkbox" name="ps_api_custom_fields[]" value="' . $f->field_id . '" ' 
+					.$checked.'/> ' . $f->label . '<br />';
+			}
+		}
+		
+		return $cfs;
+	}
+	
+	
 
 	
 }  //closes out the class

@@ -34,6 +34,12 @@ class BWBPS_Rating{
 		if((int)$user_ID == 0){
 		
 			$data['user_ip'] = $this->getUserIP();
+			
+			if( !$data['user_ip'] ){
+				echo "Voting requires login or IP.";
+				return;
+			}
+			
 			$data['user_id'] = 0;
 			
 			$voted = $wpdb->get_var($wpdb->prepare("SELECT image_id FROM ".PSRATINGSTABLE

@@ -234,7 +234,7 @@ class BWBPS_FieldEditor{
 	function saveField($options)
 	{
 		global $wpdb;
-		
+
 		//This section saves Field settings
 			check_admin_referer( 'update-photosmashfields');
 			$field_id = (int)$_POST['bwbps_field_id'];
@@ -263,6 +263,8 @@ class BWBPS_FieldEditor{
 			$d['html_filter'] = (int)$_POST['bwbps_html_filter'];
 						
 			$d['default_val'] = $_POST['bwbps_default_val'];
+			$d['auto_capitalize'] = (int)$_POST['bwbps_auto_capitalize'];
+			$d['keyboard_type'] = (int)$_POST['bwbps_keyboard_type'];
 			$d['seq'] = (int)(trim($_POST['bwbps_seq']));
 			$d['form_id'] = $options['form_id'];
 			$d['status'] = 0;
@@ -542,6 +544,35 @@ class BWBPS_FieldEditor{
 			<input type='text' name="bwbps_default_val" value='<?php echo $fieldOptions['default_val'];?>'/>
 	</td>
 </tr>
+<tr>
+<th>Auto Capitalize:</th>
+	<td>
+		<em>Auto Capitalization for the Mobile Phone Apps</em><br/>
+		<input type="radio" name="bwbps_auto_capitalize" value="0" <?php if($fieldOptions['auto_capitalize'] == 0) echo 'checked'; ?>>none<br/>
+		<input type="radio" name="bwbps_auto_capitalize" value="1" <?php if($fieldOptions['auto_capitalize'] == 1) echo 'checked'; ?>>Capitalize Words<br/>
+		<input type="radio" name="bwbps_auto_capitalize" value="2" <?php if($fieldOptions['auto_capitalize'] == 2) echo 'checked'; ?>>Capitalize sentences.<br/>
+		<input type="radio" name="bwbps_auto_capitalize" value="3" <?php if($fieldOptions['auto_capitalize'] == 3) echo 'checked'; ?>>CAPITALIZE ALL LETTERS
+	</td>
+</tr>
+<tr>
+<th>Keyboard Type:</th>
+	<td>
+		<em>Keyboard Type for the Mobile Phone Apps</em><br/>
+		<input type="radio" name="bwbps_keyboard_type" value="0" <?php if($fieldOptions['keyboard_type'] == 0) echo 'checked'; ?>> Default<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="1" <?php if($fieldOptions['keyboard_type'] == 1) echo 'checked'; ?>> ASCII Capable<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="2" <?php if($fieldOptions['keyboard_type'] == 2) echo 'checked'; ?>> Numbers and Punctuation<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="3" <?php if($fieldOptions['keyboard_type'] == 3) echo 'checked'; ?>> URL<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="4" <?php if($fieldOptions['keyboard_type'] == 4) echo 'checked'; ?>> Number Pad<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="5" <?php if($fieldOptions['keyboard_type'] == 5) echo 'checked'; ?>> Phone Pad<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="6" <?php if($fieldOptions['keyboard_type'] == 6) echo 'checked'; ?>> Name and Phone Pad<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="7" <?php if($fieldOptions['keyboard_type'] == 7) echo 'checked'; ?>> Email Address<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="8" <?php if($fieldOptions['keyboard_type'] == 8) echo 'checked'; ?>> Decimal Pad<br/>
+		<input type="radio" name="bwbps_keyboard_type" value="9" <?php if($fieldOptions['keyboard_type'] == 9) echo 'checked'; ?>> Alphabet<br/>
+		
+	</td>
+</tr>
+
+
 <tr>
 <th id='bwbps_valuelist'>List of values:</th>
 	<td>

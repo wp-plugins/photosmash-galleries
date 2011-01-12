@@ -48,6 +48,10 @@ class PhotoSmash_Widget extends WP_Widget {
 		$thumb_height = (int)$instance['thumb_height'];
 		$thumb_width = (int)$instance['thumb_width'];
 		
+		$no_pagination = (int)$instance['no_pagination'];
+		
+		$images_attr = $no_pagination ? 'images_override' : 'images';	// Use the override function if no_pagination is set.  This will override the image per page limit set in Gallery Settings
+		
 		//Tag Galleries
 		if($instance['gallery_type'] == "tags"){
 			$tags = strip_tags($instance['tags']);
@@ -69,7 +73,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			
 			if(!$layout){$layout = 'Std_Widget'; }
 			
-			$sc = "[photosmash $gid $gallery_type images=$images where_gallery=$where_gallery layout='$layout' any_height=$thumb_height any_width=$thumb_width $tags no_form=true]";
+			$sc = "[photosmash $gid $gallery_type $images_attr=$images where_gallery=$where_gallery layout='$layout' any_height=$thumb_height any_width=$thumb_width $tags no_form=true no_pagination=$no_pagination]";
 			
 			echo do_shortcode($sc);
 		
@@ -93,6 +97,7 @@ class PhotoSmash_Widget extends WP_Widget {
 		$instance['where_gallery'] = (int)( $new_instance['where_gallery'] );
 		$instance['thumb_height'] = (int)( $new_instance['thumb_height'] );
 		$instance['thumb_width'] = (int)( $new_instance['thumb_width'] );
+		$instance['no_pagination'] = (int)( $new_instance['no_pagination'] );
 		
 		return $instance;
 	}
@@ -109,7 +114,9 @@ class PhotoSmash_Widget extends WP_Widget {
 			'images' => 8,
 			'where_gallery' => 0,
 			'thumb_height' => 60,
-			'thumb_width' => 60
+			'thumb_width' => 60,
+			'no_pagination' => 0
+			
 		);
 		$instance = wp_parse_args( (array) $instance, $defaults ); ?>
 		
@@ -182,6 +189,15 @@ class PhotoSmash_Widget extends WP_Widget {
 			<label for="<?php echo $this->get_field_id( 'thumb_height' ); ?>">Width x Height:</label><br/>
 			<input style="width: 50px; padding:3px;" id="<?php echo $this->get_field_id( 'thumb_width' ); ?>" name="<?php echo $this->get_field_name( 'thumb_width' ); ?>" value="<?php echo (int)$instance['thumb_width']; ?>"   /> x 			
 			<input style="width: 50px; padding:3px;" id="<?php echo $this->get_field_id( 'thumb_height' ); ?>" name="<?php echo $this->get_field_name( 'thumb_height' ); ?>" value="<?php echo (int)$instance['thumb_height']; ?>"   /> (px)<br/>(optional)
+		</p>
+		
+		<p>
+			<label for="<?php echo $this->get_field_id( 'no_pagination' ); ?>">Disable Pagination:</label><br/>
+		
+			<select id="<?php echo $this->get_field_id( 'no_pagination' ); ?>" name="<?php echo $this->get_field_name( 'no_pagination' ); ?>"  >
+				<option <?php if ( 0 == (int)$instance['no_pagination'] ) echo 'selected="selected"'; ?> value='0'>No (retains Gallery Setting)</option>
+				<option <?php if ( 1 == (int)$instance['no_pagination'] ) echo 'selected="selected"'; ?> value='1'>Yes (overrides Gallery Setting)</option>				
+			</select>
 		</p>
 		
 		<?php

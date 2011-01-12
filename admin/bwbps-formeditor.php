@@ -322,6 +322,8 @@ class BWBPS_FormEditor{
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_cat3] - <span style='font-size: 9px;'>PS Extend users only - sames as post_cat</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[post_tags] - <span style='font-size: 9px;'>input box for tags (tags should be comma separated)</span></li>
 						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[tag_dropdown] - <span style='font-size: 9px;'>drop down lists for tags - [tag_dropdown tags='my,tags,go,here' selected='my']</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[geocode] - <span style='font-size: 9px;'>adds an address box and lat/lng boxes for geocoding</span></li>
+						<li style='border-bottom: 1px solid #f0f0f0;padding-bottom: 3px;'>[geocode_fields] - <span style='font-size: 9px;'>adds a geocode button and lat/lng boxes and uses your custom address, locality, region, country, and postal_code fields (note those fields must have those technical names to be used) for looking up the geocode</span></li>
 					</ul>
 				</td>
 			</tr>

@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.9.00
+Version: 0.9.02
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -62,7 +62,7 @@ define("PSFIELDSTABLE", $wpdb->prefix."bwbps_fields");
 define("PSLOOKUPTABLE", $wpdb->prefix."bwbps_lookup");
 define("PSHUBSTABLE", $wpdb->prefix."bwbps_sharinghubs");
 define("PSSHARINGLOGTABLE", $wpdb->prefix."bwbps_sharinglog");
-
+define("PSPARAMSTABLE", $wpdb->prefix."bwbps_params");
 
 define("PSPIXOOXAPIURL", "http://pixoox.com/api/");
 
@@ -324,7 +324,7 @@ class BWB_PhotoSmash{
 		*/
 		
 		// PhotoSmash API
-		if( is_admin() ){
+		if( is_admin() && (int)$this->psOptions['api_enabled'] ){
 			add_action( 'wp_ajax_photosmash_api', array($this,'loadAPI') );
 			add_action( 'wp_ajax_nopriv_photosmash_api', array($this, 'loadAPI') );
 		}
@@ -865,6 +865,10 @@ function shortCodeGallery($atts, $content=null){
 			'gallery_type' => false,
 			'no_form' => false,
 			'no_pagination' => false,
+			'page_arrow_right' => false,
+			'page_arrow_left' => false,
+			'page_noellipses' => false,
+			'page_nofirstlast' => false,
 			'gallery' => false,
 			'gal_id' => false,
 			'image_id' => false,			// NOTE: when referencing image_id from the DB results, use: psimageID   ...image_id is aliased!
@@ -879,11 +883,13 @@ function shortCodeGallery($atts, $content=null){
 			'tags' => false,
 			'tags_for_uploads' => false,
 			'images' => 0,
+			'images_override' => 0,	// This will override the image per page limit set in Gallery Settings
 			'page' => 0,
 			'thumb_height' => 0,
 			'thumb_width' => 0,
 			'any_height' => 0,
 			'any_width' => 0,
+			'no_inserts' => false,
 			'no_signin_msg' => false,
 			'where_gallery' => false, // This is used with Random/Recent Galleries to limit selection to a single gallery
 			'create_post' => false,	// Give a Custom Layout name to turn on creating new posts with PExt
@@ -914,7 +920,8 @@ function shortCodeGallery($atts, $content=null){
 			'geocode_label' => false,
 			'geocode_description' => false,
 			'latitude_label' => false,
-			'longitude_label' => false
+			'longitude_label' => false,
+			'required_fields' => false
 			
 		),$atts));
 		
@@ -1122,6 +1129,17 @@ function shortCodeGallery($atts, $content=null){
 		//Get Gallery	
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 		
+		$g['no_inserts'] = $no_inserts;	//Turns off inserts for this display
+		if( $g['required_fields'] ){
+			$g['required_fields'] = str_replace(" ", "", $g['required_fields']);
+			$g['required_fields'] = explode(",", $g['required_fields']);
+		}
+		
+		$g['page_arrow_right'] = $page_arrow_right;
+		$g['page_arrow_left'] = $page_arrow_left;
+		$g['page_noellipses'] = $page_noellipses;
+		$g['page_nofirstlast'] = $page_nofirstlast;
+		
 		
 		if( intval($max_user_uploads) ){
 			$g['max_user_uploads'] = intval($max_user_uploads);
@@ -1251,6 +1269,7 @@ function shortCodeGallery($atts, $content=null){
 		
 		$g['limit_images'] = (int)$images;
 		$g['limit_page'] = (int)$page;
+		$g['limit_images_override'] = (int)$images_override;
 		
 		if($thumb_height){
 			$g['thumb_height'] = (int)$thumb_height;
@@ -1684,11 +1703,6 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	
 		wp_enqueue_script('jquery');
 		wp_enqueue_script('jquery-form');
-		
-		/*
-		wp_register_script('bwbps_jsform', plugins_url('/photosmash-galleries/js/jquery.form.js' ), array('jquery'), '1.0');
-		wp_enqueue_script('bwbps_jsform');
-		*/
 		
 		wp_enqueue_script('thickbox');
 				
@@ -2172,34 +2186,61 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		}
 	}
 	
+	// Tag and Contributor Taxonomy Galleries
 	function displayTagGallery($theposts){
 			
+		if(!get_query_var( 'bwbps_wp_tag' ) && !get_query_var( 'bwbps_contributor' )){ return $theposts; } //leave if this isn't the tag page
 		
-		if(!get_query_var( 'bwbps_wp_tag' )){ return $theposts; } //leave if this isn't the tag page
-		
-		$tag = $this->getRequestedTags();
 		
 		add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
 		
 		$d = date( 'Y-m-d H:i:s' );
 		
-		if($this->psOptions['tags_mapid']){ $gmap_id = " gmap='". $this->psOptions['tags_mapid'] . "' "; }
+		// Process Tag Gallery
+		if(get_query_var( 'bwbps_wp_tag' ) ){ 
+			$tag = $this->getRequestedTags();
+			
+			if($this->psOptions['tags_mapid']){
+				$gmap_id = " gmap='". $this->psOptions['tags_mapid'] . "' ";
+			}
+			
+			$newpost->post_content = "[photosmash gallery_type=tags tags='". esc_attr($tag)
+				."'" . $gmap_id . " no_form=true]";
+				
+			$label = $this->psOptions['tag_label'] ? esc_attr($this->psOptions['tag_label']) : "Photo tags";
+			$newpost->post_name = $label . '/' . $tag;
+		 	$newpost->post_title = 'Images by ' . $tag;
+		
+		 } else {
+		 // Process Contributor Gallery
+		 	$tag = get_query_var( 'bwbps_contributor' );
+		 	
+		 	$user_info = get_userdatabylogin($tag);
+		 	
+		 	if(!$user_info){ return false; }
+		 	$user_id = (int)$user_info->ID;
+		 	
+		 	$newpost->post_content = "[photosmash gallery_type=contributor author=$user_id no_form=true]";
+		 	
+		 	$label = $this->psOptions['contributor_slug'] ? esc_attr($this->psOptions['contributor_slug']) : "contributor";
+		 	
+		 	$newpost->post_name = $label . '/' . $tag;
+		 	$newpost->post_title = 'Images by ' . $tag;
+		 }
 		
 		//Create an object for a new post to un_shift onto the posts array
 			$newpost->ID = -1;
 			$newpost->post_author = $author;
 			$newpost->post_date = $d;
 			$newpost->post_date_gmt = $d;
-			$newpost->post_content = "[photosmash gallery_type=tags tags='". esc_attr($tag)
-				."'" . $gmap_id . " no_form=true]";
-			$newpost->post_title = 'Images tagged ' . $tag; 
+			 
 			$newpost->post_category = 0;
 			$newpost->post_excerpt = '';
 			$newpost->post_status = 'publish';
 			$newpost->comment_status = 'closed';
 			$newpost->ping_status = 'closed';
 			$newpost->post_password = '';
-			$newpost->post_name = 'photo-tag/' . $tag;
+			
 			$newpost->to_ping = '';
 			$newpost->pinged = '';
 			$newpost->post_modified = $d;
@@ -2282,9 +2323,15 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		
 		$url = '';
 		
-		$tag_name = $wp_query->query_vars['bwbps_wp_tag'];
+		if( $wp_query->query_vars['bwbps_wp_tag'] ){
+			$tag_name = $wp_query->query_vars['bwbps_wp_tag'];
 				
-		$url = get_term_link($tag_name, 'photosmash');
+			$url = get_term_link($tag_name, 'photosmash');
+		} else {
+			$tag_name = $wp_query->query_vars['bwbps_contributor'];
+				
+			$url = get_term_link($tag_name, 'photosmash_contributors');
+		}
 				
 		if( !$url ){
 			$url = get_bloginfo('url');
@@ -2727,7 +2774,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	 	$label = $this->psOptions['tag_label'] ? esc_attr($this->psOptions['tag_label']) : "Photo tags";
 	 	$slug = $this->psOptions['tag_slug'] ? $this->psOptions['tag_slug'] : "photo-tag";
 	 	
-	 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );	
+	 	register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );
+	 	
+	 	$label = $this->psOptions['contributor_label'] ? esc_attr($this->psOptions['contributor_label']) : "Photo Contributors";
+	 	$slug = $this->psOptions['contributor_slug'] ? $this->psOptions['contributor_slug'] : "contributor";
+	 	
+	 	register_taxonomy( 'photosmash_contributors', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_contributor', 'rewrite' => array( 'slug' => $slug ) ) );	
 	 }
 	 
 	 /**
@@ -2795,8 +2847,15 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		}
 		
 		//images
-		if( isset($atts['images']) ){
-			$sc_atts[] = "images=$apostrophe" . $atts['images'] . "$apostrophe";
+		if( isset($atts['images']) && (int)$atts['images'] ){
+			
+			$sc_atts[] = "images=" . (int)$atts['images'] . " ";
+		}
+		
+		//images
+		if( isset($atts['images_override']) && (int)$atts['images_override'] ){
+			
+			$sc_atts[] = "images_override=" . (int)$atts['images_override'] . " ";
 		}
 		
 		//page

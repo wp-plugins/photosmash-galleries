@@ -624,3 +624,7 @@ tr.pxx-not-applied { background-color: #fff; }
 .bwbps_gmap {
 	line-height: normal !important;
 }
+
+.bwbps_red_bkg {
+	background-color: #FFCFCF !important;
+}

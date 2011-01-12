@@ -12,8 +12,8 @@
 /*
 	Return codes:
 	1001 - invalid action requested
-	1002 - 
-	1003 - invalid api url
+	1002 - invalid api url
+	1003 - Invalid User ID or Password
 	1004 - invalid key
 	1005 - server settings are incomplete
 	1006 - 
@@ -24,6 +24,8 @@
 	1030 - data too large
 	2000 - ok
 */
+
+if(!function_exists("is_admin") || !is_admin() ){ die('So long...'); }
 
 if( !class_exists(PhotoSmash_Mobile_API)){
 class PhotoSmash_Mobile_API{
@@ -59,14 +61,35 @@ class PhotoSmash_Mobile_API{
 		
 		$pp_action = $_REQUEST['photosmash_action'];
 		
+		$user_time = $_REQUEST['ps_session_time'] . '';
+		
 		switch ($pp_action){
 		
 			case 'upload' :
+				
+				$this->h->insertParam('upload', $user_time);
 				$this->uploadImage();
 				break;
 				
-			case 'viewphotos' :
-				$this->viewPhotos();
+			case 'viewsite' :
+				
+				$this->h->insertParam('view site', $user_time);
+				$this->viewSite();
+				break;
+				
+			case 'getphotos' :
+				$this->h->insertParam('get photos', $user_time);
+				$this->getPhotos();
+				break;
+				
+			case 'syncsite' :
+				$this->h->insertParam('sync', $user_time);
+				$this->syncSite();
+				break;
+				
+			case 'registeraccount' :
+				$this->h->insertParam('register', $user_time);
+				$this->redirToRegistration();
 				break;
 				
 			default :
@@ -78,8 +101,131 @@ class PhotoSmash_Mobile_API{
 		
 	}
 	
-	function viewPhotos(){
+	function redirToRegistration(){
+		
+		if(is_user_logged_in()){
+			wp_redirect(admin_url(), 301);
+		} else {
+			wp_redirect(site_url('wp-login.php?action=register', 'login'), 301);
+		}
+		return;
+	
+	}
+	
+	function syncSite(){
+		
+		global $wpdb;
+		
+		$user_name = $_REQUEST['ps_username'];
+		$pass = $_REQUEST['ps_pass'];
+		
+		$thisuser = $this->h->loginUser($user_name, $pass);
+		
+		global $current_user;
+		
+		$current_user = $thisuser;
+		
+		$data['param_group'] = 'mobile';
+		$data['param'] = 'site sync';
+		
+		
+		if( !$thisuser || !(int)$thisuser->ID ){
+			$data['val_1'] = '0';
+			$json['message'] = "User name or Password is not valid. ";
+			$json['status'] = 1003;
+		} else {
+			$data['val_1'] = $user_name;
+		}
+		$wpdb->insert(PSPARAMSTABLE, $data);		
+		unset($data);
+		
+		$json['tags'] = $this->psOptions['api_tags'];
+		$json['categories'] = $this->psOptions['api_categories'];
+		$json['galleries'] = $this->psOptions['api_galleries'];
+		$json['custom_fields'] = $this->getSiteCustomFields();
+		
+		$json['max_width'] = (int)$this->psOptions['api_max_width'] ? (int)$this->psOptions['api_max_width'] : 1024;
+		
+		$json['message'] =  "SYNC Success! Params updated.\n" . $json['message'];
+		
+		$this->exitAPI(2000, $json);
+	}
+	
+	function getSiteCustomFields(){
+		global $wpdb;
+		$cflist = $this->psOptions['api_custom_fields'];
+		
+		if($cflist){
+			$cflist = str_replace(" ","",$cflist);
+			
+			$cfs = explode(",",$cflist);
+			
+			if(is_array($cfs)){
+				foreach($cfs as $cf){
+					$cfarr[] = (int)$cf;
+				}
+				
+				$cflist = "(". implode(",", $cfarr) . ")";
+				$sql = "SELECT field_id, default_val as value, field_name as param, label, auto_capitalize, keyboard_type, type FROM ".PSFIELDSTABLE." WHERE field_id IN " . $cflist . " ORDER BY seq";
+				$cfs = $wpdb->get_results($sql, ARRAY_A);
+				
+				unset($cfarr);
+				
+				if(is_array($cfs)){
+					
+					foreach($cfs as $cfield){
+						$sql = "SELECT value, label FROM " . PSLOOKUPTABLE . " WHERE field_id = " . (int)$cfield['field_id'] . " ORDER BY seq";
+						$cvals = $wpdb->get_results($sql,ARRAY_A);
+						if($cvals){
+							foreach($cvals as $cv){
+									$cfield['value_array'][] = $cv['value'];
+									
+									$cfield['value_list'][] = $cv['label'] ? $cv['label'] : $cv['value'];
+							}
+							
+							
+							// We need to set Custom Fields up for Single select only...that's the way it is online
+							$cfield['single'] = "YES";					
+						}
+						
+						$cfarr[] = $cfield;
+						
+					}
+				
+					return $cfarr;
+				}
+				
+			}
+			
+		}
+		
+	}
+	
+	function viewSite(){
 		wp_redirect(site_url(), 301);
+	}
+	
+	function getPhotos(){
+		global $bwbPS;
+		$r = $this->psOptions['api_view_galleries'];
+		
+		$r = $r ? str_replace(" ","", $r) : "";
+		
+		$cnt = (int)$_REQUEST['count'] ? (int)$_REQUEST['count'] : 48;
+		
+		$page = (int)$_REQUEST['pagenumber'] ? (int)$_REQUEST['pagenumber'] : 1;
+		
+		$images = $bwbPS->img_funcs->getImagesForMobile($cnt, $r, $page);
+		
+		if(is_array($images)){
+			$json['images'] = $images;
+		} else {
+			$json['message'] = 'No images found.';
+			$json['status'] = 1020;
+		}
+		
+		$this->exitAPI(2000, $json);
+		
 	}
 	
 	function setRetCodes(){
@@ -94,7 +240,7 @@ class PhotoSmash_Mobile_API{
 		$this->retcode[1008] = "...";
 		$this->retcode[1009] = "...";
 		$this->retcode[1010] = "...";
-		$this->retcode[1020] = "...";
+		$this->retcode[1020] = "No images found";
 		$this->retcode[2000] = "Ok.";
 	}
 	
@@ -106,9 +252,9 @@ class PhotoSmash_Mobile_API{
 		if( $message ){
 			if( is_array($message) ){
 				//Merge in the Message array...you can load it up with all sorts of stuff
-				$json = PlumberHelpers::mergeArrays($json, $message);
+				$json = PixooxHelpers::mergeArrays($json, $message);
 			} else {
-				$json['message'] = $message;
+				$json['message'] = $message . ' Return code: ' . $this->retcode[$status];
 			}
 			
 		} else {
@@ -130,16 +276,16 @@ class PhotoSmash_Mobile_API{
 		$user_name = $_REQUEST['ps_username'];
 		$pass = $_REQUEST['ps_pass'];
 		
-		$thisuser = $this->h->loginUser($user_name, $pass);
+		if($user_name && $pass){
+			$thisuser = $this->h->loginUser($user_name, $pass);
+		}
 		
 		global $current_user;
 		
-		$current_user = $thisuser;
-		
-		if( !$thisuser || !(int)$thisuser->ID ){
-			$this->exitAPI(1003, "User name is: " . $user_name);	// invalid username or password
+		//print_r($thisuser);
+		if(!is_array($thisuser->errors)){	
+			$current_user = $thisuser;
 		}
-		
 		
 		$gallery_id = (int)$this->psOptions['api_upload_gallery'];
 		
@@ -157,7 +303,13 @@ class PhotoSmash_Mobile_API{
 		// prevent any JSON echo messages from using the <textarea></textarea>
 		$this->psUploader->jquery_forms_hack = false;	
 		
-		$this->g = $this->psUploader->getGallerySettings($gallery_id);
+		if(trim($_POST['bwbps_gallery_name'])){
+			$gname = trim(stripslashes($_POST['bwbps_gallery_name']));
+		} else {
+			$gname = false;
+		}
+		
+		$this->g = $this->psUploader->getGallerySettings($gallery_id, $gname );
 		
 		$this->psUploader->setGallery($this->g);
 		
@@ -165,15 +317,13 @@ class PhotoSmash_Mobile_API{
 		
 		// This does the whole upload thing
 		$image_id = $this->processUpload();
-
-	
 		
-		//$j = json_decode( stripslashes($_REQUEST['ps_json']) );
+		$json['gallery_id'] = $this->psUploader->g['gallery_id'] . " - " . $gallery_id;
+		$json['thumb_url'] = $this->psUploader->json['thumb_fullurl'];
+		$json['image_id'] = $image_id;
+		$json['message'] = "Image uploaded: " . $image_id;
 		
-		echo "Image uploaded: " .$image_id;
-		die();
-		
-		$this->exitAPI(2000);
+		$this->exitAPI(2000, $json);
 	
 	}
 	
@@ -249,25 +399,25 @@ class PhotoSmash_Mobile_API{
 		$this->psUploader->json['succeed'] = 'false'; 
 		$this->psUploader->json['size'] = (int)$_POST['MAX_FILE_SIZE'];
 				
-		$this->psUploader->json['post_id'] = $g->post_id;
+		$this->psUploader->json['post_id'] = $g['post_id'];
 		
 		$this->psUploader->json['file_type'] = 0;
 		
-		$this->psUploader->json['image_caption'] = $this->psUploader->getImageCaption('caption');
+		$this->psUploader->json['image_caption'] = $this->psUploader->getImageCaption('bwbps_imgcaption');
 		
-		if( !empty($_POST['post_tags']) ){
+		if( !empty($_POST['bwbps_post_tags']) ){
 			
-			if(is_array(  $_POST['post_tags'] ) ){
-				$bbpost_tags = implode(",", $_POST['post_tags']);
+			if(is_array(  $_POST['bwbps_post_tags'] ) ){
+				$bbpost_tags = implode(",", $_POST['bwbps_post_tags']);
 			} else {
-				$bbpost_tags = $_POST['post_tags'];
+				$bbpost_tags = $_POST['bwbps_post_tags'];
 			}
 					
 			$this->psUploader->json['post_tags'] = wp_kses($bbpost_tags, $tags[3]);
 		}
 		
 		//Get URL
-		$bwbps_url = $this->h->validURL($_POST['url']);
+		$bwbps_url = $this->h->validURL($_POST['bwbps_url']);
 				
 		if( $bwbps_url ){
 			$this->psUploader->json['url'] = $bwbps_url;
@@ -329,7 +479,7 @@ class PhotoSmash_Mobile_API{
 		
 		return false;
 	}
-
+	
 	
 }	// Closes class
 }	// Closes the if( !class_exists )

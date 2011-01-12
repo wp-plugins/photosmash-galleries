@@ -12,9 +12,14 @@ class BWBPS_Init{
 		$psOptions = get_option($this->adminOptionsName);
 		
 		$label = $psOptions['tag_label'] ? esc_attr($psOptions['tag_label']) : "Photo tags";
-		 $slug = $psOptions['tag_slug'] ? $psOptions['tag_slug'] : "photo-tag";
+		$slug = $psOptions['tag_slug'] ? $psOptions['tag_slug'] : "photo-tag";
 	 	
-		 register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );	
+		register_taxonomy( 'photosmash', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_wp_tag', 'rewrite' => array( 'slug' => $slug ) ) );	
+		 
+		 $label = $psOptions['contributor_label'] ? esc_attr($psOptions['contributor_label']) : "Photo Contributors";
+		 $slug = $psOptions['contributor_slug'] ? $psOptions['contributor_slug'] : "contributor";
+	 	
+		 register_taxonomy( 'photosmash_contributors', 'post', array( 'hierarchical' => false, 'label' => __($label, 'series'), 'query_var' => 'bwbps_contributor', 'rewrite' => array( 'slug' => $slug ) ) );
 	 	
 		 	global $wp_rewrite;
 			$wp_rewrite->flush_rules();
@@ -53,35 +58,35 @@ class BWBPS_Init{
 			$sql = "CREATE TABLE " . $table_name . " (
 				image_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				gallery_id BIGINT(20) NOT NULL,
-				user_id BIGINT(20) NOT NULL,
+				user_id BIGINT(20) NOT NULL DEFAULT '0',
 				post_id BIGINT(20),
-				comment_id BIGINT(20) NOT NULL,
-				image_name VARCHAR(250) NOT NULL,
+				comment_id BIGINT(20),
+				image_name VARCHAR(250),
 				image_caption TEXT,
 				file_type TINYINT(1),
-				file_name TEXT NOT NULL,
+				file_name TEXT,
 				file_url TEXT,
 				mini_url TEXT,
 				thumb_url TEXT,
 				medium_url TEXT,
 				image_url TEXT,
 				wp_attach_id BIGINT(11),
-				url VARCHAR(250) NOT NULL,
+				url VARCHAR(250),
 				custom_fields TEXT,
 				meta_data TEXT,
-				geolong double NOT NULL,
-				geolat double NOT NULL,
+				geolong double,
+				geolat double,
 				img_attribution TEXT,
 				img_license TINYINT(1),
-				updated_by BIGINT(20) NOT NULL,
-				created_date DATETIME NOT NULL,
+				updated_by BIGINT(20) NOT NULL DEFAULT '0',
+				created_date DATETIME,
 				updated_date TIMESTAMP NOT NULL,
-				status TINYINT(1) NOT NULL,
-				alerted TINYINT(1) NOT NULL,
-				seq BIGINT(11) NOT NULL,
+				status TINYINT(1) NOT NULL DEFAULT '0',
+				alerted TINYINT(1) NOT NULL DEFAULT '0',
+				seq BIGINT(11) NOT NULL DEFAULT '0',
 				favorites_cnt BIGINT(11),
-				avg_rating FLOAT(8,4) NOT NULL,
-				rating_cnt BIGINT(11) NOT NULL,
+				avg_rating FLOAT(8,4) NOT NULL DEFAULT '0',
+				rating_cnt BIGINT(11) NOT NULL DEFAULT '0',
 				votes_sum BIGINT(11) NOT NULL DEFAULT '0',
 				votes_cnt BIGINT(11) NOT NULL DEFAULT '0',
 				PRIMARY KEY   (image_id),
@@ -130,11 +135,12 @@ class BWBPS_Init{
 				gallery_id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				post_id BIGINT(20),
 				gallery_name VARCHAR(255),
+				gallery_description TEXT,
 				gallery_type TINYINT(1) NOT NULL default '0',
 				caption TEXT,
 				add_text VARCHAR(255),
 				upload_form_caption VARCHAR(255),
-				contrib_role TINYINT(1) NOT NULL,
+				contrib_role TINYINT(1) NOT NULL default '0',
 				anchor_class VARCHAR(255),
 				img_count BIGINT(11),
 				img_rel VARCHAR(255),
@@ -161,7 +167,7 @@ class BWBPS_Init{
 				allow_no_image TINYINT(1),
 				suppress_no_image TINYINT(1),
 				default_image VARCHAR(255),
-				created_date DATETIME NOT NULL,
+				created_date DATETIME,
 				updated_date TIMESTAMP NOT NULL,
 				layout_id INT(4),
 				use_customform TINYINT(1),
@@ -173,6 +179,7 @@ class BWBPS_Init{
 				sort_order TINYINT(1),
 				poll_id INT(4),
 				rating_position INT(4),
+				hide_toggle_ratings TINYINT(1),
 				pext_insert_setid INT(4),
 				max_user_uploads INT(4),
 				uploads_period INT(4),
@@ -226,12 +233,12 @@ class BWBPS_Init{
 				image_id BIGINT(20) NOT NULL,
 				gallery_id BIGINT(20),
 				poll_id BIGINT(20),
-				user_id BIGINT(20) NOT NULL,
+				user_id BIGINT(20),
 				user_ip VARCHAR(30) ,
-				rating TINYINT(1) NOT NULL,
+				rating TINYINT(1),
 				comment VARCHAR(250),
 				updated_date TIMESTAMP NOT NULL,
-				status TINYINT(1) NOT NULL,
+				status TINYINT(1) NOT NULL DEFAULT '0',
 				PRIMARY KEY  (rating_id),
 				INDEX (image_id)
 				)  $charset_collate;";
@@ -360,6 +367,8 @@ class BWBPS_Init{
 				numeric_field TINYINT(1) NOT NULL default '0',
 				multi_val TINYINT(1) NOT NULL,
 				default_val varchar(255),
+				auto_capitalize TINYINT(1),
+				keyboard_type TINYINT(1),
 				html_filter TINYINT(1),
 				date_format TINYINT(1),
 				seq INT(4) ,
@@ -414,46 +423,38 @@ class BWBPS_Init{
 				)  $charset_collate;";
 			dbDelta($sql);
 			
-			//Sharing Hubs
-			//Create the Sharing Hub table
-			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_sharinghubs (
-				hub_id INT(4) NOT NULL AUTO_INCREMENT,
-				hub_name VARCHAR(255),
-				hub_description TEXT,
-				hub_url VARCHAR(255),
-				api_url VARCHAR(255),
-				logo_url VARCHAR(255),
-				categories TEXT,
-				tags TEXT,
-				restricts_categories TINYINT(1),
-				requires_signup TINYINT(1),
-				allows_adult TINYINT(1), 
-				signup_status TINYINT(1), 
-				number_sites INT(4),
-				user_name VARCHAR(60),
-				pixoox_key TEXT,
-				twitter_token TEXT,
-				nonce VARCHAR(255),
-				admin_email VARCHAR(255),
-				created_date DATETIME NOT NULL,
-				hub_status TINYINT(1) NOT NULL default '0',
-				PRIMARY KEY  (hub_id)
-				)  $charset_collate;";
-			dbDelta($sql);
+			// The Sharing API morphed into the Mobile API...tables are not needed
 			
-			//Sharing Log
-			//Create the Sharing Log table
-			$sql = "CREATE TABLE " . $wpdb->prefix."bwbps_sharinglog (
-				log_id BIGINT(20) NOT NULL AUTO_INCREMENT,
-				image_id BIGINT(20) NOT NULL,
-				hub_id INT(4),
-				hub_name VARCHAR(255),
-				status INT(4),
-				url VARCHAR(255),
-				message TEXT,
-				serialized TEXT,
-				created_date DATETIME NOT NULL,
-				PRIMARY KEY  (log_id)
+			$wpdb->query("DROP TABLE if exists " . $wpdb->prefix . "bwbps_sharinghubs");
+			
+			
+			
+			$wpdb->query("DROP TABLE if exists " . $wpdb->prefix . "bwbps_sharinglog");
+			
+			
+			//PARAMS TABLE
+			$table_name = $wpdb->prefix . "bwbps_params";
+			
+			if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
+			
+				//Delete the old indices
+				
+				$sql = "ALTER TABLE " . $table_name .
+					" DROP INDEX param_group";
+				$wpdb->query($sql);
+			
+			}
+			
+			$sql = "CREATE TABLE " . $table_name . " (
+				id BIGINT(11) NOT NULL AUTO_INCREMENT,
+				param_group VARCHAR(20),
+				param VARCHAR(100),
+				num_value FLOAT,
+				text_value VARCHAR(255),
+				user_ip VARCHAR(30),
+				updated_date TIMESTAMP NOT NULL,
+				PRIMARY KEY  (id),
+				INDEX (param_group)
 				)  $charset_collate;";
 			dbDelta($sql);
 						

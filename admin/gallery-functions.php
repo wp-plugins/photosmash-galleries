@@ -124,7 +124,7 @@ class BWBPS_GalleryFunc{
 					} else {
 										
 						if($g['gallery_name']){
-							//Get gallery params based on Gallery_ID
+							//Get gallery params based on Gallery Name
 							$gquery = $wpdb->get_row(
 							$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
 								." WHERE gallery_name = %s",$g['gallery_name']),ARRAY_A);

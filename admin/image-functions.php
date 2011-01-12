@@ -26,6 +26,106 @@ class BWBPS_ImageFunc{
 		
 	}
 	
+	function getImagesForMobile($cnt, $gallery_ids, $page=1){
+	
+		//global $wpdb;
+		global $bwbPS;
+		
+		if(is_array($gallery_ids)){
+			foreach($gallery_ids as $id){
+				if((int)$id){
+					$ids[] = (int)$id;
+				}
+			}
+			/*
+			if(is_array($ids)){
+				$img_ids = " AND " . PSIMAGESTABLE . ".gallery_id IN (" . implode(",", $ids) .") ";
+			}
+			*/
+		}
+		
+		$cnt = (int)$cnt ? (int)$cnt : 60;
+		
+		$g['sort_order'] = 1;
+		$g['gallery_type'] = 30;
+		$g['limit_page'] = (int)$page;
+		$g['limit_images'] = $cnt;
+		$g['smart_gallery'] = true;
+		
+		if(is_array($ids)){
+			$g['smart_where'] = array( PSIMAGESTABLE . '.gallery_id' => $ids );
+		}
+		
+		if(!isset($this->psLayout)){
+			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-layout.php");
+			$psLayout = new BWBPS_Layout($bwbPS->psOptions, $bwbPS->cfList);
+		}
+		
+		$results = $psLayout->getGalleryImages($g);
+		
+		
+		/*
+		$sql = "SELECT ". PSIMAGESTABLE . ".*, " . PSGALLERIESTABLE 
+			. ".post_id as gal_post_id FROM " . PSIMAGESTABLE 
+			. " JOIN " . PSGALLERIESTABLE . " ON " . PSGALLERIESTABLE . ".gallery_id = "
+			. PSIMAGESTABLE . ".gallery_id WHERE " . PSIMAGESTABLE . ".status = 1 "
+			. $img_ids . "ORDER BY ". PSIMAGESTABLE . ".created_date DESC LIMIT $cnt";
+		
+		$results = $wpdb->get_results($sql, ARRAY_A);
+		*/
+		
+		
+		foreach($results as $img){
+			unset($image);
+			$image['caption'] = $img['image_caption'];
+			$urls = $this->getImageLocArray($img, 'url');
+			$image['thumb_url'] = $urls['mobile_url'] ? $urls['mobile_url'] : $urls['thumb_url'];
+		
+		
+			switch ((int)$this->options['api_big_url']){
+				case 1 :
+					$image['big_url'] = $urls['image_url'];
+					break;
+					
+				case 2 :
+					$image['big_url'] = $urls['mini_url'];
+					break;
+				
+				case 3 :
+					$image['big_url'] = $urls['thumb_url'];
+					break;
+					
+				default :
+					$image['big_url'] = $urls['medium_url'];
+					break;
+
+			}
+			
+			$image['geolat'] = $img['geolat'];
+			$image['geolong'] = $img['geolat'];
+			
+			if((int)$image['post_id']){
+					$post_perma = get_permalink((int)$img['post_id']);
+			} else {
+				if((int)$image['gal_post_id']){
+					$post_perma = get_permalink((int)$img['gal_post_id']);
+				} else {
+					$post_perma = get_permalink((int)$img['wp_attach_id']);
+				}
+			}
+			
+			if($post_perma){
+				$image['web_url'] = $post_perma;
+			}
+			
+			$images[] = $image;
+		
+		}
+		
+		return $images;
+	
+	}
+	
 	function getGallery($gallery_id){
 	
 		global $wpdb;
@@ -50,7 +150,7 @@ class BWBPS_ImageFunc{
 	}
 	
 	// Returns an array of all the available Image Size URLs
-	function getImageLocArray($image, $loc_type){
+	function getImageLocArray($image, $loc_type='url'){
 	
 		$uploads = wp_upload_dir();
 		

@@ -25,7 +25,7 @@ $aa['thumb_width'] = isset($_GET['thumb_width']) ? (int)$_GET['thumb_width'] : 0
 $aa['gallery_type'] = isset($_GET['gallery_type']) ? $_GET['gallery_type'] : 0;
 $aa['tags'] = isset($_GET['tags']) ? $_GET['tags'] : "";
 $aa['layout'] = isset($_GET['layout']) ? $_GET['layout'] : "";
-$aa['images'] = isset($_GET['images']) ? (int)$_GET['images'] : 25;
+$aa['images_override'] = isset($_GET['images']) ? (int)$_GET['images'] : 25;
 $aa['page'] = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 
 $aa['no_pagination'] = 1;

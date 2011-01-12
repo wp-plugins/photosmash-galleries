@@ -136,7 +136,7 @@ class BWBPS_Uploader{
 		
 		$this->json['form_name'] = esc_attr(wp_kses($_POST['bwbps_formname'], $tags[3]));
 		
-		$this->json['post_id'] = (int)$_POST['bwbps_post_id'];
+		$this->json['post_id'] = (int)$_POST['bwbps_post_id'] ? (int)$_POST['bwbps_post_id'] : (int)$g['post_id'];
 		
 		$this->json['file_type'] = (int)$_POST['bwbps_file_type'];
 		
@@ -395,8 +395,8 @@ class BWBPS_Uploader{
 			$uploadedsize = (int)$upload['size']/1000;
 		
 			$this->exitUpload(" ***  File too Large  *** 
-				Maximum allowed file size is: " 
-				. round($maxfilesize,1) . "kB --- Uploaded file size: "
+				Max allowed: " 
+				. round($maxfilesize,1) . "kB -- Uploaded: "
 				.round($uploadedsize,1) . "kB");
 		
 		}
@@ -633,6 +633,11 @@ class BWBPS_Uploader{
 		
 		$this->imageData['upload_agent'] = $this->upload_agent;
 		
+		//Set the Contributor Tag
+		if($this->imageData['user_login']){
+			wp_set_object_terms($image_id, $this->imageData['user_login'], 'photosmash_contributors', false);
+		}
+		
 		//Trigger for up the Upload Alert Email
 		if($image_id){
 			if( $this->psOptions['img_alerts'] == -1 ) {
@@ -820,8 +825,17 @@ class BWBPS_Uploader{
 		$this->json['gallery_id'] = (int)$this->g['gallery_id'];
 	}
 		
-	function getGallerySettings($gallery_id){
+	function getGallerySettings($gallery_id=false, $gallery_name=false){
 		global $wpdb;
+		
+		if($gallery_name){
+			$g = $wpdb->get_row(
+					$wpdb->prepare("SELECT * FROM ". PSGALLERIESTABLE
+						." WHERE gallery_name = %s",$gallery_name), ARRAY_A);
+						
+			if($g){ return $g; }
+		}
+		
 		
 		if(!$gallery_id){
 			$gallery_id = (int)$this->json['gallery_id'];
@@ -922,14 +936,14 @@ class BWBPS_Uploader{
 		//Get Caption
 		//For some reason, img_caption doesn't always carry the value & vice versa
 		if(!$_POST[$post_name]){
-			$json = $this->stripSlashes($_POST[$post_name . 'Input']);   
+			$caption = $this->stripSlashes($_POST[$post_name . 'Input']);   
 		} else {
-			$json = $this->stripSlashes($_POST[$post_name]);   
+			$caption = $this->stripSlashes($_POST[$post_name]);   
 		}
 		
 		$tags = $this->getFilterArrays();
 		
-		return wp_kses($json, $tags[0]);
+		return wp_kses($caption, $tags[0]);
 	}
 	
 	function stripSlashes($val){

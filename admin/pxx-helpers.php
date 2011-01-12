@@ -196,6 +196,27 @@ class PixooxHelpers {
 				
 	    return preg_replace('/[^a-zA-Z0-9]/', '', $string);
     }
+    
+    /*
+	 * Log Actions
+	 * Note: this logging provides the ability to spot patterns of use and abuse
+	 *		 the PhotoSmash mobile app(s) does not send any identifying information
+	 *		 without the user expressly doing so.
+	 *		 It does not send the phone number or even the devices unique identifies.
+	 *		 It does send the time that the user first started using the app, and that
+	 *		 is hardly enough to link back to a phone or a user.
+	*/
+	function insertParam($param_group, $param, $text_value = '', $num_value = 0){
+		global $wpdb;
+		$d['param_group'] = wp_kses('mob-' . $param_group, array());
+		$d['param'] = wp_kses($param, array());
+		$d['text_value'] = wp_kses($text_value, array());
+		$d['num_value'] = floatval($num_value);
+		$d['user_ip'] = preg_replace( '/[^0-9a-fA-F:., ]/', '',$_SERVER['REMOTE_ADDR'] );
+		
+		$wpdb->insert(PSPARAMSTABLE, $d);
+	}
+
 
 }
 }

@@ -204,7 +204,7 @@ class BWBPS_UploadForm{
 	 */
 	function getStandardForm($g, $formname){
 		
-		global $current_user;
+		global $current_user; 
 	
 		if(!trim($formname)){ $formname = "ps-standard"; }
 		$retForm = $this->getFormHeader($g, $formname, false);
@@ -220,13 +220,19 @@ class BWBPS_UploadForm{
 		
 		//Get the Upload Fields
 		$retForm .= $this->getStdFormUploadFields($g);
+		
+		if( is_array($g['required_fields']) ){
+			$reqclass = in_array("caption", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+		} else {
+			$reqclass = ""; 
+		}
 				
 		$retForm .= '
 				</td>
 			</tr>
 			<tr><th>Caption:</th>
 				<td align="left">
-					<input tabindex="50" type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset"/>';
+					<input tabindex="50" type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset ' . $reqclass . '"/>';
 	
 		$retForm .='
 				</td>
@@ -237,10 +243,17 @@ class BWBPS_UploadForm{
 		
 		//Alternate Caption URL
 		if($this->options['use_urlfield']){
+			
+			if( is_array($g['required_fields']) ){
+				$reqclass = in_array("url", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+			} else {
+				$reqclass = ""; 
+			}
 		
 			$retForm .= '<tr><th>Caption URL:</th>
 				<td align="left">
-					<input tabindex="50" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" /> Ex: http://www.mysite.com';
+					<input tabindex="50" type="text" name="bwbps_url" id="' . $g["pfx"] 
+					. 'bwbps_url" class="bwbps_reset ' . $reqclass . '" /> Ex: http://www.mysite.com';
 			
 			$retForm .='
 				</td>
@@ -251,10 +264,17 @@ class BWBPS_UploadForm{
 		//Alternate Caption URL
 		if($this->options['use_attribution']){
 		
+			if( is_array($g['required_fields']) ){
+				$reqclass = in_array("attribution", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+			} else {
+				$reqclass = ""; 
+			}
 		
 			$retForm .= '<tr><th>Image Attribution:</th>
 				<td align="left">
-					<input tabindex="50" type="text" name="bwbps_img_attribution" id="' . $g["pfx"] . 'bwbps_img_attribution" class="" value="'.esc_attr($current_user->display_name).'"  /> Who took this image?';
+					<input tabindex="50" type="text" name="bwbps_img_attribution" id="' 
+					. $g["pfx"] . 'bwbps_img_attribution" class="'. $reqclass 
+					. '" value="'.esc_attr($current_user->display_name).'"  /> Who took this image?';
 			
 			$retForm .='
 				</td>
@@ -536,8 +556,24 @@ class BWBPS_UploadForm{
 		if($val !== false ){
 			$value = ' value="' . esc_attr($val) . '" ';
 		}
+		
+		$rfld = str_replace("[", "", $fld);
+		$rfld = str_replace("]", "", $rfld);
+		
+		$fld_attributes = $atts['attributes'] ? " " . trim($atts['attributes']) . " " : ""; 
+		
+		if( $fld_attributes ){
+			$fld_attributes = str_replace('\\"', "'", $fld_attributes);
+			$fld_attributes = str_replace("\\'", '"', $fld_attributes);
+		}
+		
+		if( is_array($g['required_fields']) ){
+			$reqclass = in_array($rfld, $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+		} else {
+			$reqclass = "";
+		}
 	
-		switch ($fld) {
+		switch ($fld) { 
 		
 			//$atts should be an array that includes $atts['gallery_type'] = (int)
 			//This is what will determine what types of upload fields are returneds.
@@ -566,7 +602,8 @@ class BWBPS_UploadForm{
 				break;
 
 			case '[allow_no_image]' :
-				$ret = "<input type='hidden' id='".$g['pfx']."bwbps_allownoimg' name='bwbps_allownoimg' value='1' />";
+				$ret = "<input type='hidden' class='". $reqclas . "' id='"
+					.$g['pfx']."bwbps_allownoimg' name='bwbps_allownoimg' value='1' $fld_attributes/>";
 				break;
 			
 			case "[submit]":
@@ -575,7 +612,7 @@ class BWBPS_UploadForm{
 				} else {
 					$submitname = 'Submit';
 				}
-				$ret = '<input type="submit" class="ps-submit" value="'.$submitname.'" id="' . $g["pfx"] . 'bwbps_submitBtn" name="bwbps_submitBtn" />';
+				$ret = '<input type="submit" class="ps-submit" value="'.$submitname.'" id="' . $g["pfx"] . 'bwbps_submitBtn" name="bwbps_submitBtn" ' . $fld_attributes . '/>';
 				break;
 				
 			case "[done]":
@@ -589,31 +626,31 @@ class BWBPS_UploadForm{
 				if(!$this->options['use_thickbox'] && !$g['use_thickbox']){
 				
 					if($this->options['use_donelink']){
-						$ret .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.(int)$g["gallery_id"].',\'' . $g["pfx"] . '\');return false;">'.$donename.'</a>';
+						$ret .= '<a href="javascript: void(0);" onclick="bwbpsHideUploadForm('.(int)$g["gallery_id"].',\'' . $g["pfx"] . '\');return false;" ' . $fld_attributes . '>'.$donename.'</a>';
 					} else {			
 						$ret .= '
-		        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="bwbpsHideUploadForm('.(int)$g['gallery_id'].',\'' . $g["pfx"] . '\');return false;" />
+		        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="bwbpsHideUploadForm('.(int)$g['gallery_id'].',\'' . $g["pfx"] . '\');return false;" ' . $fld_attributes . '/>
 	        		';
 		        	}
 
 	        	} else {
 	        	
 	        		if($this->options['use_donelink']){
-					$ret .= '<a href="javascript: void(0);" onclick="tb_remove();return false;">'.$donename.'</a>';
+					$ret .= '<a href="javascript: void(0);" onclick="tb_remove();return false;" ' . $fld_attributes . '>'.$donename.'</a>';
 					} else {
 						$ret .= '
-	        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="tb_remove();return false;" />
+	        		<input type="button" class="ps-submit" value="'.$donename.'" onclick="tb_remove();return false;" ' .$fld_attributes.' />
 		        	';
 		        	}
 	        	}
 				break;
 				
 			case "[caption]":
-				$ret = '<input tabindex="' . $tab_index . '" type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
+				$ret = '<input tabindex="' . $tab_index . '" type="text" name="bwbps_imgcaptionInput" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset ' . $reqclass .'" ' . $value . $fld_attributes . '/>';
 				break;
 			
 			case "[caption2]":
-				$ret = '<input tabindex="' . $tab_index . '" type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset" ' . $value . ' />';
+				$ret = '<input tabindex="' . $tab_index . '" type="text" name="bwbps_imgcaption2" id="' . $g["pfx"] . 'bwbps_imgcaptionInput" class="bwbps_reset ' . $reqclass .'" ' . $value . $fld_attributes .' />';
 				break;
 			
 			case "[user_url]":
@@ -622,7 +659,7 @@ class BWBPS_UploadForm{
 				if($current_user->display_name){
 					
 					if($this->validURL($current_user->user_url)){
-						$ret = "<a href='$current_user->user_url' title=''>".$current_user->display_name."</a>";
+						$ret = "<a href='$current_user->user_url' title='' $fld_attributes>".$current_user->display_name."</a>";
 					}
 				}
 				break;
@@ -649,10 +686,10 @@ class BWBPS_UploadForm{
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2" class="bwbps_result bwbps_result2"></span>';
 				break;
 			case "[url]":
-				$ret = '<input tabindex="'. $tab_index . '" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset" ' . $value . ' />';
+				$ret = '<input tabindex="'. $tab_index . '" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset ' . $reqclass. '" ' . $value . ' />';
 				break;
 			case "[loading]":
-				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" />';
+				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" '.$fld_attributes . '/>';
 				break;
 			case "[message]" :
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_message" class="bwbps_message"></span>';
@@ -665,8 +702,8 @@ class BWBPS_UploadForm{
 				. 'bwbps_lat\',\'' . $g["pfx"] . 'bwbps_lng\'); return false;" class="button">
 				<br/>';
 				
-				$ret .= '<div style="float:left;">' . $g['latitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolat" id="' . $g["pfx"] . 'bwbps_lat" class="bwbps_reset" ' . $value . ' size="10"/></div> ';
-				$ret .= '<div style="float:left; margin-left: 5px;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolong" id="' . $g["pfx"] . 'bwbps_lng" class="bwbps_reset" ' . $value2 . ' size="10" /></div><div style="clear: both;"></div>';
+				$ret .= '<div style="float:left;">' . $g['latitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolat" id="' . $g["pfx"] . 'bwbps_lat" class="bwbps_reset" ' . $value . ' size="10" '.$fld_attributes . '/></div> ';
+				$ret .= '<div style="float:left; margin-left: 5px;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolong" id="' . $g["pfx"] . 'bwbps_lng" class="bwbps_reset" ' . $value2 . ' size="10" '.$fld_attributes . '/></div><div style="clear: both;"></div>';
 				
 				break;
 			
@@ -675,8 +712,13 @@ class BWBPS_UploadForm{
 				$ret .= $g['geocode_description'] . '
 				<br/>';
 				
-				$ret .= '<div style="float:left;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolat" id="' . $g["pfx"] . 'bwbps_lat" class="bwbps_reset" ' . $value . ' size="10"/></div> ';
-				$ret .= '<div style="float:left; margin-left: 5px;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolong" id="' . $g["pfx"] . 'bwbps_lng" class="bwbps_reset" ' . $value2 . ' size="10" /> <input type="button" value="Get" onclick="bwb_gmap.geocodeAddress(bwb_gmap.getFormAddress(\'' . $g["pfx"] . '\'), \'' . $g["pfx"] 
+				$ret .= '<div style="float:left;">' . $g['longitude_label'] . ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolat" id="' . $g["pfx"] . 'bwbps_lat" class="bwbps_reset" ' . $value . ' size="10" '.$fld_attributes . '/></div> ';
+				$ret .= '<div style="float:left; margin-left: 5px;">' . $g['longitude_label'] 
+				. ':<br/><input tabindex="'. $tab_index . '" type="text" name="bwbps_geolong" id="' 
+				. $g["pfx"] . 'bwbps_lng" class="bwbps_reset" ' . $value2 
+				. ' size="10" '.$fld_attributes 
+				. '/> <input type="button" value="Get" onclick="bwb_gmap.geocodeAddress(bwb_gmap.getFormAddress(\'' 
+				. $g["pfx"] . '\'), \'' . $g["pfx"] 
 				. 'bwbps_lat\',\'' . $g["pfx"] . 'bwbps_lng\'); return false;" class="button"></div><div style="clear: both;"></div>';
 				
 				break;
@@ -687,7 +729,8 @@ class BWBPS_UploadForm{
 					$value = ' value="'. esc_attr($current_user->display_name) . '"';
 				}
 				$ret = "<input type='text' name='bwbps_img_attribution' tabindex='". $tab_index . "'" 
-					. " id='" . $g["pfx"] . "bwbps_img_attribution' class='' " . $value . " />";
+					. " id='" . $g["pfx"] . "bwbps_img_attribution' class='" . $reqclass . "' " 
+					. $value . $fld_attributes . " />";
 					
 				break;
 			
@@ -717,7 +760,8 @@ class BWBPS_UploadForm{
 				$val = esc_attr($val);
 				
 				$ret = "<input type='text' name='bwbps_post_tags[]' tabindex='". $tab_index . "'"
-					. " id='" . $g["pfx"] . "bwbps_post_tags' class='bwbps_reset' value='" . $val . "' />";
+					. " id='" . $g["pfx"] . "bwbps_post_tags' class='bwbps_reset ". $reqclass . "' value='" 
+					. $val . "' " . $fld_attributes . "/>";
 					
 				break;
 			
@@ -1245,6 +1289,12 @@ class BWBPS_UploadForm{
 		
 		if($atts['tab_index']){$tabindex = $atts['tab_index']; }
 		
+		$fld_attributes = $atts['attributes'] ? " " . trim($atts['attributes']) . " " : ""; 
+		if( $fld_attributes ){
+			$fld_attributes = str_replace('\\"', "'", $fld_attributes);
+			$fld_attributes = str_replace("\\'", '"', $fld_attributes);
+		}
+		
 		//Name is field name + bwbps (prepended)
 		$name = "bwbps_".$blank.$f->field_name;
 		
@@ -1266,16 +1316,29 @@ class BWBPS_UploadForm{
 		//Element name....works for about everything
 		$ele_name = " name='$name'";
 		
+		if( is_array($g['required_fields']) ){
+			$reqclass = in_array($f->field_name, $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+		} else {
+			$reqclass = "";
+		}
+		
 		
 		$opts['field_type'] = $f->type;
 		switch ($f->type){
 			case 0 :	//text box
+			
+					if(strpos($fld_attributes, 'maxlength=') === false ){
+						$maxlength = " maxlength='255' ";
+					} else {
+						$maxlength = "";
+					}
 				
 					//Single Value Text Box
 					$ret = "<input tabindex='".$tabindex."' ".$id
 						." ".$ele_name
 						." value='".esc_attr($val)
-						."' type='text' maxlength='255' class='bwbps_reset' />";
+						."' type='text'  class='bwbps_text_field bwbps_reset " 
+						. $reqclass . "' " . $maxlength . $fld_attributes . "/>";
 				break;
 			case 1 :	//textarea
 			
@@ -1289,13 +1352,13 @@ class BWBPS_UploadForm{
 				} else {
 					if((int)$atts['textarea_cols']){ $ret .= " cols=" . (int)$atts['textarea_cols']; }
 				}
-				$ret .= " class='bwbps_reset bwbps_textarea' />"
+				$ret .= " class='bwbps_reset bwbps_textarea " . $reqclass . "' " . $fld_attributes . " />"
 					.esc_attr($val)."</textarea>
 					";
 				break;
 			case 2 :	//option (ddl)
 				$ret = "<select tabindex='".$tabindex."' ".$id
-					." ".$ele_name.">";
+					." ".$ele_name." class='bwbps_select_field' " . $fld_attributes . ">";
 				$ret .= "<option value=''>--Select--</option>";
 				
 				$opts['opentag'] = "option";	//opening tag
@@ -1334,7 +1397,9 @@ class BWBPS_UploadForm{
 			
 				$ret = "<input tabindex=".$tabindex. $checked . " type='checkbox' value='" 
 					. $cbx_value . "' "
-					. "name='"."bwbps_".$blank.$f->field_name."' />";
+					. "name='bwbps_".$blank.$f->field_name 
+					. "' class='bwbps_checkbox bwbps_" . $f->field_name . "' "
+					. $fld_attributes . "/>";
 				
 				
 				break;
@@ -1345,7 +1410,7 @@ class BWBPS_UploadForm{
 				$ret = "<input tabindex='".$tabindex."' " . $id
 					. " ".$ele_name
 					. " value='".esc_attr($val)
-					. "' type='text' style='width:130px;' class='bwbps_reset' />";
+					. "' type='text' style='width:130px;' class='bwbps_reset' $fld_attributes />";
 					
 				$ret .= "
 				<script type='text/javascript'>

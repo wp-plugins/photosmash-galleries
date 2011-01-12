@@ -383,6 +383,10 @@ class BWBPS_AJAX{
 						
 					$json['updated'] = $wpdb->query($sql);		//The database update
 					$json['message'] = 'Moved images to gallery';
+					
+					foreach($imgs as $newid){
+						$this->img_funcs->resizeImage($newid);
+					}
 									
 				} else {
 					
@@ -449,7 +453,14 @@ class BWBPS_AJAX{
 									}	
 																	
 								}
-																
+								
+								//Inset Contributor tag for new image
+								$this->saveImageContributorTag($newid, $img['user_id']);
+								
+								// Perform the resize on the new image
+								if($newid){
+									$this->img_funcs->resizeImage($newid);							
+								}
 								
 							}
 						}
@@ -514,6 +525,7 @@ class BWBPS_AJAX{
 		
 		return;
 		
+		/*
 		$data['image_id'] = (int)$image_id;
 		$data['category_id'] = 0;
 		
@@ -529,6 +541,28 @@ class BWBPS_AJAX{
 			$wpdb->insert(PSCATEGORIESTABLE, $data);
 		
 		}
+		*/
+		
+	}
+	
+	/*
+	 *	Save contributor tags
+	*/
+	function saveImageContributorTag($image_id, $user_id){
+	
+		global $wpdb;
+		
+		if(!(int)$image_id || !(int)$user_id){ return; }
+		
+		$user_info = get_userdata((int)$user_id);
+		
+		if(!$user_info){ return; }
+		
+		$t = array($user_info->user_login);
+		
+		wp_set_object_terms($image_id, $t, 'photosmash_contributors', false);
+		
+		return;
 		
 	}
 	
@@ -690,10 +724,11 @@ class BWBPS_AJAX{
 		global $wpdb;
 		if(current_user_can('level_10')){
 		
-			$this->sendMsg( $json['image_id'], 1 );
+			
 			
 			$data['alerted'] = 1;
 			$json['image_id'] = (int)$_POST['image_id'];
+			$this->sendMsg( $json['image_id'], 1 );
 			$where['image_id'] = $json['image_id'];
 			$json['status'] = $wpdb->update(PSIMAGESTABLE, $data, $where);
 			$json['action'] = 'marked';
@@ -827,7 +862,7 @@ class BWBPS_AJAX{
 				}
 				
 				//Do this before we delete it, or we can't get the user ID
-				$this->sendMsg( $json['image_id'], 0 );
+				$this->sendMsg( $imgid, 0 );
 			
 				$json['status'] = $wpdb->query($wpdb->prepare('DELETE FROM '.
 					PSIMAGESTABLE.' WHERE image_id = %d', $imgid ));
@@ -859,8 +894,10 @@ class BWBPS_AJAX{
 					// Delete tagged photos
 					
 					wp_set_object_terms($imgid, '', 'photosmash', false);
-					
 					wp_delete_object_term_relationships( $imgid, 'photosmash' );
+					
+					wp_set_object_terms($imgid, '', 'photosmash_contributors', false);
+					wp_delete_object_term_relationships( $imgid, 'photosmash_contributors' );
 
 					//Delete Post Meta for Attachment
 					$wpdb->query($wpdb->prepare('DELETE FROM '. $wpdb->postmeta
@@ -1101,10 +1138,13 @@ class BWBPS_AJAX{
 		
 		$msg = stripslashes($msg);
 		
+		$msg = wp_kses( $msg, array() );
+		
 		$msg = str_replace('[blogname]', get_bloginfo("site_name" ), $msg);
 		$msg = str_replace('[post_link]', $perma, $msg);
 		$msg = str_replace('[user_name]', $row->user_login, $msg);
 		$msg = str_replace('[author_link]', $authorlink, $msg);
+		$msg = nl2br($msg);
 		
 				
 		$msg .= "<div style='margin-top: 30px;'><p>Image caption: " . $row->image_caption
@@ -1116,7 +1156,21 @@ class BWBPS_AJAX{
  		$headers = "MIME-Version: 1.0\n" . "From: " . get_bloginfo("site_name" ) ." <{$admin_email}>\n" . "Content-Type: text/html; charset=\"" . get_bloginfo('charset') . "\"\n";
  		 		
  		$accepted = $approve ? "Accepted" : "Rejected";
- 		wp_mail($email, "Image moderation notice: ". $accepted, $msg, $headers );
+ 		
+ 		$msg = str_replace('[status]', $accepted, $msg);
+ 		
+ 		$msgSubject = $_POST['mod_subject'] ? $_POST['mod_subject'] : 'Image moderation notice: ' . $accepted;
+ 		
+ 		$msgSubject = stripslashes($msgSubject);
+ 		
+ 		$msgSubject = wp_kses( $msgSubject, array() );
+ 		
+ 		$msgSubject = str_replace('[blogname]', get_bloginfo("site_name" ), $msgSubject);
+ 		$msgSubject = str_replace('[status]', $accepted, $msgSubject);
+ 		$msgSubject = str_replace('\r', "", $msgSubject);
+ 		$msgSubject = str_replace('\n', "", $msgSubject);
+ 		
+ 		wp_mail($email, $msgSubject, $msg, $headers );
 				
 	}
 	

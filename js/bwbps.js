@@ -19,24 +19,6 @@ $j.fn.tagName = function() {
 $j(document).ready(function() { 
 	//Show and hide the Loading icon on Ajax start/end
 	
-	/*
-	$j("#bwbps_loading")
-	.ajaxStart(function(){
-		$j(this).show();
-	})
-	.ajaxComplete(function(){
-		$j(this).hide();
-		if(	bwbpsUploadStatus == false)
-			{
-				$j("#bwbps_submitBtn").removeAttr('disabled');
-				$j("#bwbps_imgcaptionInput").removeAttr('disabled');
-				$j('#bwbps_message').html("Image upload failed. Your image may have been too large or there may have been another problem. Please reload the page and try again.");
-			}
-		bwbpsUploadStatus = false;
-	});
-	
-	*/
-	
 	$j('.bwbps_uploadform').submit(function() { 
 		$j('#bwbps_message').html('');
 		bwbpsAjaxLoadImage(this);
@@ -161,6 +143,8 @@ function bwbpsUserDeleteImageSuccess(data, image_id){
 	if(data.status == 1)
 	{
 		jQuery(".bwbps_deleting_" + image_id).html('deleted');
+	} else {
+		jQuery(".bwbps_deleting_" + image_id).html('<a href="javascript: void(0);" onclick="alert(\'Cannot delete approved images\'); return false;" title="Cannot delete approved images">unable to delete</a>');
 	}
 }
 
@@ -181,11 +165,6 @@ function bwbpsAjaxLoadImage(myForm){
 	$j('#' + form_pfx + 'bwbps_message').html('');
 	$j('#' + form_pfx + 'bwbps_previewpost').html('');
 	$j("#" + form_pfx + "bwbps_loading").show();
-	/*
-	$j("#" + form_pfx + "bwbps_loading").ajaxComplete(function(){
-		$j(this).hide();
-	});
-	*/
 	
 	var options = { 
 		beforeSubmit:  function(){ 
@@ -233,7 +212,11 @@ function bwbpsVerifyUploadRequest(form_pfx) {
 		$j('#' + form_pfx + 'bwbps_submitBtn').removeAttr('disabled');
 		$j('#' + form_pfx + 'bwbps_imgcaptionInput').removeAttr('disabled');
 		return false; 
-	} 
+	}
+	
+	if(!bwbpsVerifyRequiredFields(form_pfx)){
+		return false;
+	}
 
 	$j('#' + form_pfx + 'bwbps_submitBtn').attr('disabled','disabled');
 
@@ -241,7 +224,29 @@ function bwbpsVerifyUploadRequest(form_pfx) {
 	$j('#' + form_pfx + 'bwbps_result').html('');
 
 	return true;
-} 
+}
+
+function bwbpsVerifyRequiredFields(form_pfx){
+	var bFilled = true;
+	
+	var icnt = 0;
+	
+	jQuery(".ps_required_" + form_pfx).each( function(index){
+			if( !jQuery(this).val() ){
+				icnt++;
+				jQuery(this).addClass('bwbps_red_bkg');
+				bFilled = false;
+			} else {
+				jQuery(this).removeClass('bwbps_red_bkg');
+			}
+		});
+		
+		if(!bFilled){
+			alert("There are " + icnt + " incomplete required fields.");
+		}
+	
+	return bFilled;
+}
 
 
 /*
@@ -550,6 +555,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 	
 	var sendMsg = jQuery("#ps_mod_send_msg").attr('checked') ? 1 : 0;
 	var modMsg = '';
+	var modSubject = '';
 	var confirmOn = true;
 	
 	switch (action) {
@@ -572,6 +578,7 @@ function bwbpsModerateImage(action, image_id, post_id)
 			} else {
 				if( sendMsg ){
 					modMsg = jQuery("#ps_mod_reject_msg").val();
+					modSubject = jQuery("#ps_mod_msg_subject").val();
 				}
 			}
 			
@@ -587,14 +594,24 @@ function bwbpsModerateImage(action, image_id, post_id)
 			} else {
 				if( sendMsg ){
 					modMsg = jQuery("#ps_mod_approve_msg").val();
+					modSubject = jQuery("#ps_mod_msg_subject").val();
 				}
 			}
 			
 			break;
 		
 		case 'review' :
+			
 			myaction = action;
 			actiontext = "mark this image as reviewed ";
+			if( sendMsg && !confirm('Is Approve Moderation Message correct?\n\n ' + jQuery("#ps_mod_approve_msg").val() )){
+				return;
+			} else {
+				if( sendMsg ){
+					modMsg = jQuery("#ps_mod_approve_msg").val();
+					modSubject = jQuery("#ps_mod_msg_subject").val();
+				}
+			}
 			break;
 			
 		case 'savecaption' :
@@ -660,7 +677,8 @@ function bwbpsModerateImage(action, image_id, post_id)
        'post_id' : postid,
        'image_post_id' : image_post_id,
 	   'mod_msg' : modMsg,
-	   'send_msg' : sendMsg
+	   'send_msg' : sendMsg,
+	   'mod_subject' : modSubject
        },
 		dataType: 'json',
 		success: function(data) {
