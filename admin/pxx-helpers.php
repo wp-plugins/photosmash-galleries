@@ -172,7 +172,8 @@ class PixooxHelpers {
 						
 	}
 	
-	static function mergeArrays($base, $addon){
+	// Removed static modifier to get PHP4 compatibilty back
+	function mergeArrays($base, $addon){
 		if(is_array($base) && is_array($addon)){
 			foreach ( $addon as $key => $option ){
 				if(!$base[$key]){
@@ -183,7 +184,8 @@ class PixooxHelpers {
 		return $base;
 	}
 	
-	static function alphaNumeric( $string, $spaces = true, $under = false )
+	// Removed static modifier to get PHP4 compatibilty back
+	function alphaNumeric( $string, $spaces = true, $under = false )
     {
 		// Format for element IDs and table names
 		if($under){

@@ -69,7 +69,9 @@ class BWBPS_Info{
 		
 		}
 		
-		wp_update_term_count_now($t, 'photosmash');
+		if(is_array($t)){
+			wp_update_term_count_now($t, 'photosmash');
+		}
 		
 	}
 	

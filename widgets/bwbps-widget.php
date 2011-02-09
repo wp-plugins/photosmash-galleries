@@ -66,6 +66,10 @@ class PhotoSmash_Widget extends WP_Widget {
 		/* Title of widget (before and after defined by themes). */
 		if ( $title )
 			echo $before_title . $title . $after_title;
+			
+		/* GMap Widget */
+		if ( $instance['gmap_widget'] )
+			$gmap = ' gmap=gmap_widget';
 
 		/* Display Gallery. */
 		if ( $gallery_type || $gallery_id ){
@@ -73,7 +77,7 @@ class PhotoSmash_Widget extends WP_Widget {
 			
 			if(!$layout){$layout = 'Std_Widget'; }
 			
-			$sc = "[photosmash $gid $gallery_type $images_attr=$images where_gallery=$where_gallery layout='$layout' any_height=$thumb_height any_width=$thumb_width $tags no_form=true no_pagination=$no_pagination]";
+			$sc = "[photosmash $gid $gallery_type $images_attr=$images where_gallery=$where_gallery layout='$layout' any_height=$thumb_height any_width=$thumb_width $tags no_form=true no_pagination=$no_pagination $gmap]";
 			
 			echo do_shortcode($sc);
 		
@@ -98,6 +102,7 @@ class PhotoSmash_Widget extends WP_Widget {
 		$instance['thumb_height'] = (int)( $new_instance['thumb_height'] );
 		$instance['thumb_width'] = (int)( $new_instance['thumb_width'] );
 		$instance['no_pagination'] = (int)( $new_instance['no_pagination'] );
+		$instance['gmap_widget'] = isset( $new_instance['gmap_widget'] ) ? 1 : 0;
 		
 		return $instance;
 	}
@@ -200,12 +205,17 @@ class PhotoSmash_Widget extends WP_Widget {
 			</select>
 		</p>
 		
+		<p>
+			<label for="<?php echo $this->get_field_id( 'gmap_widget' ); ?>">Show in Map Widget:</label><br/>
+			<input type='checkbox' id="<?php echo $this->get_field_id( 'gmap_widget' ); ?>" name="<?php echo $this->get_field_name( 'gmap_widget' ); ?>" <?php if( $instance['gmap_widget'] ){ echo 'checked=checked'; } ?>   /> <span style='font-size: 9px;'>show mapped images in map widget (having id 'gmap_widget')</span>
+		</p>
+		
 		<?php
 	}
 	
 	
 	//Get Layouts DDL
-	function getLayoutsDDL($selected_layout,$psDefault){
+	function getLayoutsDDL($selected_layout){
 		
  		global $wpdb;
  		 		

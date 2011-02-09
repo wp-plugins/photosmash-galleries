@@ -330,6 +330,7 @@ class BWBPS_Init{
 				css TEXT ,
 				pagination_class VARCHAR(255),
 				lists VARCHAR(255) ,
+				post_type VARCHAR(20),
 				fields_used TEXT,
 				footer_layout TEXT,
 				PRIMARY KEY  (layout_id)

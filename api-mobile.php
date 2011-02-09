@@ -67,28 +67,43 @@ class PhotoSmash_Mobile_API{
 		
 			case 'upload' :
 				
-				$this->h->insertParam('upload', $user_time);
+				if($this->psOptions['api_disable_uploads']){
+					$json['message'] = "Uploads are disabled";
+					$this->exitAPI(1010);
+				}
+				if($this->psOptions['api_logging']){
+					$this->h->insertParam('upload', $user_time);
+				}
 				$this->uploadImage();
 				break;
 				
 			case 'viewsite' :
 				
-				$this->h->insertParam('view site', $user_time);
+				if($this->psOptions['api_logging']){
+					$this->h->insertParam('view site', $user_time);
+				}
 				$this->viewSite();
 				break;
 				
 			case 'getphotos' :
-				$this->h->insertParam('get photos', $user_time);
+				if($this->psOptions['api_logging']){
+					$this->h->insertParam('get photos', $user_time);
+				}
 				$this->getPhotos();
 				break;
 				
 			case 'syncsite' :
-				$this->h->insertParam('sync', $user_time);
+				if($this->psOptions['api_logging']){
+					$this->h->insertParam('sync', $user_time);
+				}
 				$this->syncSite();
 				break;
 				
 			case 'registeraccount' :
-				$this->h->insertParam('register', $user_time);
+				
+				if($this->psOptions['api_logging']){
+					$this->h->insertParam('register', $user_time);
+				}
 				$this->redirToRegistration();
 				break;
 				
@@ -136,13 +151,18 @@ class PhotoSmash_Mobile_API{
 		} else {
 			$data['val_1'] = $user_name;
 		}
-		$wpdb->insert(PSPARAMSTABLE, $data);		
+		
+		if($this->psOptions['api_logging']){
+			$wpdb->insert(PSPARAMSTABLE, $data);		
+		}
+		
 		unset($data);
 		
 		$json['tags'] = $this->psOptions['api_tags'];
 		$json['categories'] = $this->psOptions['api_categories'];
 		$json['galleries'] = $this->psOptions['api_galleries'];
 		$json['custom_fields'] = $this->getSiteCustomFields();
+		$json['enable_uploads'] = $this->psOptions['api_disable_uploads'] ? 0 : 1;
 		
 		$json['max_width'] = (int)$this->psOptions['api_max_width'] ? (int)$this->psOptions['api_max_width'] : 1024;
 		
@@ -207,6 +227,22 @@ class PhotoSmash_Mobile_API{
 	
 	function getPhotos(){
 		global $bwbPS;
+		
+		// Get Logged in if we can
+		$user_name = $_REQUEST['ps_username'];
+		$pass = $_REQUEST['ps_pass'];
+		
+		if($user_name && $pass){
+			$thisuser = $this->h->loginUser($user_name, $pass);
+		}
+		
+		global $current_user;
+		
+		if(!is_array($thisuser->errors)){	
+			$current_user = $thisuser;
+		}
+		
+		// Get the List of Galleries that can be viewed
 		$r = $this->psOptions['api_view_galleries'];
 		
 		$r = $r ? str_replace(" ","", $r) : "";
@@ -237,9 +273,9 @@ class PhotoSmash_Mobile_API{
 		$this->retcode[1005] = "Timed out.";
 		$this->retcode[1006] = "Invalid data type.";
 		$this->retcode[1007] = "Data too large.";
-		$this->retcode[1008] = "...";
+		$this->retcode[1008] = "Server not configured";
 		$this->retcode[1009] = "...";
-		$this->retcode[1010] = "...";
+		$this->retcode[1010] = "Uploads are disabled";
 		$this->retcode[1020] = "No images found";
 		$this->retcode[2000] = "Ok.";
 	}
@@ -271,21 +307,22 @@ class PhotoSmash_Mobile_API{
 		global $wpdb;
 		global $bwbPS;
 		
-		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-wp-uploader.php");
-		
 		$user_name = $_REQUEST['ps_username'];
 		$pass = $_REQUEST['ps_pass'];
+		
+		global $current_user;
 		
 		if($user_name && $pass){
 			$thisuser = $this->h->loginUser($user_name, $pass);
 		}
 		
-		global $current_user;
-		
-		//print_r($thisuser);
 		if(!is_array($thisuser->errors)){	
 			$current_user = $thisuser;
+		} else {
+			unset($current_user);
 		}
+		
+		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/bwbps-wp-uploader.php");
 		
 		$gallery_id = (int)$this->psOptions['api_upload_gallery'];
 		
@@ -295,7 +332,7 @@ class PhotoSmash_Mobile_API{
 				. (int)$this->psOptions['api_upload_gallery'] 
 				. ").  Check your API settings and make sure you have set a valid gallery for the upload gallery.");
 				
-			$this->exitUpload(1005,"Server settings are incomplete.");
+			$this->exitAPI(1008,"Server settings are incomplete.");
 		}
 						
 		$this->psUploader = new BWBPS_Uploader($this->psOptions, $gallery_id, true);
@@ -332,6 +369,7 @@ class PhotoSmash_Mobile_API{
 		//Step 2 & 3
 		$this->prepareUploadStep('', 'image');
 		
+		
 		//Step 4
 		$processStatus = $this->processUploadStep('', true);
 				
@@ -354,14 +392,37 @@ class PhotoSmash_Mobile_API{
 			
 			//Step 7 - Do Action 'bwbps_api_uploaded' - triggers the create new post in PhotoSmash Extend
 			//		 - it can also be called by other plugins or themes
-			if($this->pxxoptions['new_post_layout']){
-				do_action( 'bwbps_api_uploaded', $this->pxxoptions['new_post_layout'], $this->pxxoptions['new_post_categories'], $this );
+			if($this->psOptions['api_post_layout']){
+			
+				$categories = $this->getNewPostCategories();
+			
+				do_action( 'bwbps_api_uploaded', $this->psOptions['api_post_layout'], $categories, $this );
 			}
 		
 		}
 		
 		return $image_id;
 	
+	}
+	
+	function getNewPostCategories(){
+		
+		if(is_array($_POST['bwbps_post_cats'])){
+			$cats = $_POST['bwbps_post_cats'];
+		} else{
+			$cats = explode(",",$_POST['bwbps_post_cats']);
+		}
+		
+		if(is_array($cats)){
+			$cats = array_map("trim", $cats);
+			foreach($cats as $cat){
+				$c[] = get_cat_ID($cat);
+			}
+			if(is_array($c)){
+				$ret = implode(",", $c);
+			}
+		}
+		return $ret;
 	}
 	
 	/*

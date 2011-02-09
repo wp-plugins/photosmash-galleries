@@ -81,6 +81,7 @@ class BWBPS_Layout{
 			, 'tag_dropdown'
 			, 'nav_search'
 			, 'nav_gallery'
+			, 'nav_search_term'
 			, 'submit'
 			, 'tags_has_all'
 			, 'favorite'
@@ -810,7 +811,7 @@ class BWBPS_Layout{
 						.$g['url_attr']['imagetargblank'].">";
 			
 			// URL when setting for Front/Cat/Archive pages to link thumbnails to the Post
-			if( !is_single() && $this->psOptions['imglinks_postpages_only'])
+			if( $this->psOptions['imglinks_postpages_only'] && (is_front_page() || is_category()))
 			{
 				
 				if((int)$image['post_id']){
@@ -1082,12 +1083,17 @@ class BWBPS_Layout{
 					
 					if( is_array($matches) ){
 						foreach ($matches as $atts){
+							$cleanVal = $val;
+							$len = (int)$atts['length'];
+							if( $len && strlen($cleanVal) > $len) {
+								$cleanVal = substr($cleanVal, 0, $len) . "&#8230;";
+							}
 						
-							if( ( $atts['if_before'] || $atts['if_after'] ) && !$val ) 
+							if( ( $atts['if_before'] || $atts['if_after'] ) && !$cleanVal ) 
 							{
 								$tempval = "";
 							} else {
-								$tempval = $atts['if_before'] . $val . $atts['if_after'];
+								$tempval = $atts['if_before'] . $cleanVal . $atts['if_after'];
 							}
 					
 							// Allows you to specify a field to test if it has a value...if not, then it returns ""
@@ -1106,6 +1112,8 @@ class BWBPS_Layout{
 							if( !$tempval ) { $tempval = $atts['if_blank']; }
 								
 							$m = $atts['bwbps_match'];
+							
+							
 							
 							$ret = str_replace($m, $tempval, $ret);	
 						}
@@ -2107,6 +2115,8 @@ class BWBPS_Layout{
 				global $current_user;
 				global $bwbPS;
 				
+				if ((int)$image['user_id'] !== (int)$current_user->ID){ return; }
+				
 				if(!isset($bwbPS->footerJSArray['upload_nonce'])){
 					$nonce = wp_create_nonce('bwb_upload_photos');
 					
@@ -2120,11 +2130,11 @@ class BWBPS_Layout{
 					$btn_name = 'delete';
 				}
 				
-			    if ((int)$image['user_id'] == (int)$current_user->ID)
-			       $ret = "<input class='bwbps_user_delete_button bwbps_delbtn_" 
-			       	. $image['psimageID']."' type='button' value='$btn_name' onclick='bwbpsUserDeleteImage(".$image['psimageID'].")' />";
-			    else
-			       $ret = "";
+			    $ret = "<input class='bwbps_user_delete_button bwbps_delbtn_" 
+			       	. $image['psimageID'] 
+			       	."' type='button' value='$btn_name' onclick='bwbpsUserDeleteImage("
+			       	.$image['psimageID'].")' />";
+			    
 			    break;
 							
 			case '[tag_links]' :
@@ -2197,6 +2207,16 @@ class BWBPS_Layout{
 				
 				$ret = '<input type="text" name="bwbps_q" size="30" maxlength="60" class="ps-ext-nav-search" value="' 
 					. esc_attr( stripslashes($_POST['bwbps_q'])) . '" />';
+				
+				break;
+			
+			case '[nav_search_term]' :
+				
+				$ret = stripslashes($_POST['bwbps_q']);
+				
+				if($atts['escape']){
+					$ret = esc_attr( $ret );
+				}
 				
 				break;
 			
@@ -2284,10 +2304,11 @@ class BWBPS_Layout{
 	function getGalleryURL( $gallery_id, $main_viewer = false ){
 		
 		if( $main_viewer ){
-			$args = array("psmash-gallery" => (int)$gallery_id );
+			
+			$args = array($this->psOptions['gallery_viewer_slug'] => (int)$gallery_id );
 			return add_query_arg($args, get_permalink($main_viewer));
 		} else {
-			$args = array("psmash-gallery" => (int)$gallery_id );
+			$args = array($this->psOptions['gallery_viewer_slug'] => (int)$gallery_id );
 			return add_query_arg($args);
 		}
 
@@ -2789,8 +2810,8 @@ class BWBPS_Layout{
 		
 		//TODO Use add_query_arg(array()) to build the links instead!
 		
-		if( (int)$_REQUEST['psmash-gallery'] ){
-			$viewerargs = array( "psmash-gallery" => (int)$_REQUEST['psmash-gallery']);
+		if( (int)$_REQUEST[$this->psOptions['gallery_viewer_slug']] ){
+			$viewerargs = array( $this->psOptions['gallery_viewer_slug'] => (int)$_REQUEST[$this->psOptions['gallery_viewer_slug']]);
 		} else {
 			$viewerargs = array();
 		}
@@ -3059,9 +3080,9 @@ class BWBPS_Layout{
 			
 		}
 		
-		if(isset($_POST['bwbps_q']) ){
-			if(!isset($_POST['bwbps_extnav_gal']) || 
-				((int)$_POST['bwbps_extnav_gal'] == $g['gallery_id']))
+		if(isset($_REQUEST['bwbps_q']) ){
+			if(!isset($_REQUEST['bwbps_extnav_gal']) || 
+				((int)$_REQUEST['bwbps_extnav_gal'] == $g['gallery_id']))
 			{
 				$sqlSpecialWhere .= $this->getSearchSQL();
 				if($sqlSpecialWhere){
@@ -3361,7 +3382,7 @@ class BWBPS_Layout{
 	function getSearchSQL(){
 		global $wpdb;
 		
-		$q = trim(stripslashes($_POST['bwbps_q']));
+		$q = trim(stripslashes($_REQUEST['bwbps_q']));
 		
 		do_action('bwbps_ext_search', $q);
 			
@@ -3477,7 +3498,7 @@ class BWBPS_Layout{
 			if(is_array($ag)){
 				foreach($ag as $gal){
 					if((int)trim($gal)){
-						$gal_a[] = trim($gal);
+						$gal_a[] = (int)trim($gal);
 					}
 				}
 				if(is_array($gal_a)){
@@ -3491,11 +3512,11 @@ class BWBPS_Layout{
 			unset($gal);
 			unset($gal_a);
 			
-			$ag = split(",", $galIDs);
+			$ag = split(",", $galExclude);
 			if(is_array($ag)){
 				foreach($ag as $gal){
 					if((int)trim($gal)){
-						$gal_a[] = trim($gal);
+						$gal_a[] = (int)trim($gal);
 					}
 				}
 				if(is_array($gal_a)){

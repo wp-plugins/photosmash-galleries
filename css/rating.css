@@ -91,13 +91,11 @@ background:transparent url(images/ps_ratings.png) no-repeat scroll 0 0;
 -moz-background-clip:border;
 -moz-background-inline-policy:continuous;
 -moz-background-origin:padding;
-background:transparent url(images/star-left.gif) no-repeat scroll 0 0;
 }
 .bwbps-star-right, .bwbps-star-right a {
 -moz-background-clip:border;
 -moz-background-inline-policy:continuous;
 -moz-background-origin:padding;
-background:transparent url(images/star-right.gif) no-repeat scroll 0 0;
 }
 .cancel a, .bwbps-star a {
 background-position:0 0;

@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 0.9.02
+Version: 1.0.0
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -37,8 +37,8 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '0.9.00');
-define('PHOTOSMASHEXTVERSION', '0.2.20');
+define('PHOTOSMASHVERSION', '1.0.0');
+define('PHOTOSMASHEXTVERSION', '1.0.0');
 
 define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
 
@@ -90,7 +90,7 @@ define('BWBPSPLUGINURL',plugins_url("/photosmash-galleries/") );
 define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
 
-define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a>
+define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
 
 /*
@@ -216,6 +216,7 @@ if( ! function_exists('esc_html_e') ){
 
 class BWB_PhotoSmash{
 
+	var $emailChecked;
 	var $customFormVersion = 22;  //Increment this to force PS to update the Custom Fields Option
 	var $adminOptionsName = "BWBPhotosmashAdminOptions";
 	
@@ -278,6 +279,9 @@ class BWB_PhotoSmash{
 		$this->uploads = wp_upload_dir();
 				
 		$this->psOptions = $this->getPSOptions();
+		
+		$this->psOptions['gallery_viewer_slug'] = $this->psOptions['gallery_viewer_slug'] 
+				? $this->psOptions['gallery_viewer_slug'] : 'psmash-gallery';
 				
 		$this->loadCustomFormOptions();
 		
@@ -312,17 +316,6 @@ class BWB_PhotoSmash{
 		//Add action for Tags Gallery
 		add_filter('the_posts', array(&$this, 'displayTagGallery') );
 		
-		/* SHARING OFF
-		// Set up Pixoox Sharing if turned on for  a Hub
-		$this->sharing_options = get_option('bwbps_sharing_options');
-		
-		if( (int)$this->sharing_options['status'] && !(int)$this->sharing_options['suspend_sharing'] ){
-			add_action( 'bwbps_upload_done', array(&$this, 'shareImages'));
-			add_action( 'bwbps_image_approved', array(&$this, 'shareImages'));
-		}	
-		
-		*/
-		
 		// PhotoSmash API
 		if( is_admin() && (int)$this->psOptions['api_enabled'] ){
 			add_action( 'wp_ajax_photosmash_api', array($this,'loadAPI') );
@@ -353,6 +346,11 @@ class BWB_PhotoSmash{
         if ($file == $this_plugin){
             $settings_link = '<a href="admin.php?page=bwb-photosmash.php">'.__("Settings", "photosmash-galleries").'</a>';
             array_unshift($links, $settings_link);
+            
+             $settings_link = '<a href="http://smashly.net/photosmash-galleries/tutorials/">'.__("Tutorials", "photosmash-galleries").'</a>';
+            array_unshift($links, $settings_link);
+            
+            
         }
         return $links;
     }
@@ -785,6 +783,8 @@ function checkEmailAlerts(){
 	// Get the Class level psOptions variable
 	// contains Options defaults and the Alert message psuedo-cron	
 	
+	$this->emailChecked = true;
+	
 	//This does the alert if it is set to alert immediately
 	if( $this->psOptions['img_alerts'] == -1 && (int)get_option('BWBPhotosmashNeedAlert') ){
 		$this->img_funcs->sendNewImageAlerts(true);
@@ -830,8 +830,10 @@ function shortCodeGallery($atts, $content=null){
 		}
 		
 */
-				
-		$this->checkEmailAlerts();
+		// Check Email Alerts
+		if(!$this->emailChecked){
+			$this->checkEmailAlerts();
+		}
 		
 		if(!is_array($atts)){
 			$atts = array();
@@ -848,6 +850,8 @@ function shortCodeGallery($atts, $content=null){
 			'gallery_viewer' => false,
 			'gallery_view_layout' => false,
 			'image_layout' => 'image_view_layout',	//For use with Gallery Viewer ?psmash-image=ID# (shows a single image
+			'exclude_galleries' => false,	// Gallery IDs to exclude in a Gallery Viewer
+			'gallery_ids' => false,	// Gallery IDs to include in a Gallery Viewer
 			'before_gallery' => '',	// Text/html to place before the gallery
 			'after_gallery' => '', // Text/html to place after the gallery
 			'wp_gallery' => false,	// Display the gallery using the WordPress Gallery instead - only displays images that are in the Media Library for the gallery's post ID
@@ -1076,7 +1080,7 @@ function shortCodeGallery($atts, $content=null){
 				
 				}
 				
-				if((int)$_REQUEST['psmash-gallery']){
+				if((int)$_REQUEST[$this->psOptions['gallery_viewer_slug']]){
 				
 					if(!$before_gallery){
 					
@@ -1084,7 +1088,7 @@ function shortCodeGallery($atts, $content=null){
 					
 					}
 					
-					$galparms['gallery_id'] = (int)$_REQUEST['psmash-gallery'];
+					$galparms['gallery_id'] = (int)$_REQUEST[$this->psOptions['gallery_viewer_slug']];
 					
 					if($gallery_view_layout){
 						$layout = $gallery_view_layout;
@@ -1140,6 +1144,9 @@ function shortCodeGallery($atts, $content=null){
 		$g['page_noellipses'] = $page_noellipses;
 		$g['page_nofirstlast'] = $page_nofirstlast;
 		
+		//Include/Exclude Galleries for Gallery Viewer
+		$g['gallery_ids'] = $gallery_ids;
+		$g['exclude_galleries'] = $exclude_galleries;
 		
 		if( intval($max_user_uploads) ){
 			$g['max_user_uploads'] = intval($max_user_uploads);
@@ -1192,7 +1199,7 @@ function shortCodeGallery($atts, $content=null){
 		//PhotoSmash Extend Variables used in Post on Upload (creating new Posts on Uploads)
 		$g['create_post'] = $create_post;
 		$g['preview_post'] = $preview_post;
-		$g['cat_layout'] = $cat_layout;
+		$g['cat_layout'] = $cat_layout ? $cat_layout : "postcat";
 		$g['post_cat_child_of'] = $post_cat_child_of;
 		$g['post_cat_exclude'] = $post_cat_exclude;
 		$g['post_cat_show'] = $post_cat_show;
@@ -1298,6 +1305,18 @@ function shortCodeGallery($atts, $content=null){
 		
 		$g['no_pagination'] = $no_pagination;
 		$g['no_form'] = $no_form;
+		
+		if(isset($_POST['bwbps_q']) ){
+			if(!isset($_POST['bwbps_extnav_gal']) || 
+				((int)$_POST['bwbps_extnav_gal'] == $g['gallery_id']))
+			{
+				$g['no_pagination'] = true;
+				$g['limit_images'] = 0;
+				$g['limit_page'] = 0;
+				$g['limit_images_override'] = 0;
+				$g['img_perpage'] = 0;
+			}
+		}
 		
 		/* *********************************** */
 		// Shortcode for MANUAL FORM placement //
@@ -1717,10 +1736,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		
 		if(!$this->bExcludeDatePicker){
 			//enqueue jQuery DatePicker
-			wp_register_script('jquery_datepicker'
+			wp_enqueue_script('jquery-ui-core');
+			
+			wp_register_script('jquery-datepicker'
 				, plugins_url('/photosmash-galleries/js/ui.datepicker.js')
 				, array('jquery'), '1.0');
-			wp_enqueue_script('jquery_datepicker');
+			wp_enqueue_script('jquery-datepicker');
 		
 		}
 	}
@@ -1746,10 +1767,16 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	if(trim($this->psOptions['css_file'])){  
 	?>
 	<link rel="stylesheet" href="<?php echo PSTEMPLATESURL.$this->psOptions['css_file'];?>" type="text/css" media="screen" />
-	<?php } ?>
+	<?php } 
 	
+	// Add DatePicker CSS
+	 if( $this->bExcludeDatePicker === false ){ 
+	 ?>
 	<link rel="stylesheet" type="text/css" href="<?php echo plugins_url();?>/photosmash-galleries/css/ui.core.css" />
 	<link rel="stylesheet" type="text/css" href="<?php echo plugins_url();?>/photosmash-galleries/css/ui.datepicker.css" />
+	
+	<?php } ?>
+	
 	
 	<link rel="alternate" href="<?php echo plugins_url(); ?>/photosmash-galleries/bwbps-media-rss.php" type="application/rss+xml" title="" id="gallery" />
 
@@ -2514,7 +2541,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	
 	function injectGMapFooterCodes(){
 	
-		if( !$this->skipGoogleAPI && trim($this->psOptions['gmap_js']) != 'none' ){
+		if($this->loadGoogleMaps && !$this->skipGoogleAPI && trim($this->psOptions['gmap_js']) != 'none' ){
 			
 			if( $this->psOptions['gmap_js'] ){
 				
@@ -3341,7 +3368,9 @@ add_action('init', array(&$bwbPS, 'enqueueBWBPS'), 1);
 
 add_action( 'init', array(&$bwbPS, 'createTaxonomy'), 0 );
 
-add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
+add_action('wp_print_styles', array(&$bwbPS, 'injectBWBPS_CSS'));
+
+//add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
 
 add_action('wp_footer', array(&$bwbPS, 'injectFooterJavascript'), 100);
 

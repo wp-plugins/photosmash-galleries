@@ -3,8 +3,8 @@ Contributors: bennebw
 Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 3.0.4
-Stable tag: 0.9.02
+Tested up to: 3.0.5
+Stable tag: 1.0.0
  
 PhotoSmash - photo gallery plugin that integrates with built-in WordPress gallery functionality and lets you allow your users to upload images.
 
@@ -14,16 +14,18 @@ PhotoSmash Galleries makes it easy to create photo galleries in posts or pages t
 
 = Links =
 
-* <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Help Forum</a>
+* <a href="http://wordpress.org/tags/photosmash-galleries?forum_id=10" title="WP Forum Page">WordPress Help Forum</a>
+* <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Help Forum (deprecated)</a>
 * <a href="http://smashly.net/photosmash-galleries/tutorials/" title="Help Videos">Help Videos</a>
 * <a href="http://smashly.net/photosmash-galleries/photosmash-demo/" title="Demo Gallery">Demo Gallery</a>
+* <a href="http://www.itunes.com/apps/photosmash/" title="PhotoSmash iPhone App">PhotoSmash iPhone App</a> on the App Store
 
 
 = Features =
 
 For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
 
-*   iPhone App - coming soon!  Will let you and your site's users browse your images and upload images to galleries using your custom fields, tags, etc
+*   PhotoSmash iPhone App - <a href='http://www.itunes.com/apps/photosmash/'>Available on the App Store!</a>  Lets you and your site's users browse your images and upload images to galleries using your custom fields, tags, etc
 *   User contributable photo galleries - allow your users to upload images to galleries
 *   Map your images using Google Maps API V.3 - simple to use (see Changelog for details)
 *	Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
@@ -88,6 +90,23 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 1.0.0 – 2/8/2011 =
+    * (Extend) Added Post Meta Mapping - for PhotoSmash Extend, New Posts on Upload, you can now map PhotoSmash fields to Custom Fields in your posts. Go to PSExtend Settings / Post on Upload settings, then add your fields to the Post Meta Field Mapping (more details are given there)
+    * iPhone/Mobile API tweaked
+    * Added ability to let Users Delete Their Approved Images - previously, they could only delete images that were awaiting moderation. Now you can turn on ability to delete approved images. Go to PhotoSmash Settings, look for option near bottom of first tab
+    * Added - Post Excerpt (Caption) is set to Image Caption when Attachment is Inserted - the WP Attachments use the Post Excerpt field as the caption for the standard galleries. Now when PhotoSmash inserts an Attachment, it is populating the Post Excerpt with the Caption.
+    * Added - ability to select what the Gallery Viewer gallery ID slug will be - in PhotoSmash Settings (first tab), this slug will default to psmash-gallery. It is used with the Gallery Viewer when a gallery is clicked.
+    * Fixed - Extend will now properly create new posts on Mobile uploads
+    * Fixed - Extend Nav Search doesn't use paging...all result images are shown
+    * Fixed - Function call was expecting too many arguments in bwbps-widget.php
+    * Fixed - Static modifier on function broke PHP4 compatibility - in the pxx-helpers.php file, a STATIC modifier to a function broke PHP4
+    * Added Gallery Viewer Shortcode Attributes - gallery_ids='1,3,4,##' will include only the gallery ids you enter (replace 1,3,4,## with your own ids. exclude_galleries='1,3,4,##' - you get the picture. So now you have multiple Gallery Viewers with different galleries listed. Here's a full shortcode (remove the space after the '['): [ photosmash gallery_viewer=true gallery_ids='1,3,4,12']
+    * Added length attribute to custom fields in Layouts - so, now you can limit how many characters will display from your custom fields in your custom layouts. Say you have a field called Description. You can put that field in a custom layout and say you only want the first 30 characters like this: [description length=30]
+    * Added nav_search_term field for Extended Navigation (Extend use only) - This allows you show the something like: Search results for: my search term. You can use the conditionals 'if_before' and 'if_after' to add styling and the 'Search results for:' text that will only appear if a search term exists. So the whole thing would be like: [nav_search_term if_before='<h3>Results for: ' if_after='</h3>']
+    * Fixed - datepicker.js does not to load if you don't have a Custom Field (type date)
+    * Fixed Google Maps code to only load when needed
+    * Added Google Map checkbox to PhotoSmash Widget - you can now have your PhotoSmash image widgets mapped in a PhotoSmash Map widget. Look at the bottom of the PhotoSmash Widget for the "Show in Map Widget" setting.
 
 = 0.9.02 – 1/11/2011 =
 
@@ -383,7 +402,9 @@ Visit the [Changelog on Smashly.net](http://smashly.net/photosmash-galleries/ "C
 
 == Usage ==
 
-Using PhotoSmash is extremely simple:
+Using PhotoSmash can be as simple as just adding this shortcode to a Post: [photosmash]
+
+Here's how to get up and running:
 
 1. Download PhotoSmash and unzip?you should wind up with a folder named: bwb-photosmash
 1. Upload the bwb-photosmash plugin folder to your /wp-content/plugins/ folder

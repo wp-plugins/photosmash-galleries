@@ -686,7 +686,7 @@ class BWBPS_UploadForm{
 				$ret = '<span id="' . $g["pfx"] . 'bwbps_result2" class="bwbps_result bwbps_result2"></span>';
 				break;
 			case "[url]":
-				$ret = '<input tabindex="'. $tab_index . '" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset ' . $reqclass. '" ' . $value . ' />';
+				$ret = '<input tabindex="'. $tab_index . '" type="text" name="bwbps_url" id="' . $g["pfx"] . 'bwbps_url" class="bwbps_reset ' . $reqclass. '" ' . $value . ' ' . $fld_attributes . ' />';
 				break;
 			case "[loading]":
 				$ret = '<img id="' . $g["pfx"] . 'bwbps_loading" src="'.WP_PLUGIN_URL.'/photosmash-galleries/images/loading.gif" style="display:none;" alt="loading" '.$fld_attributes . '/>';
@@ -1404,8 +1404,11 @@ class BWBPS_UploadForm{
 				
 				break;
 			case 5 :	//date picker
-				if($val){
+
+				if($val != '0000-00-00 00:00:00'){
 					$val = date('m/d/Y',strtotime ($val));
+				} else {
+					$val = "";
 				}
 				$ret = "<input tabindex='".$tabindex."' " . $id
 					. " ".$ele_name

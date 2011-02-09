@@ -61,19 +61,7 @@ class BWBPS_ImageFunc{
 			$psLayout = new BWBPS_Layout($bwbPS->psOptions, $bwbPS->cfList);
 		}
 		
-		$results = $psLayout->getGalleryImages($g);
-		
-		
-		/*
-		$sql = "SELECT ". PSIMAGESTABLE . ".*, " . PSGALLERIESTABLE 
-			. ".post_id as gal_post_id FROM " . PSIMAGESTABLE 
-			. " JOIN " . PSGALLERIESTABLE . " ON " . PSGALLERIESTABLE . ".gallery_id = "
-			. PSIMAGESTABLE . ".gallery_id WHERE " . PSIMAGESTABLE . ".status = 1 "
-			. $img_ids . "ORDER BY ". PSIMAGESTABLE . ".created_date DESC LIMIT $cnt";
-		
-		$results = $wpdb->get_results($sql, ARRAY_A);
-		*/
-		
+		$results = $psLayout->getGalleryImages($g);		
 		
 		foreach($results as $img){
 			unset($image);
@@ -104,13 +92,24 @@ class BWBPS_ImageFunc{
 			$image['geolat'] = $img['geolat'];
 			$image['geolong'] = $img['geolat'];
 			
-			if((int)$image['post_id']){
-					$post_perma = get_permalink((int)$img['post_id']);
-			} else {
-				if((int)$image['gal_post_id']){
-					$post_perma = get_permalink((int)$img['gal_post_id']);
+			
+			//Check to see if user prefers Attachment links
+			$post_perma = "";
+			if((int)$bwbPS->psOptions['api_link_toattachments'] && (int)$img['wp_attach_id']){
+			
+				$post_perma = get_permalink((int)$img['wp_attach_id']);
+				
+			}
+			
+			if(!$post_perma){
+				if((int)$img['post_id']){
+						$post_perma = get_permalink((int)$img['post_id']);
 				} else {
-					$post_perma = get_permalink((int)$img['wp_attach_id']);
+					if((int)$image['gal_post_id']){
+						$post_perma = get_permalink((int)$img['gal_post_id']);
+					} else {
+						$post_perma = get_permalink((int)$img['wp_attach_id']);
+					}
 				}
 			}
 			

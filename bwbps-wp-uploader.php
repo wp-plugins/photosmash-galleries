@@ -720,7 +720,8 @@ class BWBPS_Uploader{
 			'guid' => $this->file['url'],
 			'post_parent' => (int)$this->json['post_id'],
 			'post_title' => $wpdb->escape( $this->json['image_caption'] ),
-			'post_content' => $wpdb->escape( $this->json['image_caption'] )
+			'post_content' => $wpdb->escape( $this->json['image_caption'] ),
+			'post_excerpt' => $wpdb->escape( $this->json['image_caption'] )
 		);
 				
 		//insert post attachment

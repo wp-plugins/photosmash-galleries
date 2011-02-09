@@ -81,7 +81,7 @@ class BWBPS_AJAX{
 	 *	  image in a Custom Upload script
 	*/
 	function userDeleteImage($deletePost){
-		global $wpdb, $user_ID;
+		global $wpdb, $user_ID, $bwbPS;
 		
 		
 		$imgid = (int)$_POST['image_id'];
@@ -91,7 +91,7 @@ class BWBPS_AJAX{
 			$json['image_id'] = $imgid;
 			if($imgid){
 			
-				if( current_user_can('level_10')){
+				if( current_user_can('level_10') || (int)$bwbPS->psOptions['can_delete_approved']){
 					$status = 2;
 				} else {
 					$status = 0;

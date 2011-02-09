@@ -52,11 +52,13 @@ class BWBPS_LayoutsEditor{
 		$d['alt_layout'] = $_POST['bwbps_alt_layout'];
 		$d['wrapper'] = $_POST['bwbps_wrapper'];
 		$d['css'] = $_POST['bwbps_css'];
+		$d['post_type'] = stripslashes($_POST['bwbps_post_type']."");
 		
 		$d['pagination_class'] = esc_attr__($_POST['bwbps_pagination_class']);
 		
 		//Strip slashes...I think WP adds slashes regardless, so you need to strip them
 		$d['layout'] = stripslashes($d['layout']);
+		
 		$d['alt_layout'] = stripslashes($d['alt_layout']);
 		$d['css'] = stripslashes($d['css']);
 		$d['wrapper'] = stripslashes($d['wrapper']);
@@ -259,13 +261,43 @@ class BWBPS_LayoutsEditor{
 </tr>
 
 <tr>
-<th id='bwbps_layout'>Javascript Layout:</th>
+<th id='bwbps_footer_layout'>Javascript Layout:</th>
 	<td>
 		<input type='text' name="bwbps_footer_layout" value='<?php esc_attr_e($layoutOptions['footer_layout']);
 		?>' />
 		<br/>- Enter another Custom Layout name here to create javascript for each image.  This javascript will be inserted to the footer of your page.  The &lt;script&gt; tags will be added automatically.  Use the Wrapper of your Javascript Custom Layout if you'd like to wrap your images scripts in a function, or if you need to call certain functions once.  Example of use: you could add javascript that would add your images to a Google Map!
 		<br/><br/>You can override this Javascript Layout in your shortcode by using an attribute like: javascript_layout='my_js_layout' 
 		<br/>You can prevent the javascript_layout from being used by adding javascript_layout='none' to your shortcode.
+	</td>
+</tr>	
+
+<tr>
+	<th>Post Type:</th>
+	<td>
+		<?php echo "type: ".$layoutOptions['post_type'];?>
+		<select name="bwbps_post_type">
+			<option value="0" <?php if(!$layoutOptions['post_type']) echo 'selected=selected'; ?>>default</option>
+		<?php 
+			$post_types=get_post_types('','names'); 
+			foreach ($post_types as $post_type ) {
+				if($post_type != 'revision' && $post_type != 'attachment' && $post_type != 'nav_menu_item'){
+					if($layoutOptions['post_type'] == $post_type){ $selected = 'selected=selected'; }
+					echo "<option value='$post_type' $selected >$post_type</option>";
+				}
+			 }
+		
+		 ?>
+		 </select>
+		
+		<p>Post Types use with PhotoSmash Extend's New Post on Upload feature...adds a Post Type to new posts.
+		</p><b>Note:</b> PhotoSmash does not implement Post Types for you...your theme or another plugin will need to do that.  This just allows you to set a Post Type on New Posts when they are created via PhotoSmash Extend.
+		<br/>Post Types are well documented on the web.  Try one of these tutorials to get started:
+		<ul>
+		<li><a href='http://justintadlock.com/archives/2010/04/29/custom-post-types-in-wordpress'>Justin Tadlock's tutorial</a></li>
+		<li><a href='http://www.wpbeginner.com/wp-tutorials/how-to-use-custom-post-types/'>WPBeginner's tutorial...links to plugins</a></li>
+		<li><a href='http://net.tutsplus.com/tutorials/wordpress/rock-solid-wordpress-3-0-themes-using-custom-post-types/'>NetTuts+ tutorial</a></li>
+		<li><a href='http://codex.wordpress.org/Function_Reference/register_post_type'>The Official WP Codex entry</a></li>
+		</ul>
 	</td>
 </tr>
 

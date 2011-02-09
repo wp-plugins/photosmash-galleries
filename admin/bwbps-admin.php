@@ -388,6 +388,12 @@ class BWBPS_Admin{
 			$ps['contributor_label'] = esc_attr( $_POST['ps_contributor_label'] );
 			$ps['contributor_slug'] = sanitize_title( $_POST['ps_contributor_slug'] );
 			
+			$ps['gallery_viewer_slug'] = trim(sanitize_title( $_POST['ps_gallery_viewer_slug'] ));
+			
+			if(!$ps['gallery_viewer_slug']){ $ps['gallery_viewer_slug'] = 'psmash-gallery'; }
+			
+			$ps['can_delete_approved'] = isset($_POST['ps_can_delete_approved']) ? 1 : 0;
+			
 			$ps['nofollow_caption'] = isset($_POST['ps_nofollow_caption']) ? 1 : 0;
 			
 			//Alert on All Uploads
@@ -501,8 +507,11 @@ class BWBPS_Admin{
 			$ps['mod_send_msg'] = isset($_POST['ps_mod_send_msg']) ? 1 : 0;
 			
 			$ps['api_enabled'] = isset($_POST['ps_api_enabled']) ? 1 : 0;
+			$ps['api_disable_uploads'] = isset($_POST['ps_api_disable_uploads']) ? 1 : 0;
+			
 			$ps['api_upload_gallery'] = (int)$_POST['ps_api_upload_gallery'];
-			$ps['api_post_layout'] = (int)$_POST['ps_api_post_layout'];
+			$ps['api_post_layout'] = $_POST['ps_api_post_layout'];
+			
 			$ps['api_url'] = $bwbPS->h->validURL( $_POST['ps_api_url'] );
 			$ps['api_logging'] = isset($_POST['ps_api_logging']) ? 1 : 0;
 			
@@ -510,10 +519,20 @@ class BWBPS_Admin{
 				$ps['api_url'] = admin_url('admin-ajax.php');
 			}
 			
-			$ps['api_categories'] = esc_attr(stripslashes(trim($_POST['ps_api_categories'])));
-			$ps['api_tags'] = esc_attr(stripslashes(trim($_POST['ps_api_tags'])));
+			if(is_array($_POST['ps_api_categories'])){
+				$catstemp = array_map("trim", $_POST['ps_api_categories']);
+				$ps['api_categories'] = implode(",",$catstemp);
+			} else {
+				$ps['api_categories'] = trim($_POST['ps_api_categories']);
+			}
+			
+			$ps['api_categories'] = stripslashes(trim($ps['api_categories']));
+			
+			$ps['api_tags'] = stripslashes(trim($_POST['ps_api_tags']));
 			$ps['api_galleries'] = esc_attr(stripslashes(trim($_POST['ps_api_galleries'])));
 			$ps['api_view_galleries'] = esc_attr(stripslashes(trim($_POST['ps_api_view_galleries'])));
+			
+			$ps['api_link_toattachments'] = isset($_POST['ps_api_link_toattachments']) ? 1 : 0;
 			
 			$ps['api_big_url'] = (int)$_POST['ps_api_big_url'];
 			
@@ -1534,7 +1553,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	</ul>
 	<div id='bwbps_galleryoptions'>
 		<table class="form-table">
-		
+			<tr>
+				<th>Need help?</th>
+				<td style='font-size: 16px; color: #ff0000 !important;'><a href='http://smashly.net/photosmash-galleries/tutorials/'><span style='color: #ff0000 !important;'>Tutorials</span></a> <a href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/'  target='_blank' title='Video tutorials'><img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video Tutorial' /></a> - <a href='http://smashly.net/community/'>Old Help Forum</a> - <a href='http://wordpress.org/tags/photosmash-galleries?forum_id=10'>Support on WordPress</a></td>
 			<tr>
 				<th>Gallery Viewer Page:</th>
 				<td class='<?php if(!$psOptions['gallery_viewer']) echo 'message error'; ?>'>
@@ -1550,9 +1571,8 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			$galviewsel = " selected='selected' ";
 		}
 		
-		$ddl_pages = str_replace('<select name="ps_gallery_viewer" id="ps_gallery_viewer">
-	<option value="">select page</option>',
-			'<select name="ps_gallery_viewer" id="ps_gallery_viewer"><option value="">select page</option>
+		$ddl_pages = str_replace('<option value="">select page</option>',
+			'<option value="">select page</option>
 			<option class="level-0" value="-1" '
 			. $galviewsel . '>-- no gallery viewer --</option>', $ddl_pages);
 			
@@ -1566,6 +1586,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Auto-add gallery to posts:</th>
 				<td>
+					<em>NOTE: This feature is NOT recommended.  Use the shortcode [photosmash] instead.</em><br/>
 					<select name="ps_auto_add">
 						<option value="0" <?php if($psOptions['auto_add'] == 0) echo 'selected=selected'; ?>>No auto-add</option>
 						<option value="1" <?php if($psOptions['auto_add'] == 1) echo 'selected=selected'; ?>>Add to top</option>
@@ -1790,7 +1811,23 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					<a href='javascript:void(0);' onclick="jQuery('#ps_update_contribs').val('true'); jQuery('#bwbps_form_gensettings').submit(); return false;" title='Update all images in the Contributor taxonomy'>Update All Images</a> - updates the contributor taxonomy for all images (could take a while depending on # of images in database)
 					<input type='hidden' id='ps_update_contribs' name='ps_update_contribtags' value='' />
 				</td>
-			</tr>		
+			</tr>
+			
+			<tr>
+				<th>Gallery Viewer Slug:</th>
+				<td>
+					<?php $psOptions['gallery_viewer_slug'] = $psOptions['gallery_viewer_slug'] ? $psOptions['gallery_viewer_slug'] : 'psmash-gallery'; ?>
+					<input type='text' name="ps_gallery_viewer_slug" value='<?php echo esc_attr($psOptions['gallery_viewer_slug']);?>'/>
+					will default to 'psmash-gallery'
+				</td>
+			</tr>
+			<tr>
+				<th>Users Can Delete Approved Images:</th>
+				<td>
+					<input type="checkbox" name="ps_can_delete_approved" <?php if( $psOptions['can_delete_approved'] == 1) echo 'checked'; ?>/> 
+					Note: you still have to provide a [delete_button] in your Custom Layouts to give the user a button for deleting.  Leaving this blank only allows them to delete their 'unapproved' images...if you give them the button.
+				</td>
+			</tr>
 
 		</table>
 	</div>
@@ -2260,14 +2297,26 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	<div id="bwbps_api">
 		<h2>Mobile API Settings</h2>
-		<span style='color: red; font-weight: bold;'>New!</span> Version 1.0 of the PhotoSmash iPhone App is ready for submission to the Apple iTunes App Store!  We'll keep you posted.  In the meantime, read more here: <a href='http://smashly.net/photosmash-galleries/iphone/'>iPhone App info</a>
-		<p><b>PhotoSmash Extend users</b> have a <a href='http://smashly.net/photosmash-galleries/extend/'><span style='text-decoration: underline;'><b>special invitation</b></span></a> here: <a href='http://smashly.net/photosmash-galleries/extend/'>Special Invitation (bottom of page)</a></p>
+		<h3>iPhone App is Available Now!</h3>
+		The PhotoSmash iPhone App is now available on the iTunes App Store!  Visit <a href='http://smashly.net/photosmash-galleries/iphone/'>Smashly.net</a> for more info, or get your copy on the <a href='http://www.itunes.com/apps/photosmash/'>App Store</a> now!
+		
+		<h3 style='color:red;'>Special Invitation to PS Extend Users</h3>
+		<b>PhotoSmash Extend users</b> may apply to have their sites included in the PhotoSmash Mobile Listing.  Visit the <a href='http://smashly.net/photosmash-galleries/extend/'>PhotoSmash Extend</a> homepage today!  We want family-friendly sites to be included in the downloadable list of PhotoSmash Sites!
+		
+		<p><a style='color: #d54e21 !important; text-decoration: none !important;' href='<?php echo PHOTOSMASHWEBHOME; ?>iphone/getting-started/'  target='_blank' title='Video tutorial on configuring the Mobile API.'>Get Help <img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video - Configuring API for Mobile' /></a> - video tutorial on configuring the Mobile API.</p>
 		<table class="form-table">
 			
 			<tr>
 				<th>Enable Mobile API:</th>
 				<td>
 					<input type="checkbox" name="ps_api_enabled" <?php if($psOptions['api_enabled']) echo 'checked'; ?> /> turns on ability for mobile Apps to interact with PhotoSmash
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Disable Uploading via API:</th>
+				<td>
+					<input type="checkbox" name="ps_api_disable_uploads" <?php if($psOptions['api_disable_uploads']) echo 'checked'; ?> /> turns off ability for mobile Apps to Upload Images
 				</td>
 			</tr>
 		
@@ -2280,7 +2329,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					}
 					?>
 				
-					<input type="text" id='ps_api_url' name="ps_api_url" value='<?php echo esc_attr($psOptions['api_url']);?>'> Should point to your WP-Admin.  Only change this if you're using MOD rewrite in your .htaccess.  It's not really necessary to change this, so feel free to leave it as is.
+					<input type="text" id='ps_api_url' name="ps_api_url" value='<?php echo esc_attr($psOptions['api_url']);?>' style='width:300px;' /> Should point to your WP-Admin.  Only change this if you're using MOD rewrite in your .htaccess.  It's not really necessary to change this, so feel free to leave it as is.
 				</td>
 			</tr>
 			
@@ -2289,7 +2338,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<td><em>Max pixels in longest side:</em><br/>
 					<input type="text" id='ps_api_tags' name="ps_api_max_width" value='<?php 
 						echo ((int)$psOptions['api_max_width'] ? (int)$psOptions['api_max_width'] : 1024);
-					?>'> <br/>(the phone will resize the image using this as maximum pixels in longest side - so if you enter 800, then in landscape, the width will be a maximum of 800 pixels...in portrait, the height will be max of 800)
+					?>' /> <br/>(the phone will resize the image using this as maximum pixels in longest side - so if you enter 800, then in landscape, the width will be a maximum of 800 pixels...in portrait, the height will be max of 800)
 				</td>
 			</tr>
 			
@@ -2322,24 +2371,44 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Upload Gallery List:</th>
 				<td>
-					<em>List of Galleries that user can select from to upload to (gallery names, comma separated):</em><br/>
-					<input type="text" id='ps_api_galleries' name="ps_api_galleries" value='<?php echo esc_attr($psOptions['api_galleries']);?>'> 
+					<em>List of Galleries that user can select from to upload to (<b>Gallery Names</b>, comma separated):</em><br/>
+					<input style='width: 300px;' type="text" id='ps_api_galleries' name="ps_api_galleries" value='<?php echo esc_attr($psOptions['api_galleries']);?>'> Names
 				</td>
 			</tr>
 			
 			<tr>
 				<th>Viewable Gallery List:</th>
 				<td>
-					<em>List of Gallery IDs for images that will be viewable in the Mobile app (Gallery IDs, comma separated):</em><br/>
-					<input type="text" id='ps_api_view_galleries' name="ps_api_view_galleries" value='<?php echo esc_attr($psOptions['api_view_galleries']);?>'> <br/>
+					<em>List of Gallery IDs for images that will be viewable in the Mobile app (<b>Gallery IDs</b>, comma separated):</em><br/>
+					<input type="text" id='ps_api_view_galleries' name="ps_api_view_galleries" value='<?php echo esc_attr($psOptions['api_view_galleries']);?>' /> Numeric IDs<br/>
 					<em>You can find Gallery IDs in the Drop Down (it's the number right after 'ID:').</em>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Prefer Link to Attachment Pages:</th>
+				<td>
+					<em>Link to Image Attachment Pages if they Exist (otherwise, links to Posts first):</em><br/>
+					<input type="checkbox" name="ps_api_link_toattachments" <?php if($psOptions['api_link_toattachments']) echo 'checked'; ?> />
 				</td>
 			</tr>
 			
 			<tr>
 				<th>Tag List:</th>
 				<td><em>List of Tags that user can select from (comma separated):</em><br/>
-					<input type="text" id='ps_api_tags' name="ps_api_tags" value='<?php echo esc_attr($psOptions['api_tags']);?>'>
+					<input style='width: 400px'  type="text" id='ps_api_tags' name="ps_api_tags" value='<?php echo esc_attr($psOptions['api_tags']);?>'>
+				</td>
+			</tr>
+			
+			<tr>
+				<th>Category List:</th>
+				<td>
+					<em>(PhotoSmash Extend - for New Posts on Upload)</em>
+					<div style='height:100px; overflow: auto;'>
+						<?php
+							echo $this->getAPICategoryList($psOptions['api_categories']);
+						?>
+					</div>
 				</td>
 			</tr>
 			
@@ -2365,18 +2434,11 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			?>
 			
 			<tr>
-				<th>Category List:</th>
-				<td>
-					<input type="text" id='ps_api_categories' name="ps_api_categories" value='<?php echo esc_attr($psOptions['api_categories']);?>'> list of Categories that user can select from, comma separated (Requires PhotoSmash Extend...is only used for categories that the New Post will receive).
-				</td>
-			</tr>
-			
-			<tr>
 				<th>Layout for New Posts:</th>
 				<td>
 					<?php 
-						echo $this->getLayoutsDDL((int)$psOptions['api_post_layout'], false, 0, 'ps_api_post_layout');
-					?> (Requires PhotoSmash Extend)
+						echo $this->getLayoutsDDL($psOptions['api_post_layout'], false, false, 'ps_api_post_layout', true);
+					?> (Requires PhotoSmash Extend) For Extend users using the New Post feature, all of your New Posts via Mobile will use this layout unless you use the 'postcat_XX' layout naming schema to work with Categories.  <br/><br/>Leave BLANK to NOT create a new post. Post on Upload must be enabled in PSmashExtend settings for posts to be created.
 				</td>
 			</tr>
 			
@@ -3480,22 +3542,27 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		return $ret;
 	}
 	
-	
 	//Get Layouts DDL
-	function getLayoutsDDL($selected_layout,$psDefault, $type=false, $ele_name=false){
+	function getLayoutsDDL($selected_layout,$psDefault, $type=false, $ele_name=false, $use_name_for_value = false){
 		
  		global $wpdb;
  		
- 		if($psDefault && !$selected_layout){ $selected_layout = -1; }
  		
- 		if($selected_layout == -1){$sel = "selected='selected'";}else{$sel = "";}
-		$ret .= "<option value='-1' ".$sel.">Standard display</option>";
+ 		if( !$use_name_for_value ){
+	 		if($psDefault && !$selected_layout){ $selected_layout = -1; }
+ 		
+ 			if($selected_layout == -1){$sel = "selected='selected'";}else{$sel = "";}
+				$ret .= "<option value='-1' ".$sel.">Standard display</option>";
+
 		
-		if(!$psDefault){
-			if($selected_layout == 0){$sel = "selected='selected'";}else{$sel = "";}
-			$ret .= "<option value='0' ".$sel.">&lt;Default layout&gt;</option>";
+			if(!$psDefault){
+				if(!$selected_layout){$sel = "selected='selected'";}else{$sel = "";}
+				$ret .= "<option value='0' ".$sel.">&lt;Default layout&gt;</option>";
+			}
+			
 		}
 		
+		// Type specifies if we're limiting to a specific Layout Type
 		if($type !== false){
 			$where = " WHERE layout_type=" . (int) $type. " ";
 		}
@@ -3505,9 +3572,22 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		
 		if($query){
 			foreach($query as $row){
-		
-				if($selected_layout == $row->layout_id){$sel = "selected='selected'";}else{$sel = "";}
-				$ret .= "<option value='".$row->layout_id."' ".$sel.">".$row->layout_name."</option>";
+				if($use_name_for_value){
+					
+					if($selected_layout == $row->layout_id){
+						$sel = "selected='selected'";
+					}else{$sel = "";}
+					
+					$ret .= "<option value='".$row->layout_name."' "
+						.$sel.">".$row->layout_name."</option>";
+					
+				} else {
+					if($selected_layout == $row->layout_id){
+						$sel = "selected='selected'";}else{$sel = "";}
+
+					$ret .= "<option value='".$row->layout_id."' "
+						.$sel.">".$row->layout_name."</option>";
+				}
 		
 			}
 		}
@@ -3565,6 +3645,28 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		return $loginname;
 	}
 	
+	function getAPICategoryList($selected=""){
+		$sel_raw = explode(",", $selected);
+		
+		$sel = array_map("trim",$sel_raw);
+		
+		$cats = get_categories(array('hide_empty' => 0));
+		
+		foreach( $cats as $cat ){
+			
+			if(in_array($cat->name, $sel)){
+				$checked = ' checked="checked"';
+			} else { $checked = ''; }
+			
+			$c .= '<input type="checkbox" name="ps_api_categories[]" value="' 
+				. esc_attr($cat->name) . '" ' .$checked.' /> ' . $cat->name . '<br />';
+			
+		}
+		
+		return $c;
+		
+	}
+	
 	function getCustomFieldsCheckBoxes($selected=""){
 		global $bwbPS;
 		
@@ -3579,11 +3681,11 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		if(is_array($bwbPS->cfList)){
 			foreach( $bwbPS->cfList as $f ){
 				if(is_array($sel)){
-					$checked = in_array($f->field_id, $sel) ? " checked=checked " : "";
+					$checked = in_array($f->field_id, $sel) ? " checked='checked' " : "";
 				} else {
 					$checked = "";
 				}
-				$cfs .= '<input type="checkbox" name="ps_api_custom_fields[]" value="' . $f->field_id . '" ' 
+				$cfs .= '<input type="checkbox" name="ps_api_custom_fields[]" value="' . esc_attr($f->field_id) . '" ' 
 					.$checked.'/> ' . $f->label . '<br />';
 			}
 		}
