@@ -747,7 +747,10 @@ class BWBPS_Admin{
 		
 		<h2>PhotoSmash Galleries</h2>
 		
+		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>.</h3>
+		
 		<?php
+		
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
@@ -1527,6 +1530,8 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		?>
 		
 		<h2>PhotoSmash Galleries</h2>
+		
+		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>.</h3>
 		
 		<?php
 			if($this->message){
