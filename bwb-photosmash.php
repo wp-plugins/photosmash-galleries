@@ -603,37 +603,19 @@ class BWB_PhotoSmash{
 			add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 9,  
 			'importPSImages', array(&$bwbPS, 'loadImageImporter'));
 			
-			/*	SHARING OFF
-			add_submenu_page(basename(__FILE__), __('Photo Sharing')
-					, __('Photo Sharing'), 9, 'psmashSharing'
-					, array(&$bwbPS, 'loadPhotoSharing'));
-			*/
-			
 			//Advanced Features (Layouts and Custom Fields
-			if($this->psOptions['use_advanced'] == 1){
-				$bshowadv = true;
-			}
-			if(isset($_POST['update_bwbPSDefaults'])){
-				if(isset($_POST['ps_use_advanced'])){
-					$bshowadv = true;
-				}else{
-					$bshowadv = false;
-				}
-			}
-			if($bshowadv){
-				add_submenu_page(basename(__FILE__), __('PS Form Editor')
-					, __('Custom Forms'), 9, 'editPSForm'
-					, array(&$bwbPS, 'loadFormEditor'));
-					
-				add_submenu_page(basename(__FILE__), __('PS Field Editor')
-					, __('Custom Fields'), 9, 'editPSFields'
-					, array(&$bwbPS, 'loadFieldEditor'));
+			add_submenu_page(basename(__FILE__), __('PS Form Editor')
+				, __('Custom Forms'), 9, 'editPSForm'
+				, array(&$bwbPS, 'loadFormEditor'));
 				
-				add_submenu_page(basename(__FILE__), __('PS Layouts Editor')
-					, __('Layouts Editor'), 9, 'editPSHTMLLayouts'
-					, array(&$bwbPS, 'loadLayoutsEditor'));
+			add_submenu_page(basename(__FILE__), __('PS Field Editor')
+				, __('Custom Fields'), 9, 'editPSFields'
+				, array(&$bwbPS, 'loadFieldEditor'));
+			
+			add_submenu_page(basename(__FILE__), __('PS Layouts Editor')
+				, __('Layouts Editor'), 9, 'editPSHTMLLayouts'
+				, array(&$bwbPS, 'loadLayoutsEditor'));
 					
-			}
 			add_submenu_page(basename(__FILE__), __('Plugin Info'), __('Plugin Info'), 9,  
 			'psInfo', array(&$bwbPS, 'loadPsInfo'));
 				
