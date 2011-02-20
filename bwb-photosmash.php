@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 1.0.1
+Version: 1.0.2
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -37,8 +37,8 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '1.0.0');
-define('PHOTOSMASHEXTVERSION', '1.0.0');
+define('PHOTOSMASHVERSION', '1.0.2');
+define('PHOTOSMASHEXTVERSION', '1.0.2');
 
 define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
 
@@ -603,18 +603,18 @@ class BWB_PhotoSmash{
 			add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 9,  
 			'importPSImages', array(&$bwbPS, 'loadImageImporter'));
 			
-			//Advanced Features (Layouts and Custom Fields
-			add_submenu_page(basename(__FILE__), __('PS Form Editor')
-				, __('Custom Forms'), 9, 'editPSForm'
-				, array(&$bwbPS, 'loadFormEditor'));
-				
-			add_submenu_page(basename(__FILE__), __('PS Field Editor')
-				, __('Custom Fields'), 9, 'editPSFields'
-				, array(&$bwbPS, 'loadFieldEditor'));
 			
-			add_submenu_page(basename(__FILE__), __('PS Layouts Editor')
-				, __('Layouts Editor'), 9, 'editPSHTMLLayouts'
-				, array(&$bwbPS, 'loadLayoutsEditor'));
+				add_submenu_page(basename(__FILE__), __('PS Form Editor')
+					, __('Custom Forms'), 9, 'editPSForm'
+					, array(&$bwbPS, 'loadFormEditor'));
+					
+				add_submenu_page(basename(__FILE__), __('PS Field Editor')
+					, __('Custom Fields'), 9, 'editPSFields'
+					, array(&$bwbPS, 'loadFieldEditor'));
+				
+				add_submenu_page(basename(__FILE__), __('PS Layouts Editor')
+					, __('Layouts Editor'), 9, 'editPSHTMLLayouts'
+					, array(&$bwbPS, 'loadLayoutsEditor'));
 					
 			add_submenu_page(basename(__FILE__), __('Plugin Info'), __('Plugin Info'), 9,  
 			'psInfo', array(&$bwbPS, 'loadPsInfo'));

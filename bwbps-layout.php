@@ -258,6 +258,7 @@ class BWBPS_Layout{
 				$startImg = $lastImg - $g['img_perpage'] + 1;
 				$g['starting_image'] = $startImg > 1 ? ($startImg - 1) : 0;
 				$startImg = 1;
+				
 			} 
 		}
 
@@ -364,6 +365,9 @@ class BWBPS_Layout{
 		if($layoutName){
 			$layout = $this->getLayout(false, $layoutName);
 		}
+		
+		
+		
 		if(!$layout && (int)$g['layout_id'] > -1){
 			if((int)$g['layout_id'] == 0){ 
 				//use the PhotoSmash Default Layout 
@@ -414,6 +418,7 @@ class BWBPS_Layout{
 			}
 			$startImg = 0;
 			$lastImg = count($images);
+			$lastImg = ($useAlt && $lastImg==1) ? 2 : $lastImg;
 		
 			if($this->psOptions['img_targetnew']){
 				$g['url_attr']['imagetargblank'] = " target='_blank' ";
@@ -439,13 +444,11 @@ class BWBPS_Layout{
 				} else {
 					$image['ps_fav_html'] = "";
 				}
-					
 				
 				$imgNum++;
 				//Pagination - not the most efficient, 
 				//but there shouldn't be thousands of images in a gallery
 				if($startImg > $imgNum || $lastImg < $imgNum){ continue;}
-				
 				
 				//Handle PSmashExtend Inserts
 				if( $image['pext_insert'] ){
@@ -481,7 +484,6 @@ class BWBPS_Layout{
 					continue;
 				
 				}
-				
 								
 				//Handle Rating Code
 				if($rate){
@@ -596,7 +598,7 @@ class BWBPS_Layout{
 							
 				} else {
 					//Custom Layout
-										
+								
 					if($imgNum % 2 == 0){
 						$imageTemp .= $this->getCustomLayout($g, $image, $layout, true);	
 					} else {
@@ -1153,8 +1155,10 @@ class BWBPS_Layout{
 	function getPartialLayout($g, &$image, $layoutName, $alt=false){
 		$g['suppress_no_image'] = false;
 		if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
-		return $this->getGallery($g, $layoutName, $image, $alt);
-	
+		
+		$ret = $this->getGallery($g, $layoutName, $image, $alt);
+		
+		return $ret;
 	}
 	
 	function getFileField($g, &$image, $is_thumb=true){
@@ -2961,9 +2965,9 @@ class BWBPS_Layout{
 		global $wpdb;
 		
 		$layoutName = $layout_name ? strtolower($layout_name) : "psid-".$layout_id;
-		
+
 		if(is_array($this->layouts)){
-			if(array_key_exists($layoutName, $this->layouts)){
+			if(array_key_exists($layoutName, $this->layouts)){ 
 				return $this->layouts[$layoutName];
 			}
 		}

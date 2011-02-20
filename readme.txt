@@ -3,16 +3,16 @@ Contributors: bennebw
 Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
-Tested up to: 3.0.5
-Stable tag: 1.0.1
- 
+Tested up to: 3.1
+Stable tag: 1.0.2
+
 ATTENTION! ATTENTION! ATTENTION! A 'farewell' for PhotoSmash:
 
-It has been my pleasure to be part of the WordPress community over the past couple of years by providing the PhotoSmash plugin and supporting its users.  However, like many developers before me, I find that as PhotoSmash's install base grows, I can no longer provide a level of support that meets my personal standard of excellence.  Tonight, PhotoSmash received it's 40th rating, 1 star out of 5. That's always fun ;-) I fear that as the demands for support continue to outstrip the time available to provide it, I would see an increasing number of dissatisfied users like Mr. #40.  That is not something I take lightly.  Therefore, it is with regret that I will be withdrawing PhotoSmash from WordPress Extend and ending support for PhotoSmash within the next few days. Thankfully, there are many excellent alternatives to PhotoSmash in the WP Community, starting with the venerable NextGEN Gallery.  So, it is with a mixture of sadness and relief that I move on to my next adventure. To all of you PhotoSmashers, best wishes and...Cheers! Byron 
+It has been my pleasure to be part of the WordPress community over the past couple of years by providing the PhotoSmash plugin and supporting its users.  However, like many developers before me, I find that as PhotoSmash's install base grows, I can no longer provide a level of support that meets my personal standards.  So, it is with a mixture of sadness and relief that I move on to my next adventure. To all of you PhotoSmashers, best wishes and...Cheers! Byron 
+
+PhotoSmash - photo gallery plugin that integrates with built-in WordPress gallery functionality and lets you allow your users to upload images.
 
 == Description ==
-
-PhotoSmash - photo gallery plugin that integrates with built-in WordPress gallery functionality and lets you allow your users to upload images. 
 
 PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  PhotoSmash has incredibly flexible and simple models for designing custom photo gallery and form layouts, utilizing your own custom database fields, html, and css, or just use the standard.
 
@@ -94,6 +94,14 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 1.0.2 – 2/19/2011
+
+    * (Extend) Fix alternate titles for new posts – the Alternate Layout was not working for the Title when creating a new Post.
+    
+= 1.0.1 – February 2011
+
+    * Farewell notification
 
 = 1.0.0 – 2/8/2011 =
     * (Extend) Added Post Meta Mapping - for PhotoSmash Extend, New Posts on Upload, you can now map PhotoSmash fields to Custom Fields in your posts. Go to PSExtend Settings / Post on Upload settings, then add your fields to the Post Meta Field Mapping (more details are given there)
