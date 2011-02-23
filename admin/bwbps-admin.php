@@ -20,6 +20,8 @@ class BWBPS_Admin{
 		$this->psOptions = $this->getPSOptions();
 		
 		$this->gallery_id = (int)$_POST['gal_gallery_id'];
+		
+		if($_GET['ps-discon-msg']){ update_option('photosmash_discontinued_msg', 'true'); }
 				
 		//Save PS General Settings
 		if(isset($_POST['update_bwbPSDefaults'])){
@@ -747,9 +749,11 @@ class BWBPS_Admin{
 		
 		<h2>PhotoSmash Galleries</h2>
 		
-		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>.</h3>
-		
+		<?php 
+		if(!get_option('photosmash_discontinued_msg')){ ?>
+		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>. (<a href='admin.php?page=bwb-photosmash.php&ps-discon-msg=true'>Hide</a> this message.)</h3>
 		<?php
+		}
 		
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
@@ -1378,6 +1382,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<input type="radio" name="gal_show_imgcaption"  value="8" <?php if($galOptions['show_imgcaption'] == 8) echo 'checked'; ?> />No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="9" <?php if($galOptions['show_imgcaption'] == 9) echo 'checked'; ?> />Caption (thumbs & captions link to user submitted url)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="12" <?php if($galOptions['show_imgcaption'] == 12) echo 'checked'; ?> />No caption (thumbs link to post)<br/>
+						<input type="radio" name="gal_show_imgcaption"  value="13" <?php if($galOptions['show_imgcaption'] == 13) echo 'checked'; ?>>Caption (thumbs & captions link to post)<br/>
 						<input type="radio" name="gal_show_imgcaption"  value="14" <?php if($galOptions['show_imgcaption'] == 14) echo 'checked'; ?> />No caption (thumbs link to WP Attachment Page)<br/>	
 						<input type="radio" name="gal_show_imgcaption"  value="15" <?php if($galOptions['show_imgcaption'] == 15) echo 'checked'; ?> />Caption (thumbs & captions link to WP Attachment Page)<br/>									
 						<br/>
@@ -1531,9 +1536,12 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		
 		<h2>PhotoSmash Galleries</h2>
 		
-		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>.</h3>
-		
+		<?php 
+		if(!get_option('photosmash_discontinued_msg')){ ?>
+		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>. (<a href='admin.php?page=bwb-photosmash.php&ps-discon-msg=true'>Hide</a> this message.)</h3>
 		<?php
+		}
+		
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
@@ -1703,6 +1711,8 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<hr/><span style='color: #888;'>Special: these also change thumbnail links (normal is link to image)</span><br/>
 						<input type="radio" name="ps_show_imgcaption"  value="8" <?php if($psOptions['show_imgcaption'] == 8) echo 'checked'; ?>>No caption (thumbs link to user submitted url)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="9" <?php if($psOptions['show_imgcaption'] == 9) echo 'checked'; ?>>Caption (thumbs & captions link to user submitted url)<br/>
+						<input type="radio" name="ps_show_imgcaption"  value="12" <?php if($psOptions['show_imgcaption'] == 12) echo 'checked'; ?>>No caption (thumbs link to post)<br/>	
+						<input type="radio" name="ps_show_imgcaption"  value="13" <?php if($psOptions['show_imgcaption'] == 13) echo 'checked'; ?>>Caption (thumbs & captions link to post)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="14" <?php if($psOptions['show_imgcaption'] == 14) echo 'checked'; ?>>No caption (thumbs link to WP Attachment Page)<br/>
 						<input type="radio" name="ps_show_imgcaption"  value="15" <?php if($psOptions['show_imgcaption'] == 15) echo 'checked'; ?>>Caption (thumbs & captions link to WP Attachment Page)<br/>
 						

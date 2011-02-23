@@ -4,7 +4,7 @@ Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 2.8
 Tested up to: 3.1
-Stable tag: 1.0.2
+Stable tag: 1.0.5
 
 ATTENTION! ATTENTION! ATTENTION! A 'farewell' for PhotoSmash:
 
@@ -94,6 +94,12 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 1.0.5 – 2/22/2011
+
+    * Fixed XSS Vulnerability – an XSS vulnerability was discovered by High-Tech Bridge SA. It was reported as a “Medium” risk level. It was fixed the same day we were notified. The vulnerability was leftover code from testing and has been completely removed. All PhotoSmash users should upgrade to this release.
+    * Added Link to Post to PhotoSmash Settings / Caption Style
+    * Added ability to permanently hide Farewell notification
 
 = 1.0.2 – 2/19/2011
 

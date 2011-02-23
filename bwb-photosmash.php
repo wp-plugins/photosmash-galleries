@@ -3,7 +3,7 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 1.0.2
+Version: 1.0.5
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
@@ -2958,10 +2958,12 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	function mediaUAddGalleryFieldToMediaUploader(){
 		if(isset($_REQUEST['bwbps_galid']) && (int)$_REQUEST['bwbps_galid']){
 		
+			$gallery_name = wp_kses( $_REQUEST['bwbps_galname'], array() );
+		
 			echo "<input type='hidden' id='bwbps_mediau_galid' name='bwbps_mediau_galid' value='" . (int)$_REQUEST['bwbps_galid'] . "' />
 			<input type='hidden' id='bwbps_galid' name='bwbps_galid' value='" . (int)$_REQUEST['bwbps_galid'] . "' />
-			<input type='hidden' name='bwbps_galname' value='" . $_REQUEST['bwbps_galname'] . "' />
-			<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Adding to PhotoSmash: " . $_REQUEST['bwbps_galname'] . "</div>
+			<input type='hidden' name='bwbps_galname' value='" . $gallery_name . "' />
+			<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Adding to PhotoSmash: " . $gallery_name . "</div>
 			";
 		
 		} else {
@@ -3051,11 +3053,14 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 						";
 				}
 			}
+			
+			$gallery_name = wp_kses( $_REQUEST['bwbps_galname'], array() );
+			
 			echo "
 				});
 			</script>
 				<input type='hidden' id='bwbps_mediau_galid_flash' name='bwbps_mediau_galid' value='" . (int)$_REQUEST['bwbps_galid'] . "' />
-				<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Adding to PhotoSmash: " . $_REQUEST['bwbps_galname'] . "</div>
+				<div style='background-color: #eaffdf; padding: 5px; border: 1px solid #a0a0a0; margin: 3px; font-size: 14px; color: #333;'>Adding to PhotoSmash: " . $gallery_name . "</div>
 			";
 		
 		} else {
