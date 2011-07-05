@@ -336,6 +336,12 @@ class BWBPS_Layout{
 				
 			$g['img_rel'] = str_replace("[album]","[album_"
 				.$g['gallery_id']."]",$g['img_rel']);
+				
+			$caprel = str_replace("[gallery]","gal_"
+				.$g['gallery_id']."cap",$caprel);
+				
+			$g['img_rel'] = str_replace("[gallery]","gal_"
+				.$g['gallery_id']."",$g['img_rel']);
 			
 			if( $caprel == $g['img_rel'] ){ $caprel .= 'cap'; }
 			

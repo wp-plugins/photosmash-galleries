@@ -2592,7 +2592,6 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		</div>	
 		<div id='bwbps_post_map' class='bwbps_gmap bwbps_gmap_ ' style='width: 80%; height: 370px;'></div>
 		
-		</div>
 		<?php
 		
 		return;	

@@ -2,11 +2,11 @@
 Contributors: bennebw
 Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
-Requires at least: 2.8
-Tested up to: 3.1
-Stable tag: 1.0.5
+Requires at least: 3.0
+Tested up to: 3.2
+Stable tag: 1.0.7
 
-ATTENTION! ATTENTION! ATTENTION! A 'farewell' for PhotoSmash:
+ATTENTION! A 'farewell' for PhotoSmash:
 
 It has been my pleasure to be part of the WordPress community over the past couple of years by providing the PhotoSmash plugin and supporting its users.  However, like many developers before me, I find that as PhotoSmash's install base grows, I can no longer provide a level of support that meets my personal standards.  So, it is with a mixture of sadness and relief that I move on to my next adventure. To all of you PhotoSmashers, best wishes and...Cheers! Byron 
 
@@ -94,6 +94,11 @@ You can also exclude the standard css file and include your own through options 
 3.	Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 1.0.7 – 7/4/2011
+
+    * Removed an extra /DIV that was causing problems with the absolutely positions footer in Admin > Photo Manager 
+    * NOTE:  Users who are displaying their images with the Thickbox Popup...for some reason, Thickbox now doesn't like when the REL attribute contains something like:  lightbox[album].  It causes the Thickbox loading screen to pop up, but nothing happens.  Here are your options: 1) try using either the Shadowbox JS or Fancybox for Wordpress plugins (Thicbox stopped being developed back in 2009, and I believe that time and the new jQuery have caught up with it), or 2) if you have lightbox[album] in you REL parameter (first page of the Gallery Settings screen after you select your gallery and click Edit), try changing the [album] to [gallery].  I added some extra code to deal with that.  But NOTICE, if you switch to Shadowbox JS or Fancybox, be sure to switch the [gallery] back to [album].
 
 = 1.0.5 – 2/22/2011
 
