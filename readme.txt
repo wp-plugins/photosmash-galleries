@@ -95,86 +95,80 @@ You can also exclude the standard css file and include your own through options 
 
 == Changelog ==
 
-= 1.0.7 – 7/4/2011
+= 1.0.7.2 =
+* FIX: Fixed fatal errors
+* FIX: Fixed some warnings
+* UPDATE: Confirmed compatibility with WordPress 4.3 (RC2)
 
-    * Removed an extra /DIV that was causing problems with the absolutely positions footer in Admin > Photo Manager 
-    * NOTE:  Users who are displaying their images with the Thickbox Popup...for some reason, Thickbox now doesn't like when the REL attribute contains something like:  lightbox[album].  It causes the Thickbox loading screen to pop up, but nothing happens.  Here are your options: 1) try using either the Shadowbox JS or Fancybox for Wordpress plugins (Thicbox stopped being developed back in 2009, and I believe that time and the new jQuery have caught up with it), or 2) if you have lightbox[album] in you REL parameter (first page of the Gallery Settings screen after you select your gallery and click Edit), try changing the [album] to [gallery].  I added some extra code to deal with that.  But NOTICE, if you switch to Shadowbox JS or Fancybox, be sure to switch the [gallery] back to [album].
+= 1.0.7 – 7/4/2011
+* Removed an extra /DIV that was causing problems with the absolutely positions footer in Admin > Photo Manager 
+* NOTE:  Users who are displaying their images with the Thickbox Popup...for some reason, Thickbox now doesn't like when the REL attribute contains something like:  lightbox[album].  It causes the Thickbox loading screen to pop up, but nothing happens.  Here are your options: 1) try using either the Shadowbox JS or Fancybox for Wordpress plugins (Thicbox stopped being developed back in 2009, and I believe that time and the new jQuery have caught up with it), or 2) if you have lightbox[album] in you REL parameter (first page of the Gallery Settings screen after you select your gallery and click Edit), try changing the [album] to [gallery].  I added some extra code to deal with that.  But NOTICE, if you switch to Shadowbox JS or Fancybox, be sure to switch the [gallery] back to [album].
 
 = 1.0.5 – 2/22/2011
-
-    * Fixed XSS Vulnerability – an XSS vulnerability was discovered by High-Tech Bridge SA. It was reported as a “Medium” risk level. It was fixed the same day we were notified. The vulnerability was leftover code from testing and has been completely removed. All PhotoSmash users should upgrade to this release.
-    * Added Link to Post to PhotoSmash Settings / Caption Style
-    * Added ability to permanently hide Farewell notification
+* Fixed XSS Vulnerability – an XSS vulnerability was discovered by High-Tech Bridge SA. It was reported as a “Medium” risk level. It was fixed the same day we were notified. The vulnerability was leftover code from testing and has been completely removed. All PhotoSmash users should upgrade to this release.
+* Added Link to Post to PhotoSmash Settings / Caption Style
+* Added ability to permanently hide Farewell notification
 
 = 1.0.2 – 2/19/2011
-
-    * (Extend) Fix alternate titles for new posts – the Alternate Layout was not working for the Title when creating a new Post.
+* (Extend) Fix alternate titles for new posts – the Alternate Layout was not working for the Title when creating a new Post.
     
 = 1.0.1 – February 2011
-
-    * Farewell notification
+* Farewell notification
 
 = 1.0.0 – 2/8/2011 =
-    * (Extend) Added Post Meta Mapping - for PhotoSmash Extend, New Posts on Upload, you can now map PhotoSmash fields to Custom Fields in your posts. Go to PSExtend Settings / Post on Upload settings, then add your fields to the Post Meta Field Mapping (more details are given there)
-    * iPhone/Mobile API tweaked
-    * Added ability to let Users Delete Their Approved Images - previously, they could only delete images that were awaiting moderation. Now you can turn on ability to delete approved images. Go to PhotoSmash Settings, look for option near bottom of first tab
-    * Added - Post Excerpt (Caption) is set to Image Caption when Attachment is Inserted - the WP Attachments use the Post Excerpt field as the caption for the standard galleries. Now when PhotoSmash inserts an Attachment, it is populating the Post Excerpt with the Caption.
-    * Added - ability to select what the Gallery Viewer gallery ID slug will be - in PhotoSmash Settings (first tab), this slug will default to psmash-gallery. It is used with the Gallery Viewer when a gallery is clicked.
-    * Fixed - Extend will now properly create new posts on Mobile uploads
-    * Fixed - Extend Nav Search doesn't use paging...all result images are shown
-    * Fixed - Function call was expecting too many arguments in bwbps-widget.php
-    * Fixed - Static modifier on function broke PHP4 compatibility - in the pxx-helpers.php file, a STATIC modifier to a function broke PHP4
-    * Added Gallery Viewer Shortcode Attributes - gallery_ids='1,3,4,##' will include only the gallery ids you enter (replace 1,3,4,## with your own ids. exclude_galleries='1,3,4,##' - you get the picture. So now you have multiple Gallery Viewers with different galleries listed. Here's a full shortcode (remove the space after the '['): [ photosmash gallery_viewer=true gallery_ids='1,3,4,12']
-    * Added length attribute to custom fields in Layouts - so, now you can limit how many characters will display from your custom fields in your custom layouts. Say you have a field called Description. You can put that field in a custom layout and say you only want the first 30 characters like this: [description length=30]
-    * Added nav_search_term field for Extended Navigation (Extend use only) - This allows you show the something like: Search results for: my search term. You can use the conditionals 'if_before' and 'if_after' to add styling and the 'Search results for:' text that will only appear if a search term exists. So the whole thing would be like: [nav_search_term if_before='<h3>Results for: ' if_after='</h3>']
-    * Fixed - datepicker.js does not to load if you don't have a Custom Field (type date)
-    * Fixed Google Maps code to only load when needed
-    * Added Google Map checkbox to PhotoSmash Widget - you can now have your PhotoSmash image widgets mapped in a PhotoSmash Map widget. Look at the bottom of the PhotoSmash Widget for the "Show in Map Widget" setting.
+* (Extend) Added Post Meta Mapping - for PhotoSmash Extend, New Posts on Upload, you can now map PhotoSmash fields to Custom Fields in your posts. Go to PSExtend Settings / Post on Upload settings, then add your fields to the Post Meta Field Mapping (more details are given there)
+* iPhone/Mobile API tweaked
+* Added ability to let Users Delete Their Approved Images - previously, they could only delete images that were awaiting moderation. Now you can turn on ability to delete approved images. Go to PhotoSmash Settings, look for option near bottom of first tab
+* Added - Post Excerpt (Caption) is set to Image Caption when Attachment is Inserted - the WP Attachments use the Post Excerpt field as the caption for the standard galleries. Now when PhotoSmash inserts an Attachment, it is populating the Post Excerpt with the Caption.
+* Added - ability to select what the Gallery Viewer gallery ID slug will be - in PhotoSmash Settings (first tab), this slug will default to psmash-gallery. It is used with the Gallery Viewer when a gallery is clicked.
+* Fixed - Extend will now properly create new posts on Mobile uploads
+* Fixed - Extend Nav Search doesn't use paging...all result images are shown
+* Fixed - Function call was expecting too many arguments in bwbps-widget.php
+* Fixed - Static modifier on function broke PHP4 compatibility - in the pxx-helpers.php file, a STATIC modifier to a function broke PHP4
+* Added Gallery Viewer Shortcode Attributes - gallery_ids='1,3,4,##' will include only the gallery ids you enter (replace 1,3,4,## with your own ids. exclude_galleries='1,3,4,##' - you get the picture. So now you have multiple Gallery Viewers with different galleries listed. Here's a full shortcode (remove the space after the '['): [ photosmash gallery_viewer=true gallery_ids='1,3,4,12']
+* Added length attribute to custom fields in Layouts - so, now you can limit how many characters will display from your custom fields in your custom layouts. Say you have a field called Description. You can put that field in a custom layout and say you only want the first 30 characters like this: [description length=30]
+* Added nav_search_term field for Extended Navigation (Extend use only) - This allows you show the something like: Search results for: my search term. You can use the conditionals 'if_before' and 'if_after' to add styling and the 'Search results for:' text that will only appear if a search term exists. So the whole thing would be like: [nav_search_term if_before='<h3>Results for: ' if_after='</h3>']
+* Fixed - datepicker.js does not to load if you don't have a Custom Field (type date)
+* Fixed Google Maps code to only load when needed
+* Added Google Map checkbox to PhotoSmash Widget - you can now have your PhotoSmash image widgets mapped in a PhotoSmash Map widget. Look at the bottom of the PhotoSmash Widget for the "Show in Map Widget" setting.
 
 = 0.9.02 – 1/11/2011 =
-
-    * iPhone/Mobile API completed
-    * Added ability to turn off ‘Toggle Ratings’ link
-    * Added [gallery_description] to Gallery Settings and Custom Layouts
-    * Added ability to turn off Pagination in Widgets
+* iPhone/Mobile API completed
+* Added ability to turn off ‘Toggle Ratings’ link
+* Added [gallery_description] to Gallery Settings and Custom Layouts
+* Added ability to turn off Pagination in Widgets
 
 = 0.9.00 - 11/8/2010 =
-
-    * Added ability to run a Shortcode in Text Inserts (PhotoSmash Extend) - here is an example of running the photosmash shortcode as a text insert: [shortcode text='photosmash id=2 no_gallery=true form=std']  That will essentially show the PhotoSmash upload form as the insert, uploading to gallery 2.
-    * Fixed display of checkbox custom fields values in Photo Manager. Will no properly show as checked or unchecked.
-    * Fixed some logic in the displaying of PhotoSmash Extend Ad Inserts - there was a logic problem in bwbps-layout.php.
-    * Added ability to limit # images a user can upload - go to Gallery Settings, Edit your desired gallery, then go to the Uploading tab to set the  Maximum number of images you want a user to be able to upload to the gallery (set to 0 for unlimited uploads by user), and set the time frame that the restriction applies to: forever (ie. the user can only upload the max # images ever), per hour (ie. they can upload X number of images per hour), per day, and per week.  Note that these times are calculated by taking the number of hours specified and subtracting from the current time - so this means that max per day is really max per 24 hours, and max per week is really max per any given 168 hours regardless of the calendar.
-    * Google Map integration - show a google map of images in a gallery that have latitude and longitude specified. To turn on a map, add this to your  shortcode: gmap='map_id'.  The 'map_id' will be the ID of the DIV that you want to contain your map.  It will also become the Map's Javascript ID, so you can do other things in Javascript with the ID, basically anything allowed by the Google Maps API V3.  This uses the Google Maps API V3, so you don't need an API key.  If you are using another plugin that already loads that API, you can tell PhotoSmash to skip loading it by adding to the shortcode:  gmap_skip_api=true.  You can manually place the DIV to hold the map (be sure to give it the same id as specified in your shortcode).  You can place the div in your page or post with this shortcode (remove the space after the "["):  [ photosmash_gmap id='map_id'].  I'll have to do a tutorial on map integration since there are more features than can be explained here.  But this is enough to get you started.  Note: the most basic way to get a map going is to just say: [ photosmash gmap='true']  This will automatically add the map after your gallery.  Also, note that in PhotoSmash Settings, a new tab (Maps) has been added that will let you set a layout for the marker popup infowindows in your map, as well as set the size of your maps.
-    * Fixed a Multi-Site problem for tag galleries - in bwbps-layout.php, the table 'wp_term_taxonomy' had been hardcoded into the SQL statement.  This is now dynamic, and will handle MU sites properly.
-    * Added the ability to change the wording in the Gallery viewer page - add before_gallery='My Gallery Viewer Wording' to your shortcode.
+* Added ability to run a Shortcode in Text Inserts (PhotoSmash Extend) - here is an example of running the photosmash shortcode as a text insert: [shortcode text='photosmash id=2 no_gallery=true form=std']  That will essentially show the PhotoSmash upload form as the insert, uploading to gallery 2.
+* Fixed display of checkbox custom fields values in Photo Manager. Will no properly show as checked or unchecked.
+* Fixed some logic in the displaying of PhotoSmash Extend Ad Inserts - there was a logic problem in bwbps-layout.php.
+* Added ability to limit # images a user can upload - go to Gallery Settings, Edit your desired gallery, then go to the Uploading tab to set the  Maximum number of images you want a user to be able to upload to the gallery (set to 0 for unlimited uploads by user), and set the time frame that the restriction applies to: forever (ie. the user can only upload the max # images ever), per hour (ie. they can upload X number of images per hour), per day, and per week.  Note that these times are calculated by taking the number of hours specified and subtracting from the current time - so this means that max per day is really max per 24 hours, and max per week is really max per any given 168 hours regardless of the calendar.
+* Google Map integration - show a google map of images in a gallery that have latitude and longitude specified. To turn on a map, add this to your  shortcode: gmap='map_id'.  The 'map_id' will be the ID of the DIV that you want to contain your map.  It will also become the Map's Javascript ID, so you can do other things in Javascript with the ID, basically anything allowed by the Google Maps API V3.  This uses the Google Maps API V3, so you don't need an API key.  If you are using another plugin that already loads that API, you can tell PhotoSmash to skip loading it by adding to the shortcode:  gmap_skip_api=true.  You can manually place the DIV to hold the map (be sure to give it the same id as specified in your shortcode).  You can place the div in your page or post with this shortcode (remove the space after the "["):  [ photosmash_gmap id='map_id'].  I'll have to do a tutorial on map integration since there are more features than can be explained here.  But this is enough to get you started.  Note: the most basic way to get a map going is to just say: [ photosmash gmap='true']  This will automatically add the map after your gallery.  Also, note that in PhotoSmash Settings, a new tab (Maps) has been added that will let you set a layout for the marker popup infowindows in your map, as well as set the size of your maps.
+* Fixed a Multi-Site problem for tag galleries - in bwbps-layout.php, the table 'wp_term_taxonomy' had been hardcoded into the SQL statement.  This is now dynamic, and will handle MU sites properly.
+* Added the ability to change the wording in the Gallery viewer page - add before_gallery='My Gallery Viewer Wording' to your shortcode.
 
 = 0.8.04 - 9/25/2010 - well that was fast ;-) =
-
-    * Made PhotoSmash compatible with latest version of jquery.form.js -- and by corrollary, the latest version of Contact Form 7 -- well, the latest version of Contact Form 7 introduced a new version of jquery.form.js -- this is not the version that is currently distributed with WP.  The new version of that file requires you to wrap your JSON in textarea tags if you're uploading files.  Since CF 7 is so popular, it behooves me to make PhotoSmash compatible...and now it is. Hopefully! ;-)
-    * Removed JSON.php class - this file was for PHP4 compatibility.  WordPress actually includes this file itself as of 2.8 or 2.9, so this is no longer necessary.
+* Made PhotoSmash compatible with latest version of jquery.form.js -- and by corrollary, the latest version of Contact Form 7 -- well, the latest version of Contact Form 7 introduced a new version of jquery.form.js -- this is not the version that is currently distributed with WP.  The new version of that file requires you to wrap your JSON in textarea tags if you're uploading files.  Since CF 7 is so popular, it behooves me to make PhotoSmash compatible...and now it is. Hopefully! ;-)
+* Removed JSON.php class - this file was for PHP4 compatibility.  WordPress actually includes this file itself as of 2.8 or 2.9, so this is no longer necessary.
 
 = 0.8.03 - 9/24/2010 =
-
-    * Added '[delete_button]' to custom layouts - this gives you the ability to present your users with a delete button on the images they uploaded.  You'll need to add this to the custom layouts (there's a tutorial on custom layouts if interested).
-    * Fixed importing image - was using 2nd image multiple times when multiple images were imported.  Was working earlier, but something along the way broke this.
-    * Fixed custom layouts use of the # of images per row for tables - this was broken during the last big overhaul which removed certain code to make it faster.
-    * Added image_id to [ photosmash] shortcode - while this has long been possible using the [ psmash] shortcode.  Using it in the photosmash shortcode allows you to display a single image with all the benefits of a full gallery, including star ratings and favorites.
-    * Added Post-Author Uploads as a Gallery type - this gallery type allows you to set up galleries that only allow the Author of the Page/Post on which it is displayed to upload images to it.  This is probably most useful when allowing users to create new posts on uploads with PhotoSmash Extend, but can be used without Extend.  The only requirement is that the user you want to upload to the gallery has to be the Author of the WP page/post.
+* Added '[delete_button]' to custom layouts - this gives you the ability to present your users with a delete button on the images they uploaded.  You'll need to add this to the custom layouts (there's a tutorial on custom layouts if interested).
+* Fixed importing image - was using 2nd image multiple times when multiple images were imported.  Was working earlier, but something along the way broke this.
+* Fixed custom layouts use of the # of images per row for tables - this was broken during the last big overhaul which removed certain code to make it faster.
+* Added image_id to [ photosmash] shortcode - while this has long been possible using the [ psmash] shortcode.  Using it in the photosmash shortcode allows you to display a single image with all the benefits of a full gallery, including star ratings and favorites.
+* Added Post-Author Uploads as a Gallery type - this gallery type allows you to set up galleries that only allow the Author of the Page/Post on which it is displayed to upload images to it.  This is probably most useful when allowing users to create new posts on uploads with PhotoSmash Extend, but can be used without Extend.  The only requirement is that the user you want to upload to the gallery has to be the Author of the WP page/post.
 
 = 0.8.02 - 8/18/2010 =
-
-    * Added post_cats for shortcodes [PhotoSmash Extend] - use post_cats='1,2,3' (where 1,2,3 are the id's of Categories) inside your shortcode you want to set for newly created Posts. Note, this only works with PhotoSmash Extend. An example shortcode is: [ photosmash create_post='New_post_uploald' id=1 post_tags=true post_cats='1,2,3'] (remove the space from the shortcode)
+* Added post_cats for shortcodes [PhotoSmash Extend] - use post_cats='1,2,3' (where 1,2,3 are the id's of Categories) inside your shortcode you want to set for newly created Posts. Note, this only works with PhotoSmash Extend. An example shortcode is: [ photosmash create_post='New_post_uploald' id=1 post_tags=true post_cats='1,2,3'] (remove the space from the shortcode)
 
 = 0.8.01 - 7/22/2010 =
-
-    * Fixed Sorting and Pagination - the changes in the last release caused sort order to behave incorrectly and caused the gallery to prefer the Images/Page set in Gallery Settings over the # of Images set in shortcodes when limiting the number of images returned in the query.
+* Fixed Sorting and Pagination - the changes in the last release caused sort order to behave incorrectly and caused the gallery to prefer the Images/Page set in Gallery Settings over the # of Images set in shortcodes when limiting the number of images returned in the query.
 
 = 0.8.00 - 7/15/2010 =
-
-    * Note: this is a big release with a number of significant changes to the core code. It is impossible to test all use cases (as we've see from the new releases of WordPress itself, though the WP 3.0 release seems to have been very clean), so if you have specialized use cases, you should test them in a development system before moving this to your production system.
-    * Added search post name field in Image Importer (admin) - allows you to limit the images fetched by searching on post name (partial words are ok).  This is in the Import Photos page.
-    * Text Inserts for PhotoSmash Extend now Add to the number of images being displayed on a page - previous behavior was to only show the number of images selected in the images per page setting in Gallery Settings.  But due to the use of LIMIT in the images retrieval query, it is impossible to know what the limits should be since the inserts are not known in the Layout loop.  You should Adjust your Gallery Settings to account for text inserts that you have in your galleries, if you have a strong requirement for a specific number of images on the page.  So, if you need 25 images and you have 3 inserts set, you should set the images per page in Gallery Settings to 22 (since 3 additional spots will be added by the Text Inserts module).
-    * Fixed an issue with inserting a rating - the 'comment' field is NOT NULL in the database, and it wasn't being inserted, so some MySQL setups were failing to insert. The NOT NULL has been removed, so it should update to allow nulls.
+* Note: this is a big release with a number of significant changes to the core code. It is impossible to test all use cases (as we've see from the new releases of WordPress itself, though the WP 3.0 release seems to have been very clean), so if you have specialized use cases, you should test them in a development system before moving this to your production system.
+* Added search post name field in Image Importer (admin) - allows you to limit the images fetched by searching on post name (partial words are ok).  This is in the Import Photos page.
+* Text Inserts for PhotoSmash Extend now Add to the number of images being displayed on a page - previous behavior was to only show the number of images selected in the images per page setting in Gallery Settings.  But due to the use of LIMIT in the images retrieval query, it is impossible to know what the limits should be since the inserts are not known in the Layout loop.  You should Adjust your Gallery Settings to account for text inserts that you have in your galleries, if you have a strong requirement for a specific number of images on the page.  So, if you need 25 images and you have 3 inserts set, you should set the images per page in Gallery Settings to 22 (since 3 additional spots will be added by the Text Inserts module).
+* Fixed an issue with inserting a rating - the 'comment' field is NOT NULL in the database, and it wasn't being inserted, so some MySQL setups were failing to insert. The NOT NULL has been removed, so it should update to allow nulls.
     * OPTIMIZATION - Implemented get_children() to cache Attachments when using get_attachment_link() - when linking to the Attachment pages, the get_attachment_link() WP function was executing 2 SQL queries on the database for each image just to calculate the permalink. So, if you were displaying 50 images, you would have 100 additional queries. Using get_children() can incur 1-2 more queries that cache all of the attachment pages (only the ones in the page's result set...see the paging change below for more info), but it's not 100
     * OPTIMIZATION - Various query reduction measures - now caching the Custom Field information in get_option(), several other query optimizations.
     * OPTIMIZATION - Switched Paging to return only rows for current page - we began noticing that sites with lots of images in a single gallery were using a lot of memory.  Turns out it was because of lazy paging...i.e. the entire result set was being returned (thousands of images in some cases), when only 20 or so were needed.  The downside is that an extra query has been added to count the total result set for paging purposes.  My reading on MySql was that running a straight select (on a single column in this case, so memory doesn't take too big of a hit) was faster than doing a Count( DISTINCT() ).  If someone can help optimize this, I'm all ears.
