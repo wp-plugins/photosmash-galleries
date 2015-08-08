@@ -1,5 +1,5 @@
-﻿=== PhotoSmash Galleries ===
-Contributors: bennebw
+=== PhotoSmash Galleries ===
+Contributors: bennebw, butterflymedia
 Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 3.0
