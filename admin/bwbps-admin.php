@@ -18,10 +18,16 @@ class BWBPS_Admin{
 		if(!current_user_can('level_10')){ return; }
 		
 		$this->psOptions = $this->getPSOptions();
+
+        if(isset($_POST['gal_gallery_id'])) {
+            $this->gallery_id = (int)$_POST['gal_gallery_id'];
+        } else {
+            $this->gallery_id = 0;
+        }
 		
-		$this->gallery_id = (int)$_POST['gal_gallery_id'];
-		
-		if($_GET['ps-discon-msg']){ update_option('photosmash_discontinued_msg', 'true'); }
+		if(isset($_GET['ps-discon-msg'])) {
+            update_option('photosmash_discontinued_msg', 'true');
+        }
 				
 		//Save PS General Settings
 		if(isset($_POST['update_bwbPSDefaults'])){
@@ -2469,9 +2475,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					</p>
 				</th>
 				<td>
-					Days to view: <input type="text" name="bwbps_logged_days" value='<?php
-		echo ((int)$_REQUEST['bwbps_logged_days'] ? (int)$_REQUEST['bwbps_logged_days'] : 1);
-		?>' size='5'/> <input type="submit" name="view_log" class="button-primary" value="<?php _e('View Log', 'bwbPS'); ?>" />  (log will appear beneath the form)
+					Days to view: <input type="text" name="bwbps_logged_days" value='<?php echo (isset($_REQUEST['bwbps_logged_days']) ? (int)$_REQUEST['bwbps_logged_days'] : 1); ?>' size='5'/> <input type="submit" name="view_log" class="button-primary" value="<?php _e('View Log', 'bwbPS'); ?>" />  (log will appear beneath the form)
 				</td>
 			</tr>
 			
@@ -3560,7 +3564,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	function getLayoutsDDL($selected_layout,$psDefault, $type=false, $ele_name=false, $use_name_for_value = false){
 		
  		global $wpdb;
- 		
+ 		$ret = '';
  		
  		if( !$use_name_for_value ){
 	 		if($psDefault && !$selected_layout){ $selected_layout = -1; }
@@ -3579,7 +3583,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		// Type specifies if we're limiting to a specific Layout Type
 		if($type !== false){
 			$where = " WHERE layout_type=" . (int) $type. " ";
-		}
+		} else {
+            $where = '';
+        }
 				
 		$query = $wpdb->get_results("SELECT layout_id, layout_name FROM "
 			.PSLAYOUTSTABLE. $where ." ORDER BY layout_name;");
@@ -3661,7 +3667,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	function getAPICategoryList($selected=""){
 		$sel_raw = explode(",", $selected);
-		
+		$c = '';
 		$sel = array_map("trim",$sel_raw);
 		
 		$cats = get_categories(array('hide_empty' => 0));
@@ -3683,7 +3689,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	function getCustomFieldsCheckBoxes($selected=""){
 		global $bwbPS;
-		
+		$cfs = '';
 		if(!$bwbPS->stdFieldList || !$bwbPS->cfList){
 			$bwbPS->loadCustomFormOptions();	
 		}

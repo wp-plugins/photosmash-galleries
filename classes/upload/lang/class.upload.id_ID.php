@@ -43,7 +43,7 @@
     $translation['file_error']                  = 'Berkas mengalami kerusakan. Mohon coba lagi.'; // 'File error. Please try again.';
     $translation['local_file_missing']          = 'Berkas yang akan diunggah tidak ditemukan.'; // Local file doesn\'t exist.';
     $translation['local_file_not_readable']     = 'berkas yang akan diunggah tidak dapat dibaca.'; // Local file is not readable.';
-    $translation['uploaded_too_big_ini']        = 'Pengunggahan tidak berhasil (ukuran berkas melebihi ukuran upload_max_filesize dalam php.ini).' //; 'File upload error (the uploaded file exceeds the upload_max_filesize directive in php.ini).';
+    $translation['uploaded_too_big_ini']        = 'Pengunggahan tidak berhasil (ukuran berkas melebihi ukuran upload_max_filesize dalam php.ini).'; // 'File upload error (the uploaded file exceeds the upload_max_filesize directive in php.ini).';
     $translation['uploaded_too_big_html']       = 'Pengunggahan tidak berhasil (ukuran berkas melebihi ukuran MAX_FILE_SIZE yang disebutkan dalam form di html).'; // File upload error (the uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the html form).';
     $translation['uploaded_partial']            = 'Pengunggahan tidak berhasil (berkas yang terunggah baru sebahagian saja).'; // File upload error (the uploaded file was only partially uploaded).';
     $translation['uploaded_missing']            = 'Pengunggahan tidak berhasil (tidak ada berkas yang berhasil terunggah).' ; // 'File upload error (no file was uploaded).';

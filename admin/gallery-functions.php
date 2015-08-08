@@ -1,8 +1,5 @@
 <?php
-
 class BWBPS_GalleryFunc{
-	
-	
 	var $g;	//Gallery
 	var $uploads; //The wp_upload_dir array
 	var $options; 
@@ -13,7 +10,7 @@ class BWBPS_GalleryFunc{
 	var $galleryQuery;	// caching gallery queries
 
 	//Constructor
-	function BWBPS_GalleryFunc(&$psOptions){
+	function BWBPS_GalleryFunc($psOptions){
 		$this->options = $psOptions;		
 	}
 	

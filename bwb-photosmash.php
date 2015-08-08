@@ -3,8 +3,8 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 1.0.7.1
-Author: Byron Bennett
+Version: 1.0.7.2
+Author: Byron Bennett, Ciprian Popescu
 Author URI: http://www.whypad.com/
 */
 
@@ -38,10 +38,10 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '1.0.7.1');
+define('PHOTOSMASHVERSION', '1.0.7.2');
 define('PHOTOSMASHEXTVERSION', '1.0.2');
 
-define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
+define('PHOTOSMASHWEBHOME', 'http://getbutterfly.com/wordpress-plugins/photosmash-galleries/');
 
 //Database Verifications
 define('PHOTOSMASHVERIFYTABLE', $wpdb->prefix.'bwbps_images');
@@ -276,14 +276,10 @@ class BWB_PhotoSmash{
 	
 	//Constructor
 	function BWB_PhotoSmash(){
-		
 		$this->uploads = wp_upload_dir();
-				
 		$this->psOptions = $this->getPSOptions();
-		
 		$this->psOptions['gallery_viewer_slug'] = $this->psOptions['gallery_viewer_slug'] 
 				? $this->psOptions['gallery_viewer_slug'] : 'psmash-gallery';
-				
 		$this->loadCustomFormOptions();
 		
 		/*	Code for uploading without AJAX...doesn't work
@@ -295,7 +291,7 @@ class BWB_PhotoSmash{
 		*/
 		
 		//Helpers
-		if(!class_exists(PixooxHelpers))
+		if(!class_exists('PixooxHelpers'))
 		{
 			require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/pxx-helpers.php");
 		}
@@ -414,7 +410,7 @@ class BWB_PhotoSmash{
 				update_option($this->adminOptionsName, $psAdminOptions);
 		}
 		
-		if( !$ps['api_url'] ){
+		if(!isset($ps['api_url'])) {
 			$ps['api_url'] = admin_url('admin-ajax.php');
 		}
 		
@@ -2191,7 +2187,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 				$failed = true;
 			}
 		}
-		if($failed){
+		if(isset($failed)){
 			echo "<div class='message error'><p>Please set Gallery Viewer Page in <a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a>. The Gallery Viewer Page is an index to your PhotoSmash galleries.</p></div>";
 		}
 	}

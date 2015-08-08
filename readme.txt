@@ -3,8 +3,8 @@ Contributors: bennebw, butterflymedia
 Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Requires at least: 3.0
-Tested up to: 3.2
-Stable tag: 1.0.7.1
+Tested up to: 4.3-RC2
+Stable tag: 1.0.7.2
 
 ATTENTION! A 'farewell' for PhotoSmash:
 

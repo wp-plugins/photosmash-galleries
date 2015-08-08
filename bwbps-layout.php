@@ -435,8 +435,8 @@ class BWBPS_Layout{
 				$g['ps_favorite_html'] = $this->ratings->getFavoritesHTML($layout, (int)$this->psOptions['favorites']);
 			
 			}
-					
-			foreach($images as $image){
+
+            foreach($images as $image){
 			
 				
 				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
@@ -457,7 +457,7 @@ class BWBPS_Layout{
 				if($startImg > $imgNum || $lastImg < $imgNum){ continue;}
 				
 				//Handle PSmashExtend Inserts
-				if( $image['pext_insert'] ){
+				if(isset($image['pext_insert'])){
 				
 					if(!$layout){
 						$imageTemp .= $image['pext_insert'];
