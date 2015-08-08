@@ -3,13 +3,14 @@
 Plugin Name: PhotoSmash
 Plugin URI: http://smashly.net/photosmash-galleries/
 Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 1.0.7
+Version: 1.0.7.1
 Author: Byron Bennett
 Author URI: http://www.whypad.com/
 */
 
 /** 
- * Copyright 2009-2011  Byron W Bennett (email: bwbnet@gmail.com)
+ * Copyright 2009-2011 Byron W Bennett (email: bwbnet@gmail.com)
+ * Copyright 2015 Ciprian Popescu (email: getbutterfly@gmail.com)
  *
  * Icons from Silk icon set by http://famfamfam.com/lab/icons/silk/
  * Help Icon from Crystal SVG at http://kde-look.org/content/show.php?content=8341
@@ -37,7 +38,7 @@ Author URI: http://www.whypad.com/
 */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '1.0.2');
+define('PHOTOSMASHVERSION', '1.0.7.1');
 define('PHOTOSMASHEXTVERSION', '1.0.2');
 
 define('PHOTOSMASHWEBHOME', 'http://smashly.net/photosmash-galleries/');
