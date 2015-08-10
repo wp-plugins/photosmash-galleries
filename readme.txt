@@ -1,99 +1,61 @@
-=== PhotoSmash Galleries ===
+=== Photosmash ===
 Contributors: bennebw, butterflymedia
-Donate link: http://smashly.net/photosmash-galleries/#donate
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
-Requires at least: 3.0
+Donate link: http://igg.me/at/photosmash
+Requires at least: 4.0
 Tested up to: 4.3-RC2
-Stable tag: 1.0.7.2
+Stable tag: 1.0.8
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-ATTENTION! A 'farewell' for PhotoSmash:
-
-It has been my pleasure to be part of the WordPress community over the past couple of years by providing the PhotoSmash plugin and supporting its users.  However, like many developers before me, I find that as PhotoSmash's install base grows, I can no longer provide a level of support that meets my personal standards.  So, it is with a mixture of sadness and relief that I move on to my next adventure. To all of you PhotoSmashers, best wishes and...Cheers! Byron 
-
-PhotoSmash - photo gallery plugin that integrates with built-in WordPress gallery functionality and lets you allow your users to upload images.
+Photosmash Galleries is a photo gallery plugin that integrates with the native WordPress gallery allows your users to upload images.
 
 == Description ==
-
-PhotoSmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to.  PhotoSmash has incredibly flexible and simple models for designing custom photo gallery and form layouts, utilizing your own custom database fields, html, and css, or just use the standard.
-
-= Links =
-
-* <a href="http://wordpress.org/tags/photosmash-galleries?forum_id=10" title="WP Forum Page">WordPress Help Forum</a>
-* <a href="http://smashly.net/community/forum/photosmash-help/" title="Forums page">Help Forum (deprecated)</a>
-* <a href="http://smashly.net/photosmash-galleries/tutorials/" title="Help Videos">Help Videos</a>
-* <a href="http://smashly.net/photosmash-galleries/photosmash-demo/" title="Demo Gallery">Demo Gallery</a>
-* <a href="http://www.itunes.com/apps/photosmash/" title="PhotoSmash iPhone App">PhotoSmash iPhone App</a> on the App Store
-
-
-= Features =
-
-For support and more documentation, visit the plugin's new homepage: [PhotoSmash](http://smashly.net/photosmash-galleries/ "PhotoSmash Galleries on Smashly.net")
-
-*   PhotoSmash iPhone App - <a href='http://www.itunes.com/apps/photosmash/'>Available on the App Store!</a>  Lets you and your site's users browse your images and upload images to galleries using your custom fields, tags, etc
-*   User contributable photo galleries - allow your users to upload images to galleries
-*   Map your images using Google Maps API V.3 - simple to use (see Changelog for details)
-*	Media RSS is enabled, supports PicLens (activated by including piclens=true in the shortcode)
-*	Link gallery thumbnails to various destinations including full-size image, related post, and WP Attachment Page when using Media Library integration
-*	Add images to the WordPress Media Library so you can use them in blog posts and even the Standard WordPress Image Gallery features
-*	Multiple simultaneous image uploads in Admin, using the WordPress Media Library, then import images to PhotoSmash!
-*   AJAX photo uploads from within Posts and Pages
-*	Star Ratings for images
-*   Control who can upload images: admin only, authors & contributors (and higher), or registered users and higher
-*   Moderate images uploaded by registered users (Admins and authors are automatically approved)
-*   Receive email alerts for new images that need to be moderated
-*   Options page for setting general defaults or specific gallery settings
-*   Auto-adding of photo galleries
-*   Multiple galleries per post, added using a simple tag system
-*   Integrates with popular image viewing systems like Lightbox and Shadowbox
-*   Tweak appearance through the included css file
-*	Add Custom Fields to tile
-*	Add Custom Fields to the upload form
-*	Create Custom Upload forms using simple tags and HTML
-*	Create Custom Layouts using simple tags and HTML
+Photosmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to. Photosmash has incredibly flexible and simple models for designing custom photo gallery and form layouts, utilizing your own custom database fields.
 
 == Installation ==
-
-1. Upload the plugin folder, bwb-photosmash, to the '/wp-content/plugins/' directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. To automatically add a new gallery to a post, put this shortcode in the body of the post where you want it to show up: [photosmash]
-1. To add a specific existing gallery to a post, use this shortcode (replacing ## with the gallery's id): [photosmash id=##] 
-1. Alternatively, you can set PhotoSmash to "auto-add" galleries to all post by updating the settings in the PhotoSmash options page in the Settings Admin menu.
+1. Upload the plugin folder - `photosmash-galleries` - to your `/wp-content/plugins/` directory
+2. Activate the plugin through the Plugins menu in WordPress
+3. To automatically add a new gallery to a post/page, put the `[photosmash]` shortcode in the body of the post/page where you want it to show up.
+4. To add a specific existing gallery to a post, use the `[photosmash id=#]` shortcode (replacing `#` with the gallery\'s ID).
+5. Alternatively, you can set Photosmash to \"auto-add\" galleries to all posts by updating the settings in the Photosmash options page in the Settings panel.
 
 == Frequently Asked Questions ==
+= Is Photosmash free? =
 
-= Is PhotoSmash free? =
+Yes, it is. It\'s licensed under the GPLv3.
 
-Yes...and it's licensed under the GPL.
+= How many galleries can a post/page have? =
 
-= How many galleries can a Post have? =
-
-Unlimited.  Just add as many [photosmash=%id%] tags as you like...But performance gets to be an issue at some point.
+Unlimited galleries. Just add as many `[photosmash=#]` tags as you like.
 
 = Who can upload images to a gallery? =
 
-You control this on a gallery-by-gallery basis (you can also set a default for PhotoSmash that all new galleries will inherit).  Your options are Admins only; Admins, Authors, and Contributors (anyone with level_1 or higher roles); or Register Users (level_0 roles).
+You control this on a gallery-by-gallery basis (you can also set a default for Photosmash that all new galleries will inherit). Your options are administrators only, administrators, authors, and contributors (anyone with level_1 or higher roles), or registered users (level_0 roles).
 
 = Can unregistered users upload images? =
 
-Yes...if you assign the minimum role for uploading to 'Anyone'
+Yes, if you assign the minimum role for uploading to \'Anyone\'.
 
 = How can I upload images to a gallery before adding to a Post? =
 
-Create your gallery in Gallery Settings. Go to Photo Manager, select and view your gallery.  There will be an Add Images button.
+Create your gallery in Gallery Settings. Go to Photo Manager, select and view your gallery. There will be an \'Add Images\' button.
 
 = How do I change the appearance of my galleries? =
 
-In the bwb-photosmash plugin folder, there is a css file:  bwbps.css
-It should be relatively straight forward to change the look and feel through this file.
-You can also exclude the standard css file and include your own through options in the Advanced tab of PhotoSmash Settings.
+In the main plugin folder there is a CSS file: `bwbps.css`. It should be relatively straight forward to change the look and feel through this file. You can also exclude the standard CSS file and include your own through options in the Advanced tab of Photosmash Settings.
 
 == Screenshots ==
 
-1.  Example gallery
-2.  Widgets - random, recent, random tag, highest rated
-3.	Menu pages for PhotoSmash and Extend
+1. Example gallery
+2. Widgets - random, recent, random tag, highest rated
+3. Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 1.0.8 =
+* UPDATE: New menu logo
+* FIX: Fixed widget constructor for 4.3 compatibility
 
 = 1.0.7.2 =
 * FIX: Fixed fatal errors

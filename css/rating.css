@@ -1,23 +1,19 @@
 .bwbps-rating {
-clear:both;
-display:block;
-margin: 0 !important;
-width: 98px;
-z-index: 50;
-font-size: 9px;
+    clear: both;
+    display: block;
+    margin: 0 !important;
+    width: 100%;
+    z-index: 50;
+    font-size: 9px;
 }
-
 .bwbps-rating-container {
-	margin: 0 !important;
-	padding: 2px 1px 3px 5px;
-	height: 40px;
-	width: 96px;
-	background: none;
+    margin: 0 !important;
+    padding: 2px 1px 3px 5px;
+    width: auto;
+    background: none;
 }
-
-
 .bwbps-rating-hover {
-	background:transparent url(images/rating-bkg.png) no-repeat;
+	background-color: rgba(0, 0, 0, 0.5);
 }
 
 .bwbps-rating-incaption {

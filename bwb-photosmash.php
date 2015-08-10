@@ -1,44 +1,25 @@
 <?php
 /*
-Plugin Name: PhotoSmash
-Plugin URI: http://smashly.net/photosmash-galleries/
-Description: PhotoSmash - user contributable photo galleries for WordPress pages and posts.  Focuses on ease of use, flexibility, and moxie. Deep functionality for developers. PhotoSmash is licensed under the GPL.
-Version: 1.0.7.2
+Plugin Name: Photosmash
+Plugin URI: http://getbutterfly.com/wordpress-plugins/photosmash-galleries/
+Description: Photosmash Galleries is a photo gallery plugin that integrates with the native WordPress gallery allows your users to upload images.
+Version: 1.0.8
 Author: Byron Bennett, Ciprian Popescu
-Author URI: http://www.whypad.com/
+Author URI: http://getbutterfly.com/
 */
 
-/** 
+/*
+ *
  * Copyright 2009-2011 Byron W Bennett (email: bwbnet@gmail.com)
  * Copyright 2015 Ciprian Popescu (email: getbutterfly@gmail.com)
  *
  * Icons from Silk icon set by http://famfamfam.com/lab/icons/silk/
  * Help Icon from Crystal SVG at http://kde-look.org/content/show.php?content=8341
  *
- * LICENSE: GPL
- *
- * This work is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License 
- * as published by the Free Software Foundation; either version 
- * 2 of the License, or any later version.
- *
- * This work is distributed in the hope that it will be useful, 
- * but without any warranty; without even the implied warranty 
- * of merchantability or fitness for a particular purpose. See 
- * Version 2 and version 3 of the GNU General Public License for
- * more details. You should have received a copy of the GNU General 
- * Public License along with this program; if not, write to the 
- * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, 
- * Boston, MA 02110-1301 USA
- *
- * Additional terms as provided by the GPL: if you use this
- * code, in part or in whole, you must attribute the work to the
- * copyright holder.
- * 
-*/
+ */
 
 //VERSION - Update PhotoSmash Extend!!!
-define('PHOTOSMASHVERSION', '1.0.7.2');
+define('PHOTOSMASHVERSION', '1.0.8');
 define('PHOTOSMASHEXTVERSION', '1.0.2');
 
 define('PHOTOSMASHWEBHOME', 'http://getbutterfly.com/wordpress-plugins/photosmash-galleries/');
@@ -88,10 +69,10 @@ define('PSTEMPLATESURL',content_url("/themes/") );
 
 define('BWBPSPLUGINURL',plugins_url("/photosmash-galleries/") );
 
-define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
+define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>Photosmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
 
-define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
+define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>Photosmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
 
 /*
@@ -576,50 +557,25 @@ class BWB_PhotoSmash{
 	 * Adds the PhotoSmash menu items	to Admin
 	 * 
 	 */
-	function photoSmashOptionsPage()
-	{
-		global $bwbPS;
-		if (!isset($bwbPS)) {
-			return;
-		}
-				
-		if (function_exists('add_menu_page')) {
-		
-			$menu_logo = plugins_url( "/photosmash-galleries/images/psmash.png" );
-			
-			add_menu_page('PhotoSmash', 'PhotoSmash', 9, basename(__FILE__), array(&$bwbPS, 'loadAdminPage'),$menu_logo);
-			
-			add_submenu_page(basename(__FILE__), __('PhotoSmash Settings'), __('PhotoSmash Settings'), 9,  basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
-			
-			add_submenu_page(basename(__FILE__), __('Gallery Settings'), __('Gallery Settings'), 9,  
-			'editPSGallerySettings', array(&$bwbPS, 'loadGallerySettings'));
-			
-			add_submenu_page(basename(__FILE__), __('Photo Manager'), __('Photo Manager'), 9,  
-			'managePhotoSmashImages', array(&$bwbPS, 'loadPhotoManager'));
-			
-			add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 9,  
-			'importPSImages', array(&$bwbPS, 'loadImageImporter'));
-			
-			
-				add_submenu_page(basename(__FILE__), __('PS Form Editor')
-					, __('Custom Forms'), 9, 'editPSForm'
-					, array(&$bwbPS, 'loadFormEditor'));
-					
-				add_submenu_page(basename(__FILE__), __('PS Field Editor')
-					, __('Custom Fields'), 9, 'editPSFields'
-					, array(&$bwbPS, 'loadFieldEditor'));
-				
-				add_submenu_page(basename(__FILE__), __('PS Layouts Editor')
-					, __('Layouts Editor'), 9, 'editPSHTMLLayouts'
-					, array(&$bwbPS, 'loadLayoutsEditor'));
-					
-			add_submenu_page(basename(__FILE__), __('Plugin Info'), __('Plugin Info'), 9,  
-			'psInfo', array(&$bwbPS, 'loadPsInfo'));
-				
-		}
-		
-	}
-	
+	function photoSmashOptionsPage() {
+        global $bwbPS;
+        if(!isset($bwbPS)) {
+            return;
+        }
+
+        if(function_exists('add_menu_page')) {
+            add_menu_page('Photosmash', 'Photosmash', 'manage_options', basename(__FILE__), array(&$bwbPS, 'loadAdminPage'), 'dashicons-format-gallery');
+            add_submenu_page(basename(__FILE__), __('Settings'), __('Settings'), 'manage_options',  basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
+            add_submenu_page(basename(__FILE__), __('Gallery Settings'), __('Gallery Settings'), 'manage_options', 'editPSGallerySettings', array(&$bwbPS, 'loadGallerySettings'));
+            add_submenu_page(basename(__FILE__), __('Photo Manager'), __('Photo Manager'), 'manage_options', 'managePhotoSmashImages', array(&$bwbPS, 'loadPhotoManager'));
+            add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 'manage_options', 'importPSImages', array(&$bwbPS, 'loadImageImporter'));
+            add_submenu_page(basename(__FILE__), __('PS Form Editor'), __('Custom Forms'), 'manage_options', 'editPSForm', array(&$bwbPS, 'loadFormEditor'));
+            add_submenu_page(basename(__FILE__), __('PS Field Editor'), __('Custom Fields'), 'manage_options', 'editPSFields', array(&$bwbPS, 'loadFieldEditor'));
+            add_submenu_page(basename(__FILE__), __('PS Layouts Editor'), __('Layouts Editor'), 'manage_options', 'editPSHTMLLayouts', array(&$bwbPS, 'loadLayoutsEditor'));
+			add_submenu_page(basename(__FILE__), __('Plugin Info'), __('Plugin Info'), 'manage_options', 'psInfo', array(&$bwbPS, 'loadPsInfo'));
+        }
+    }
+
 	//Prints out the Admin Options Page
 	function loadAdminPage(){
 		
@@ -1113,7 +1069,7 @@ function shortCodeGallery($atts, $content=null){
 		$g = $this->getGallery($galparms);	//Get the Gallery params
 		
 		$g['no_inserts'] = $no_inserts;	//Turns off inserts for this display
-		if( $g['required_fields'] ){
+		if(isset($g['required_fields'])) {
 			$g['required_fields'] = str_replace(" ", "", $g['required_fields']);
 			$g['required_fields'] = explode(",", $g['required_fields']);
 		}
@@ -1300,6 +1256,7 @@ function shortCodeGallery($atts, $content=null){
 		/* *********************************** */
 		// Shortcode for MANUAL FORM placement //
 		$formName = false;
+        $skipForm = false;
 		
 		if($form == "none" || $form == "false" || $no_form){
 			$skipForm = true;
@@ -1326,7 +1283,7 @@ function shortCodeGallery($atts, $content=null){
 		}
 		
 		
-		if(($formName || $manualForm) && !$skipForm){
+		if((isset($formName) || isset($manualForm)) && !isset($skipForm)) {
 					
 			//See if Manual Form Placement is on, or if a Custom Form was given
 			if(($this->psOptions['use_manualform'] 
@@ -1389,6 +1346,7 @@ function shortCodeGallery($atts, $content=null){
 		}
 				
 		//Check duplicate gallery on page...only allow once
+        $ret = '';
 		if(is_array($this->loadedGalleries) 
 			&& in_array($post->ID."-".$g['gallery_id'] 
 			, $this->loadedGalleries) && !$g['gallery_type'] == 20 && !$name){
@@ -1413,24 +1371,9 @@ function shortCodeGallery($atts, $content=null){
 			$ret .= $this->buildGallery($g, $skipForm, $layoutName, $formName, $image );
 			
 			if(!$g['no_gallery_header']){			
-				$ret .= "
-					<script type='text/javascript'>
-						displayedGalleries += '|".$g['gallery_id']."';
-					</script>
-				";
+				$ret .= "<script>displayedGalleries += '|".$g['gallery_id']."';</script>";
 			}
 		}
-		
-		/*
-	
-		//Memory Usage code - to check if we have leaks - uncomment the one at top of this function also
-		if (function_exists('memory_get_usage')){
-		$memory_usage = round(memory_get_usage() / 1024 / 1024, 2) . __(' MByte', 'bwbps-lang');
-		_e('Memory usage', 'bwbps-lang');
-		echo $memory_usage;
-		}
-		
-*/
 		
 		unset($galparms);
 		
@@ -1547,9 +1490,12 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 		}
 	}
 		
-	if( $use_tb	)
-	{
-		$this->psOptions['tb_height'] = (int)$this->psOptions['tb_height'] ? (int)$this->psOptions['tb_height'] : 390;
+	if( $use_tb	) {
+        if(!isset($g['pfx'])) {
+            $g['pfx'] = '';
+        }
+
+        $this->psOptions['tb_height'] = (int)$this->psOptions['tb_height'] ? (int)$this->psOptions['tb_height'] : 390;
 		$this->psOptions['tb_width'] = (int)$this->psOptions['tb_width'] ? (int)$this->psOptions['tb_width'] : 545;
 		
 		if(!(int)$g['post_id']){ $g['gal_post_id'] = $post->ID; }
@@ -1576,8 +1522,7 @@ function getAddPhotosLink(&$g, $blogname, &$formname){
 }
 
 
-	function getPhotoForm($g, $formName=false){	
-	
+	function getPhotoForm($g, $formName=false){
 		$frm = $formName ? $formName : 'std';
 		
 		if($this->uploadFormCount[$frm]){ return;}
@@ -1806,17 +1751,15 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	    
 
 	//Add Javascript variables to Admin header
-	function injectAdminJS()
-	{
-		wp_enqueue_script( 'jquery-ui-tabs' );
-		wp_enqueue_script( 'thickbox' );
-		
-		wp_register_script('google_maps_v3', "http://maps.google.com/maps/api/js?sensor=false", array('jquery', 'thickbox'), '3.0');
+	function injectAdminJS() {
+		wp_enqueue_script('jquery-ui-tabs');
+		wp_enqueue_script('thickbox');
+
+		wp_register_script('google_maps_v3', "https://maps.google.com/maps/api/js?sensor=false", array('jquery', 'thickbox'), '3.0');
 		wp_enqueue_script('google_maps_v3');
-		
+
 		wp_register_script('bwbps_admin_js', plugins_url('/photosmash-galleries/js/bwbps-admin.js'), array('jquery', 'thickbox'), '1.0');
 		wp_enqueue_script('bwbps_admin_js');
-		
 		?>
 		<script type="text/javascript">
 		//<![CDATA[
@@ -1828,20 +1771,18 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 			var bwbpsPhotoSmashURL = "<?php echo plugins_url(); ?>/photosmash-galleries/";
 		//]]>
 		</script>
-		
-		<?php	
-		
+		<?php
 		wp_register_script('bwbps_maps_js', plugins_url('/photosmash-galleries/js/bwbps-maps.js'), array('jquery', 'thickbox'), '1.0');
 		wp_enqueue_script('bwbps_maps_js');	
-		
 	}
-	
-	function injectAdminStyles()
-	{
+
+	function injectAdminStyles() {
 		wp_enqueue_style( 'bwbpstabs', plugins_url('/photosmash-galleries/css/bwbps.css'), false, '1.0', 'screen' );
 		wp_enqueue_style( 'bwbpsuicore', plugins_url('/photosmash-galleries/css/ui.core.css'), false, '1.0', 'screen' );		
 		wp_enqueue_style( 'bwbpsdatepicker', plugins_url('/photosmash-galleries/css/ui.datepicker.css'), false, '1.0', 'screen' );
 		wp_enqueue_style('thickbox');
+
+        wp_enqueue_style('fa', '//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css');
 	}
 	
 	

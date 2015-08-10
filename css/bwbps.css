@@ -1,5 +1,4 @@
 /* Admin styles */
-
 .bwbps_admintable select, .bwbps_admintable input , .bwbps_admintable textarea{
 	width: 215px !important;
 }
@@ -68,12 +67,8 @@ ul.bwbps_gallery li{
 	_margin-left: 0px;
 }
 
-.bwbps_gallery_div{
-	background:#222;
-	border:1px solid #ddd;
-	border-color:#888 #000 #000 #888;
-	margin: 15px;
-	_margin-left: 0px;
+.bwbps_gallery_div {
+    margin: 16px 0;
 }
 
 .bwbps_gallery_div li, .bwbps_gallery_container0 li{
@@ -85,21 +80,8 @@ ul.bwbps_gallery li{
 	*margin: 0px;
 }
 
-.bwbps_gallery_div a{
-	color: #fff;
-}
-
-.bwbps_gallery_div a:hover{
-	color: #fff;
-	text-decoration: underline;
-}
-
 .bwbps_gallery_div table, .bwbps_gallery_container0 table {
 	width: 100%;
-}
-
-.bwbps_gallery_div{
-	color: #fff;
 }
 
 .bwbps_galid {
@@ -246,25 +228,6 @@ a.bwbps-fav-0:hover {
 background:transparent url(images/ps_ratings.png) no-repeat scroll 0 0;
 }
 
-.ps-submit input, .ps-submit {
-	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;
-	text-decoration: none;
-	font-size: 11px !important;
-	line-height: 16px;
-	padding: 2px 8px;
-	cursor: pointer;
-	border-width: 1px;
-	border-style: solid;
-	-moz-border-radius: 11px;
-	-khtml-border-radius: 11px;
-	-webkit-border-radius: 11px;
-	border-radius: 11px;
-	-moz-box-sizing: content-box;
-	-webkit-box-sizing: content-box;
-	-khtml-box-sizing: content-box;
-	box-sizing: content-box;
-}
-
 .ps-modbutton input, .ps-modbutton {
 	font-family: "Lucida Grande", Verdana, Arial, "Bitstream Vera Sans", sans-serif;
 	text-decoration: none;
@@ -286,18 +249,14 @@ background:transparent url(images/ps_ratings.png) no-repeat scroll 0 0;
 
 .ps-form-table {
 	border-collapse: collapse;
-	margin-top: 0.5em;
+	margin-top: 16px;
 	width: 100%;
-	margin-bottom: -8px;
 	clear: both;
 }
 
 .ps-form-table td {
-	margin-bottom: 9px;
+	margin-bottom: 8px;
 	padding: 4px 10px 12px;
-	line-height: 20px;
-	font-size: 11px;
-	text-align: left;
 }
 
 .ps-form-table th {
@@ -307,10 +266,6 @@ background:transparent url(images/ps_ratings.png) no-repeat scroll 0 0;
 	text-align: left;
 	padding: 4px 6px;
 	width: 200px;
-}
-
-.ps-form-table input{
-	border:1px solid #777;
 }
 
 .ps-moderate img {
@@ -401,9 +356,8 @@ background:transparent url(images/ps_ratings.png) no-repeat scroll 0 0;
 }
 .ui-tabs-nav li {
     float: left;
-    padding: 6px 5px;
-    min-width: 84px; /* be nice to Opera */
-    margin: 2px 2px 0px 1px !important;
+    padding: 6px 14px;
+    margin: 2px 1px 0 0 !important;
 	text-decoration: none;
 	list-style: none;
 }

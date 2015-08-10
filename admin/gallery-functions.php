@@ -46,11 +46,9 @@ class BWBPS_GalleryFunc{
 			$galleryfound = true;
 		
 		} else {
-		
 			//Gallery was not cached......Get from either Gallery ID or Post ID
-			
 			$gquery = false;
-			
+
 			switch ((int)$g['gallery_type']) {
 				
 				case 10 :	// Contributor Gallery
@@ -350,7 +348,7 @@ class BWBPS_GalleryFunc{
 	function mergeArrays($base, $addon){
 		if(is_array($base) && is_array($addon)){
 			foreach ( $addon as $key => $option ){
-				if(!$base[$key]){
+				if(!isset($base[$key])){
 					$base[$key] = $option;
 				}
 			}

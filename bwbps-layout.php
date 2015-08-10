@@ -180,7 +180,7 @@ class BWBPS_Layout{
 		}
 		
 	
-		if( $g['wp_gallery'] && (int)$g['post_id'] ){
+		if(isset($g['wp_gallery']) && (int)$g['post_id'] ){
 		
 			$shortcode = "[gallery id=" . (int)$g['post_id'] 
 				. " " . $g['wp_gallery_params'] ."]";
@@ -243,7 +243,7 @@ class BWBPS_Layout{
 			if(!isset($pagenum[$g['gallery_id']]) || $pagenum[$g['gallery_id']] < 1){
 			
 				//check if Universal Paging is in effect
-				if((int)$pagenum['uni']){
+				if(isset($pagenum['uni'])){
 					$pagenum[$g['gallery_id']] = (int)$pagenum['uni'];
 				} else {
 					$pagenum[$g['gallery_id']] = 1;
@@ -374,7 +374,7 @@ class BWBPS_Layout{
 		
 		
 		
-		if(!$layout && (int)$g['layout_id'] > -1){
+		if(!isset($layout) && (int)$g['layout_id'] > -1){
 			if((int)$g['layout_id'] == 0){ 
 				//use the PhotoSmash Default Layout 
 				if($this->psOptions['layout_id'] && $this->psOptions['layout_id'] > -1){
@@ -407,7 +407,7 @@ class BWBPS_Layout{
 			
 			if(!$g['no_inserts']){
 				$images[0]['pext_insert_setid'] = (int)$g['pext_insert_setid'];
-				$images[0]['pext_layout_id'] = ($layout ? $layout->layout_id : false);
+				$images[0]['pext_layout_id'] = (isset($layout) ? $layout->layout_id : false);
 				$images[0]['pext_start_image'] = 1;
 				$images[0]['pext_imgs_perpage'] = $g['img_perpage'];
 				$images[0]['pext_page_number'] = 1;
@@ -431,17 +431,19 @@ class BWBPS_Layout{
 			}
 			
 			//Get Ratings HTML
-			if(current_user_can('level_0') && ($this->psOptions['favorites'] || $layout)){
+			if(current_user_can('read') && ($this->psOptions['favorites'] || isset($layout))){
 				$g['ps_favorite_html'] = $this->ratings->getFavoritesHTML($layout, (int)$this->psOptions['favorites']);
 			
 			}
+
+            $psTable = '';
 
             foreach($images as $image){
 			
 				
 				if((int)$image['image_id']) { $image['psimageID'] = (int)$image['image_id']; }
 				
-				if($g['ps_favorite_html']){
+				if(isset($g['ps_favorite_html'])) {
 					$image['ps_fav_html'] = str_replace("{img}",$image['psimageID'], $g['ps_favorite_html']);
 					$image['ps_fav_html'] = str_replace("{gal}",$image['gallery_id'], $image['ps_fav_html']);
 					$image['ps_fav_html'] = str_replace("{favstate}",(int)$image['favorite_id'] ? 1 : 0, $image['ps_fav_html']);
@@ -492,7 +494,7 @@ class BWBPS_Layout{
 				}
 								
 				//Handle Rating Code
-				if($rate){
+				if(isset($rate)) {
 					$rating['image_id'] = $image['psimageID'];
 					$rating['avg_rating'] = $image['avg_rating'];
 					
@@ -589,13 +591,14 @@ class BWBPS_Layout{
 				
 				// Calculate Google Map marker if lat & long are available and gmap_id is set
 				// Do this after all the other goodies are calculated
-				if($g['gmap_id']){
+				if(isset($g['gmap_id'])){
 					$this->addGoogleMapMarker($image, $g);
 				}
 				
 								
 				//Get the Layout:  Standard or Custom
-				if(!$layout){
+                $imageTemp = '';
+				if(!isset($layout)){
 					//Standard Layout
 					$imageTemp .= $this->getStandardLayout($g, $image);
 					
@@ -658,7 +661,7 @@ class BWBPS_Layout{
 		
 		
 		//if($layout->cells_perrow && $psTableRow){
-		if($layout->cells_perrow > 0 && $cellsInRow % $layout->cells_perrow > 0){	
+		if(isset($layout->cells_perrow) > 0 && $cellsInRow % $layout->cells_perrow > 0){	
 			$remaining =  $cellsInRow % $layout->cells_perrow;
 			if($remaining > 0){
 				for($i =0; $i < $remaining; $i++){
@@ -669,8 +672,8 @@ class BWBPS_Layout{
 		}
 		
 		//Gallery Wrapper
-		
-		if($rate){
+		$ratetoggle = '';
+		if(isset($rate)) {
 				$ratings_toggle = "<a href='javascript: void(0);'"
 					. " onclick='bwbpsToggleRatings(". $g['gallery_id'] 
 					. "); return false;' title='Toggle image ratings'>Toggle ratings</a>";
@@ -678,7 +681,7 @@ class BWBPS_Layout{
 				$ratetoggle = "<span class='bwbps-rating-toggle'>$ratings_toggle</span><div class='bwbps-toggle-ratings-clear' style=' margin: 0; padding: 0;'></div>";			
 		}
 		
-		if(!$layout){
+		if(!isset($layout)){
 			//Standard Wrapper
 			$ret = "<div class='bwbps_gallery_div' id='bwbps_galcont_".$g['gallery_id']."'>".$ratetoggle."
 			<table><tr><td>";
@@ -788,9 +791,15 @@ class BWBPS_Layout{
 			
 			}
 		}
-				
-		if(!is_array($pagenum)){ $pagenum = array(); }
-	
+
+        if(isset($pagenum)) {
+            if(!is_array($pagenum)) {
+                $pagenum = array();
+            }
+        } else {
+            $pagenum = '';
+        }
+
 		return $pagenum;
 	}
 	
@@ -805,9 +814,12 @@ class BWBPS_Layout{
 		if($filetype == 0 || $filetype == 1 || $filetype == 4 )
 		{
 			//Set anchor class ... clear it for special cases below
-			if($g['anchor_class']){
+			if(isset($g['anchor_class'])){
 				$anchor_class = " class='".$g['anchor_class']."'";
 			}
+            if(!isset($g['url_attr']['imagetargblank'])) {
+                $g['url_attr']['imagetargblank'] = '';
+            }
 			$image['the_image_link'] = "<a href='"
 						.$image['image_url']."'"
 						.$g['url_attr']['imgrel']." title='".$image['imgtitle']."' "
@@ -910,11 +922,13 @@ class BWBPS_Layout{
 	 */
 	function getStandardLayout(&$g, &$image){
 		
-		if( $image['pext_insert'] ){
+		if(isset($image['pext_insert'])){
 		
 			$insertclass = ' pext_insert';
 		
-		}
+		} else {
+            $insertclass = '';
+        }
 		
 		
 		$ret = "<li class='psgal_".$g['gallery_id']." "
@@ -925,7 +939,7 @@ class BWBPS_Layout{
 					.$g['captionwidth']." class='bwbps_image_div'>";
 					
 		//Handle PSmashExtend Insert
-		if( $image['pext_insert'] ){
+		if(isset($image['pext_insert'])){
 			
 			$ret .= $image['pext_insert'];
 			$ret .= "</div>".$g['modMenu']."</li>";					
@@ -937,7 +951,7 @@ class BWBPS_Layout{
 		$scaption =  $this->getCaption($g, $image);
 		// Get File Field
 		$fileField = $this->getFileField($g, $image);	
-		if($fileField)
+		if(isset($fileField))
 		{
 			//Add Rating as an Overlay of Image if $g['rating_position'] == FALSE
 			if(!$g['rating_position'] ){
@@ -1188,12 +1202,12 @@ class BWBPS_Layout{
 			
 		
 		switch ( true ) {
-		 
 			case ( $ftype == 0 || $ftype == 1 ) :	//image
-			
 				if($image['image_url']){
-				$ret = "<img src='".$psg_imagesurl."'".$g['imgclass']
-					." alt='".$image['img_alt']."' $imagesize />";
+                    if(!isset($image['img_alt'])) {
+                        $image['img_alt'] = '';
+                    }
+                    $ret = "<img src='".$psg_imagesurl."'".$g['imgclass']." alt='".$image['img_alt']."' $imagesize>";
 				} else { $ret = ""; }
 			
 				break;
@@ -1335,8 +1349,7 @@ class BWBPS_Layout{
 		}
 	
 		//Fix up the image Alt for images
-		if( is_array($atts)){
-		
+		if(is_array($atts)){
 			//Work with the ALT attribute in Images
 			if(array_key_exists( 'alt_field', $atts ) ){
 				if ( $atts['alt_field'] && $image[$atts['alt_field']] ){
@@ -3008,6 +3021,7 @@ class BWBPS_Layout{
 				
 		//Set up SQL for Custom Fields
 		$custdata = ", ".PSCUSTOMDATATABLE.".* ";
+        $favoriteDataJoin = '';
 		
 		$custDataJoin = " LEFT OUTER JOIN " . PSCUSTOMDATATABLE . " ON "
 			. PSIMAGESTABLE . ".image_id = " . PSCUSTOMDATATABLE . ".image_id ";		
@@ -3024,7 +3038,7 @@ class BWBPS_Layout{
 			. PSGALLERIESTABLE . ".img_count AS gallery_image_count ";
 		
 		// Add User Favorites indicator to Query if User is logged in
-		if(current_user_can('level_0') && $user_id){
+		if(current_user_can('read') && $user_id){
 		
 			$gallery_selections .= ", " . PSFAVORITESTABLE . ".favorite_id ";
 			
@@ -3089,7 +3103,7 @@ class BWBPS_Layout{
 			}
 			
 		}
-		
+		$sqlSpecialWhere = '';
 		if(isset($_REQUEST['bwbps_q']) ){
 			if(!isset($_REQUEST['bwbps_extnav_gal']) || 
 				((int)$_REQUEST['bwbps_extnav_gal'] == $g['gallery_id']))
@@ -3284,8 +3298,7 @@ class BWBPS_Layout{
 		
 		
 		// Add the WHERE clause for the Smart Galleries
-		if ( $g['smart_gallery'] ){
-			
+		if(isset($g['smart_gallery'])) {
 			if( is_array($g['smart_where'] ) ){
 				$swhere[] = $this->getSmartWhereField( $g['smart_where'] );
 				$sqlWhere = " WHERE " . implode( " AND ", $swhere );			
@@ -3302,6 +3315,8 @@ class BWBPS_Layout{
 		}
 		
 		// Calculate paging
+        $limitimages = '';
+        $hardlimit = '';
 		if( (int)$g['limit_images'] && (int)$g['img_perpage'] ){
 			if( $g['limit_images'] <= $g['img_perpage'] ){
 				$g['img_perpage'] = 0;
@@ -3321,7 +3336,7 @@ class BWBPS_Layout{
 		$sqlWhere .= " " . $sqlSpecialWhere;
 				
 		//Admins can see all images
-		if(current_user_can('level_10')){
+		if(current_user_can('manage_options')){
 			$sql = 'SELECT DISTINCT '.PSIMAGESTABLE.'.*, '
 				. PSIMAGESTABLE.'.image_id as psimageID, '
 				. $wpdb->users.'.user_nicename,'

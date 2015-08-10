@@ -59,6 +59,7 @@ class BWBPS_UploadForm{
 	function getFormHeader($g, $formName, $bCustomForm = false){
 		global $post;
 		$nonce = wp_create_nonce( 'bwb_upload_photos' );
+        $noimage = '';
 				
 		$use_tb = (int)$this->psOptions['use_thickbox'];
 		$use_tb = $g['use_thickbox'] == 'false' ? false : $use_tb;
@@ -95,7 +96,7 @@ class BWBPS_UploadForm{
 				#ui-datepicker-div{z-index: 199;}
 				-->
 		</style>
-        <form id="' . $g["pfx"] . 'bwbps_uploadform" name="bwbps_uploadform" method="post" enctype="multipart/form-data" action="" style="margin:0px;" class="bwbps_uploadform">
+        <form id="' . $g["pfx"] . 'bwbps_uploadform" name="bwbps_uploadform" method="post" enctype="multipart/form-data" action="" class="bwbps_uploadform">
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_ajax_nonce" name="_ajax_nonce" value="'.$nonce.'" />
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formname" name="bwbps_formname" value="'.$formName.'" />
         	<input type="hidden" id="' . $g["pfx"] . 'bwbps_formtype" name="bwbps_formtype" value="'.(int)$g['gallery_type'].'" />
@@ -203,9 +204,13 @@ class BWBPS_UploadForm{
 	 * @param $g: Gallery settings
 	 */
 	function getStandardForm($g, $formname){
-		
-		global $current_user; 
-	
+		global $current_user;
+
+        if(!isset($g['pfx'])) {
+            $g['pfx'] = '';
+        }
+        $reqclass = '';
+
 		if(!trim($formname)){ $formname = "ps-standard"; }
 		$retForm = $this->getFormHeader($g, $formname, false);
 		$retForm .= '
@@ -221,11 +226,13 @@ class BWBPS_UploadForm{
 		//Get the Upload Fields
 		$retForm .= $this->getStdFormUploadFields($g);
 		
-		if( is_array($g['required_fields']) ){
-			$reqclass = in_array("caption", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
-		} else {
-			$reqclass = ""; 
-		}
+        if(isset($g['required_fields'])) {
+            if( is_array($g['required_fields']) ){
+                $reqclass = in_array("caption", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+            } else {
+                $reqclass = ""; 
+            }
+        }
 				
 		$retForm .= '
 				</td>
@@ -263,12 +270,13 @@ class BWBPS_UploadForm{
 				
 		//Alternate Caption URL
 		if($this->options['use_attribution']){
-		
-			if( is_array($g['required_fields']) ){
-				$reqclass = in_array("attribution", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
-			} else {
-				$reqclass = ""; 
-			}
+            if(isset($g['required_fields'])) {
+                if( is_array($g['required_fields']) ){
+                    $reqclass = in_array("attribution", $g['required_fields']) ? "ps_required_" . $g['pfx'] : "";
+                } else {
+                    $reqclass = ""; 
+                }
+            }
 		
 			$retForm .= '<tr><th>Image Attribution:</th>
 				<td align="left">
@@ -1542,13 +1550,15 @@ class BWBPS_UploadForm{
 	}
 	
 	function getImgLicenseDDL($g, $opts, $tab_index){
-			
-		$sel[1] = ' selected=selected';
-		if($opts['value']){
+        $ret = '';
+		$sel[1] = ' selected';
+
+        $sel[2] = ''; $sel[3] = ''; $sel[4] = ''; $sel[5] = ''; $sel[6] = ''; $sel[7] = ''; $sel[8] = ''; $sel[9] = ''; $sel[10] = ''; $sel[11] = '';
+		if(isset($opts['value'])) {
 			$sel[1] = '';
-			$sel[$opts['value']] == ' selected=selected';
+			$sel[$opts['value']] = ' selected';
 		}
-					
+
 		$ret .= "<option value='1' ".$sel[1].">None - All rights reserved</option>";
 		$ret .= "<option value='0' ".$sel[0].">License unknown</option>";
 		$ret .= "<option value='2' ".$sel[2].">Attribution (by)</option>";

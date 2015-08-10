@@ -10,7 +10,7 @@ class PhotoSmash_Widget extends WP_Widget {
 		$control_ops = array( 'width' => 250, 'height' => 350, 'id_base' => 'photosmash-widget' );
 
 		/* Create the widget. */
-		$this->WP_Widget( 'photosmash-widget', 'PhotoSmash Widget', $widget_ops, $control_ops );
+		parent::__construct( 'photosmash-widget', 'PhotoSmash Widget', $widget_ops, $control_ops );
 
 	
 	}

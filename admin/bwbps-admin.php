@@ -25,10 +25,6 @@ class BWBPS_Admin{
             $this->gallery_id = 0;
         }
 		
-		if(isset($_GET['ps-discon-msg'])) {
-            update_option('photosmash_discontinued_msg', 'true');
-        }
-				
 		//Save PS General Settings
 		if(isset($_POST['update_bwbPSDefaults'])){
 			check_admin_referer( 'update-gallery');
@@ -527,12 +523,14 @@ class BWBPS_Admin{
 				$ps['api_url'] = admin_url('admin-ajax.php');
 			}
 			
-			if(is_array($_POST['ps_api_categories'])){
-				$catstemp = array_map("trim", $_POST['ps_api_categories']);
-				$ps['api_categories'] = implode(",",$catstemp);
-			} else {
-				$ps['api_categories'] = trim($_POST['ps_api_categories']);
-			}
+            if(isset($_POST['ps_api_categories'])) {
+                if(is_array($_POST['ps_api_categories'])){
+                    $catstemp = array_map("trim", $_POST['ps_api_categories']);
+                    $ps['api_categories'] = implode(",",$catstemp);
+                } else {
+                    $ps['api_categories'] = trim($_POST['ps_api_categories']);
+                }
+            }
 			
 			$ps['api_categories'] = stripslashes(trim($ps['api_categories']));
 			
@@ -568,7 +566,7 @@ class BWBPS_Admin{
 			if($this->message){
 						$this->message .= "<br/><br/>";
 					}
-			$this->message .= "PhotoSmash defaults updated...";
+			$this->message .= 'PhotoSmash defaults updated...';
 			return true;
 	}
 	
@@ -755,11 +753,8 @@ class BWBPS_Admin{
 		
 		<h2>PhotoSmash Galleries</h2>
 		
-		<?php 
-		if(!get_option('photosmash_discontinued_msg')){ ?>
-		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>. (<a href='admin.php?page=bwb-photosmash.php&ps-discon-msg=true'>Hide</a> this message.)</h3>
+        <div class="updated notice is-dismissible"><p><i class="fa fa-bolt"></i> <a href="//getbutterfly.com/wordpress-plugins/photosmash-galleries/" rel="external" target="_blank"><b>Photosmash</b> is back!</a></p></div>
 		<?php
-		}
 		
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
@@ -770,10 +765,9 @@ class BWBPS_Admin{
 <h3>Gallery Settings</h3>
 <?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
 <p>
-Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
-<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" /> 
-
-<input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" />
+Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" class="button button-secondary">
+<input type="submit" name="massGalleryEdit"  value="<?php _e('Mass Edit', 'photosmash') ?>" class="button button-secondary">
+<input type="submit" name="deletePhotoSmashGallery" onclick='return bwbpsConfirmDeleteGallery();' value="<?php _e('Delete', 'photosmash') ?>" class="button button-secondary"> 
 </p>
 </form>
 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>" onsubmit='return photosmash.verifyCreateGallery();'>
@@ -803,8 +797,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 	
 	<tr>
 		<th><b>Display code:</b></th>
-		<td>[photosmash id=<?php echo $galleryID;?>]
-		<br/>Copy/paste this code into Post or Page content <br/>where you want gallery to display...(include the []'s)<?php  echo "<br/>Associated with post: ".$galOptions['post_id']; ?>
+        <td><code>[photosmash id=<?php echo $galleryID; ?>]</code>
+            <br><small>Copy this shortcode into your post/page</small>
+            <br><small><?php echo 'Currently linked to post ID: ' . $galOptions['post_id']; ?></small>
 		</td>
 	</tr>
 	
@@ -964,22 +959,22 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			
 			
 			<tr>
-				<th>Image link (href) css class:</th>
+				<th>Image link (href) CSS class:</th>
 				<td>
-					<input type='text' name="gal_anchor_class" value='<?php echo $galOptions['anchor_class']; ?>'/> Set to 'thickbox' to use Thickbox to display images
+                    <input type="text" name="gal_anchor_class" value="<?php echo $galOptions['anchor_class']; ?>" class="regular-text"> Set to <code>thickbox</code> to use Thickbox to display images
 				</td>
 			</tr>
 			
 			<tr>
-				<th>"Rel" parameter for image links:</th>
+                <th><code>rel</code> parameter for image links:</th>
 				<td>
-					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>'/>
+					<input type="text" name="gal_img_rel" value="<?php echo $galOptions['img_rel'];?>" class="regular-text">
 				</td>
 			</tr>
 			<tr>
-				<th>Image css class:</th>
+				<th>Image CSS class:</th>
 				<td>
-					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>'/>
+					<input type="text" name="gal_img_class" value="<?php echo $galOptions['img_class']; ?>" class="regular-text">
 				</td>
 			</tr>
 			<tr>
@@ -1355,22 +1350,22 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			</tr>
 			
 			<tr>
-				<th>Image link (href) css class:</th>
+				<th>Image link (href) CSS class:</th>
 				<td>
-					<input type='text' name="gal_anchor_class" value='<?php echo $galOptions['anchor_class']; ?>'/> Set to 'thickbox' to use Thickbox to display images
+					<input type='text' name="gal_anchor_class" value='<?php echo $galOptions['anchor_class']; ?>' class="regular-text"> Set to 'thickbox' to use Thickbox to display images
 				</td>
 			</tr>
 			
 			<tr>
-				<th>"Rel" parameter for image links:</th>
+                <th><code>rel</code> parameter for image links:</th>
 				<td>
-					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>'/>
+					<input type='text' name="gal_img_rel" value='<?php echo $galOptions['img_rel'];?>' class="regular-text">
 				</td>
 			</tr>
 			<tr>
-				<th>Default image css class:</th>
+				<th>Default image CSS class:</th>
 				<td>
-					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>'/>
+					<input type='text' name="gal_img_class" value='<?php echo $galOptions['img_class']; ?>' class="regular-text">
 				</td>
 			</tr>
 			<tr>
@@ -1540,19 +1535,16 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		
 		?>
 		
-		<h2>PhotoSmash Galleries</h2>
+		<h2>Photosmash Galleries</h2>
 		
-		<?php 
-		if(!get_option('photosmash_discontinued_msg')){ ?>
-		<h3 style='color: red !important;'>ATTENTION! PhotoSmash is being discontinued...read about it <a href='http://smashly.net/blog/farewell-to-photosmash/'>here</a>. (<a href='admin.php?page=bwb-photosmash.php&ps-discon-msg=true'>Hide</a> this message.)</h3>
+        <div class="updated notice is-dismissible"><p><i class="fa fa-bolt"></i> <a href="//getbutterfly.com/wordpress-plugins/photosmash-galleries/" rel="external" target="_blank"><b>Photosmash</b> is back!</a></p></div>
 		<?php
-		}
 		
 			if($this->message){
 				echo '<div id="message" class="'.$this->msgclass.'"><p>'.$this->message.'</p></div>';
 			}
 		?>		
-		<h3>PhotoSmash Default Settings</h3>
+		<h3>Photosmash Default Settings</h3>
 		
 		<?php if($psOptions['use_advanced']) {echo PSADVANCEDMENU; } else { echo PSSTANDARDDMENU; }?>
 	
@@ -1574,7 +1566,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		<table class="form-table">
 			<tr>
 				<th>Need help?</th>
-				<td style='font-size: 16px; color: #ff0000 !important;'><a href='http://smashly.net/photosmash-galleries/tutorials/'><span style='color: #ff0000 !important;'>Tutorials</span></a> <a href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/'  target='_blank' title='Video tutorials'><img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video Tutorial' /></a> - <a href='http://smashly.net/community/'>Old Help Forum</a> - <a href='http://wordpress.org/tags/photosmash-galleries?forum_id=10'>Support on WordPress</a></td>
+				<td><i class="fa fa-life-ring"></i> <a href="//getbutterfly.com/wordpress-plugins/photosmash-galleries/" rel="external" target="_blank">Tutorials</a> | <a href="//wordpress.org/plugins/photosmash-galleries/">Support on WordPress</a></td>
 			<tr>
 				<th>Gallery Viewer Page:</th>
 				<td class='<?php if(!$psOptions['gallery_viewer']) echo 'message error'; ?>'>
@@ -1618,7 +1610,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Default Layout:</th>
 				<td>
 					<?php echo $this->getLayoutsDDL($psOptions['layout_id'], true, 0 );
-					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default layout for displaying images
+					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_layout_id' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Default layout for displaying images
 					
 					<?php if($psOptions['use_advanced']){
 						echo " - <a href='admin.php?page=editPSHTMLLayouts' title='Layout Editor'>Layout Editor</a>";
@@ -1646,52 +1638,52 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<option value="5" <?php if($psOptions['sort_field'] == 4) echo 'selected=selected'; ?>>Favorite Count (times favorited)</option>
 						
 					</select>
-					 <a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_field' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					 <a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_field' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					
 					<input type="radio" name="ps_sort_order" value="0" <?php if(!$psOptions['sort_order']) echo 'checked'; ?>>Ascending &nbsp;
 					
 					<input type="radio" name="ps_sort_order" value="1" <?php if($psOptions['sort_order'] == 1) echo 'checked'; ?>>Descending
-					&nbsp;-&nbsp;<a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_order' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					&nbsp;-&nbsp;<a href='javascript: void(0);' class='psmass_update' id='save_ps_sort_order' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					
 				</td>
 			</tr>
 			
 			<tr>
-				<th>Default Images per page:</th>
+				<th>Default images per page:</th>
 				<td>
-					<input type='text' id='ps_img_perpage' name="ps_img_perpage" value='<?php echo (int)$psOptions['img_perpage'];?>' style='width: 40px !important;'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perpage' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type="number" id="ps_img_perpage" name="ps_img_perpage" value="<?php echo (int)$psOptions['img_perpage']; ?>" min="1" max="999"> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perpage' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					 <em>0 turns off paging and shows all images in galleries</em>
 				</td>
 			</tr>
 			<tr>
-				<th>Default Images per row (Standard Layout):</th>
+				<th>Default images per row (standard layout):</th>
 				<td>
-					<input type='text' name="ps_img_perrow" value='<?php echo (int)$psOptions['img_perrow'];?>' style='width: 40px !important;'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perrow' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type="number" name="ps_img_perrow" value="<?php echo (int)$psOptions['img_perrow']; ?>" min="1" max="999"> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_perrow' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					 <em>0 places as many images per row as theme's width allows when using the Standard Layout</em>
 				</td>
 			</tr>
 			
 			<tr>
-				<th>Image link (href) css class:</th>
+				<th>Image link (href) CSS class:</th>
 				<td>
-					<input type='text' name="ps_anchor_class" value='<?php echo $psOptions['anchor_class']; ?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_anchor_class' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Set to 'thickbox' to use Thickbox to display images
+					<input type='text' name="ps_anchor_class" value='<?php echo $psOptions['anchor_class']; ?>' class="regular-text"> <a href='javascript: void(0);' class='psmass_update' id='save_ps_anchor_class' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Set to 'thickbox' to use Thickbox to display images
 				</td>
 			</tr>
 			
 			<tr>
-				<th>"Rel" parameter for image links:</th>
+                <th><code>rel</code> parameter for image links:</th>
 				<td>
-					<input type='text' name="ps_img_rel" value='<?php echo $psOptions['img_rel'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_rel' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' name="ps_img_rel" value='<?php echo $psOptions['img_rel'];?>' class="regular-text"> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_rel' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			<tr>
-				<th>Default image css class:</th>
+				<th>Default image CSS class:</th>
 				<td>
-					<input type='text' name="ps_img_class" value='<?php echo $psOptions['img_class']; ?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_class' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' name="ps_img_class" value='<?php echo $psOptions['img_class']; ?>' class="regular-text"> <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_class' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			<tr>
-				<th>Thumbnail & Caption link targets:</th>
+				<th>Thumbnail &amp; Caption link targets:</th>
 				<td>
 					<input type="checkbox" name="ps_img_targetnew" <?php if($psOptions['img_targetnew'] == 1) echo 'checked'; ?>> Thumbnail links open in new window<br/>
 					<input type="checkbox" name="ps_caption_targetnew" <?php if($psOptions['caption_targetnew'] == 1) echo 'checked'; ?>> Caption links open in new window<br/>
@@ -1724,14 +1716,14 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						
 						
 						
-						<a href='javascript: void(0);' class='psmass_update' id='save_ps_show_imgcaption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Mass update galleries
+						<a href='javascript: void(0);' class='psmass_update' id='save_ps_show_imgcaption' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Mass update galleries
 						<br/>
 						(Website links will be the website in the contributor's WordPress profile)<br/>
 						(When 'user submitted url' is selected, but none exists, uses link in contributor's WordPress profile)<br/>
 												
 						<br/>
 						
-						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='javascript: void(0);' class='psmass_update' id='save_ps_nofollow_caption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
+						<input type="checkbox" name="ps_nofollow_caption" <?php if($psOptions['nofollow_caption'] == 1) echo 'checked'; ?>> <a href='javascript: void(0);' class='psmass_update' id='save_ps_nofollow_caption' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> <a href='http://en.wikipedia.org/wiki/Nofollow'>NoFollow</a> on caption/contributor links
 				</td>
 			</tr>
 			<tr>
@@ -1752,7 +1744,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<option value="3" <?php if($psOptions['favorites'] ==3) echo 'selected=selected'; ?>>Bottom-left</option>
 						<option value="4" <?php if($psOptions['favorites'] ==4) echo 'selected=selected'; ?>>Bottom-right</option>
 						<option value="5" <?php if($psOptions['favorites'] ==5) echo 'selected=selected'; ?>>Left of Rating</option>
-					</select> <a href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/favorites/'  target='_blank' title='Video tutorial for using Favorites.'><img src='<?php echo BWBPSPLUGINURL;?>images/help.png' alt='Video Tutorial' /></a> Allow users to favorite images
+					</select> <a href='<?php echo PHOTOSMASHWEBHOME; ?>tutorials/favorites/'  target='_blank' title='Video tutorial for using Favorites.'><i class="fa fa-life-ring"></i></a> Allow users to favourite images
 				</td>
 			</tr>
 			
@@ -1781,7 +1773,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						
 						<option value="-3" <?php if($psOptions['poll_id'] == -3) echo 'selected=selected'; ?>>Standard Vote Up</option>
 
-					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_poll_id' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> 
+					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_poll_id' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> 
 				</td>
 			</tr>
 			
@@ -1791,7 +1783,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					<select name="ps_rating_position">
 						<option value="0" <?php if(!$psOptions['rating_position']) echo 'selected=selected'; ?>>Overlay thumbnail</option>
 						<option value="1" <?php if($psOptions['rating_position'] ==1) echo 'selected=selected'; ?>>Beneath caption</option>
-					</select> <a href='javascript: void(0);' class='psmass_update' id='save_ps_rating_position' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					</select> <a href='javascript: void(0);' class='psmass_update' id='save_ps_rating_position' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			
@@ -1805,14 +1797,14 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Photo tags Page Title:</th>
 				<td>
-					<input type='text' name="ps_tag_label" value='<?php echo esc_attr($psOptions['tag_label']);?>'/>	will default to 'Photo tags'
+					<input type='text' name="ps_tag_label" value='<?php echo esc_attr($psOptions['tag_label']);?>' class="regular-text"> will default to 'Photo tags'
 				</td>
 			</tr>
 			
 			<tr>
 				<th>Photo tags URL Slug:</th>
 				<td>
-					<input type='text' name="ps_tag_slug" value='<?php echo esc_attr($psOptions['tag_slug']);?>'/>
+					<input type='text' name="ps_tag_slug" value='<?php echo esc_attr($psOptions['tag_slug']);?>' class="regular-text">
 					will default to 'photo-tag'
 				</td>
 			</tr>
@@ -1820,14 +1812,14 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Contributor taxonomy Page Title:</th>
 				<td>
-					<input type='text' name="ps_contributor_label" value='<?php echo esc_attr($psOptions['contributor_label']);?>'/>	will default to 'Contributors'.  This is similar to the Contributors page used by the Author's page feature except it uses a Custom Taxonomy for authors.
+					<input type='text' name="ps_contributor_label" value='<?php echo esc_attr($psOptions['contributor_label']);?>' class="regular-text">	will default to 'Contributors'.  This is similar to the Contributors page used by the Author's page feature except it uses a Custom Taxonomy for authors.
 				</td>
 			</tr>
 			
 			<tr>
 				<th>Contributor URL Slug:</th>
 				<td>
-					<input type='text' name="ps_contributor_slug" value='<?php echo esc_attr($psOptions['contributor_slug']);?>'/>
+					<input type='text' name="ps_contributor_slug" value='<?php echo esc_attr($psOptions['contributor_slug']);?>' class="regular-text">
 					will default to 'contributor'<br/>
 					<a href='javascript:void(0);' onclick="jQuery('#ps_update_contribs').val('true'); jQuery('#bwbps_form_gensettings').submit(); return false;" title='Update all images in the Contributor taxonomy'>Update All Images</a> - updates the contributor taxonomy for all images (could take a while depending on # of images in database)
 					<input type='hidden' id='ps_update_contribs' name='ps_update_contribtags' value='' />
@@ -1838,7 +1830,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Gallery Viewer Slug:</th>
 				<td>
 					<?php $psOptions['gallery_viewer_slug'] = $psOptions['gallery_viewer_slug'] ? $psOptions['gallery_viewer_slug'] : 'psmash-gallery'; ?>
-					<input type='text' name="ps_gallery_viewer_slug" value='<?php echo esc_attr($psOptions['gallery_viewer_slug']);?>'/>
+					<input type='text' name="ps_gallery_viewer_slug" value='<?php echo esc_attr($psOptions['gallery_viewer_slug']);?>' class="regular-text">
 					will default to 'psmash-gallery'
 				</td>
 			</tr>
@@ -1872,7 +1864,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<td>
 					<?php 
 						echo $this->getCFDDL($psOptions['custom_formid'], "ps_custom_formid");
-					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_custom_formid' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Default upload form.  See custom form below
+					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_custom_formid' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Default upload form.  See custom form below
 				</td>
 			</tr>
 		
@@ -1885,7 +1877,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 						<option value="0" <?php if($psOptions['contrib_role'] == 0) echo 'selected=selected'; ?>>Subscribers</option>
 						<option value="1" <?php if($psOptions['contrib_role'] == 1) echo 'selected=selected'; ?>>Contributors/Authors</option>
 						<option value="10" <?php if($psOptions['contrib_role'] == 10) echo 'selected=selected'; ?>>Admin</option>
-					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_contrib_role' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_contrib_role' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					<br/>Authors and Admins will not need moderation, even if selected below.
 					<br/>Contributors, Subscribers, and "Anybody" will obey your moderation setting.
 				</td>
@@ -1896,7 +1888,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 					<select name="ps_img_status">
 						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
 						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Approved</option>
-					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_status' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_status' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			<tr>
@@ -1923,7 +1915,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Upload form caption:</th>
 				<td>
-					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_upload_form_caption' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' name="ps_upload_form_caption" value='<?php echo $psOptions['upload_form_caption'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_upload_form_caption' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			<tr>
@@ -2024,16 +2016,16 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Default Mini size (px):</th>
 				<td>
 					<label>Width</label>
-					<input type='text' class='small-text' name="ps_mini_width" value='<?php echo (int)$psOptions['mini_width'];?>'/>   <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_mini_width" value='<?php echo (int)$psOptions['mini_width'];?>'/>   <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_width' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					<label>Height</label>
-					<input type='text' class='small-text' name="ps_mini_height" value='<?php echo (int)$psOptions['mini_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_mini_height" value='<?php echo (int)$psOptions['mini_height'];?>'/>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_height' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
 				<th>Mini cropping:</th>
 				<td>
-					<input type="checkbox" name="ps_mini_aspect" <?php if(!$psOptions['mini_aspect']) echo 'checked'; ?> />  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
+					<input type="checkbox" name="ps_mini_aspect" <?php if(!$psOptions['mini_aspect']) echo 'checked'; ?> />  <a href='javascript: void(0);' class='psmass_update' id='save_ps_mini_aspect' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Crop to exact dimensions
 				</td>
 			</tr>
 	
@@ -2042,17 +2034,17 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Default Thumbnail size (px):</th>
 				<td>
 					<label>Width</label>
-					<input type='text' class='small-text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_thumb_width" value='<?php echo (int)$psOptions['thumb_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_width' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 
 					<label>Height</label>
-					<input type='text' class='small-text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_thumb_height" value='<?php echo (int)$psOptions['thumb_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_height' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
 				<th>Thumbnail cropping:</th>
 				<td>
-					<input type="checkbox" name="ps_thumb_aspect" <?php if(!$psOptions['thumb_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
+					<input type="checkbox" name="ps_thumb_aspect" <?php if(!$psOptions['thumb_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_thumb_aspect' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Crop to exact dimensions
 					
 				</td>
 			</tr>		
@@ -2061,16 +2053,16 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Default Medium size (px):</th>
 				<td>
 					<label>Width</label>
-					<input type='text' class='small-text' name="ps_medium_width" value='<?php echo (int)$psOptions['medium_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_medium_width" value='<?php echo (int)$psOptions['medium_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_width' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					<label>Height</label>
-					<input type='text' class='small-text' name="ps_medium_height" value='<?php echo (int)$psOptions['medium_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_medium_height" value='<?php echo (int)$psOptions['medium_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_height' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 				</td>
 			</tr>
 			
 			<tr style='border-bottom: 1px solid #f0f0f0;'>
 				<th>Medium cropping:</th>
 				<td>
-					<input type="checkbox" name="ps_medium_aspect" <?php if(!$psOptions['medium_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
+					<input type="checkbox" name="ps_medium_aspect" <?php if(!$psOptions['medium_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_medium_aspect' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Crop to exact dimensions
 				</td>
 			</tr>
 			
@@ -2079,9 +2071,9 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 				<th>Default Large size (px):</th>
 				<td>
 					<label>Width</label>
-					<input type='text' class='small-text' name="ps_image_width" value='<?php echo (int)$psOptions['image_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_width' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_image_width" value='<?php echo (int)$psOptions['image_width'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_width' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					<label>Height</label>
-					<input type='text' class='small-text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_height' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a>
+					<input type='text' class='small-text' name="ps_image_height" value='<?php echo (int)$psOptions['image_height'];?>'/> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_height' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
 					<br/>Enter 0 to set no maximum width/height
 				</td>
 			</tr>
@@ -2089,7 +2081,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 			<tr>
 				<th>Large cropping:</th>
 				<td>
-					<input type="checkbox" name="ps_image_aspect" <?php if(!$psOptions['image_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><img src='<?php echo BWBPSPLUGINURL;?>images/disk_multiple.png' alt='Mass update' /></a> Crop to exact dimensions
+					<input type="checkbox" name="ps_image_aspect" <?php if(!$psOptions['image_aspect']) echo 'checked'; ?> /> <a href='javascript: void(0);' class='psmass_update' id='save_ps_image_aspect' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Crop to exact dimensions
 				</td>
 			</tr>
 		</table>
@@ -2690,10 +2682,7 @@ Select gallery: <?php echo $galleryDDL;?>&nbsp;<input type="submit" name="show_b
 		<br/>
 		<?php 
 			echo $galleryDDL;
-		?>&nbsp;<input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" />
-			&nbsp;<input type="submit" name="showModerationImages" value="<?php _e('Moderation/New', 'bwbPS') ?>" />
-			&nbsp;<input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') 
-				?>" />	
+		?> <input type="submit" name="show_bwbPSSettings" value="<?php _e('Edit', 'bwbPS') ?>" class="button button-secondary"> <input type="submit" name="showModerationImages" value="<?php _e('Moderation/New', 'bwbPS') ?>" class="button button-secondary"> <input type="submit" name="showAllImages" value="<?php _e('All Images', 'bwbPS') ?>" class="button button-secondary">	
 		
 		
 			Show: <input type='text' name='bwbpsLimitImg' size=4 value='<?php echo $limit;

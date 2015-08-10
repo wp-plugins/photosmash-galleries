@@ -10,7 +10,7 @@ class PhotoSmash_TagCloud extends WP_Widget {
 		$control_ops = array( 'width' => 250, 'height' => 350, 'id_base' => 'photosmash-tags-widget' );
 
 		/* Create the widget. */
-		$this->WP_Widget( 'photosmash-tags-widget', 'PhotoSmash Tag Cloud', $widget_ops, $control_ops );
+		parent::__construct( 'photosmash-tags-widget', 'PhotoSmash Tag Cloud', $widget_ops, $control_ops );
 
 	
 	}
