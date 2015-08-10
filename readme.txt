@@ -13,6 +13,8 @@ Photosmash Galleries is a photo gallery plugin that integrates with the native W
 == Description ==
 Photosmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to. Photosmash has incredibly flexible and simple models for designing custom photo gallery and form layouts, utilizing your own custom database fields.
 
+We have set up a crowdfunding page, hopefully we'll raise enough to help us revive the plugin to its former glory. Feel free to share and contribute - http://igg.me/at/photosmash - thank you!
+
 == Installation ==
 1. Upload the plugin folder - `photosmash-galleries` - to your `/wp-content/plugins/` directory
 2. Activate the plugin through the Plugins menu in WordPress
