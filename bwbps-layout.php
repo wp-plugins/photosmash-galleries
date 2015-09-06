@@ -2816,7 +2816,7 @@ class BWBPS_Layout{
 		
 		//use split on ? to get the url broken between ? and rest
 		
-		$arrURL = split("\?",$url);
+		$arrURL = explode('?', $url);
 		if(count($arrURL)> 1){
 			$url .= "&";			
 		} else {

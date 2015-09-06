@@ -3,8 +3,8 @@ Contributors: bennebw, butterflymedia
 Tags: images, photos, photo, picture, gallery, social, community, posts, admin, pictures, media, galleries
 Donate link: http://igg.me/at/photosmash
 Requires at least: 4.0
-Tested up to: 4.3-RC2
-Stable tag: 1.0.8
+Tested up to: 4.3
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,19 +13,17 @@ Photosmash Galleries is a photo gallery plugin that integrates with the native W
 == Description ==
 Photosmash Galleries makes it easy to create photo galleries in posts or pages that your users can upload images to. Photosmash has incredibly flexible and simple models for designing custom photo gallery and form layouts, utilizing your own custom database fields.
 
-We have set up a crowdfunding page, hopefully we'll raise enough to help us revive the plugin to its former glory. Feel free to share and contribute - http://igg.me/at/photosmash - thank you!
-
 == Installation ==
 1. Upload the plugin folder - `photosmash-galleries` - to your `/wp-content/plugins/` directory
 2. Activate the plugin through the Plugins menu in WordPress
 3. To automatically add a new gallery to a post/page, put the `[photosmash]` shortcode in the body of the post/page where you want it to show up.
-4. To add a specific existing gallery to a post, use the `[photosmash id=#]` shortcode (replacing `#` with the gallery\'s ID).
-5. Alternatively, you can set Photosmash to \"auto-add\" galleries to all posts by updating the settings in the Photosmash options page in the Settings panel.
+4. To add a specific existing gallery to a post, use the `[photosmash id=#]` shortcode (replacing `#` with the gallery's ID).
+5. Alternatively, you can set Photosmash to "auto-add" galleries to all posts by updating the settings in the Photosmash options page in the Settings panel.
 
 == Frequently Asked Questions ==
 = Is Photosmash free? =
 
-Yes, it is. It\'s licensed under the GPLv3.
+Yes, it is. It's licensed under the GPLv3.
 
 = How many galleries can a post/page have? =
 
@@ -37,7 +35,7 @@ You control this on a gallery-by-gallery basis (you can also set a default for P
 
 = Can unregistered users upload images? =
 
-Yes, if you assign the minimum role for uploading to \'Anyone\'.
+Yes, if you assign the minimum role for uploading to 'Anyone'.
 
 = How can I upload images to a gallery before adding to a Post? =
 
@@ -54,6 +52,9 @@ In the main plugin folder there is a CSS file: `bwbps.css`. It should be relativ
 3. Menu pages for PhotoSmash and Extend
 
 == Changelog ==
+
+= 1.0.9 =
+* FIX: Fixed lots of warnings
 
 = 1.0.8 =
 * UPDATE: New menu logo

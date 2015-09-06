@@ -1,5 +1,4 @@
 <?php
-
 class BWBPS_UploadForm{
 	var $options;
 	var $stdFieldList;
@@ -61,7 +60,7 @@ class BWBPS_UploadForm{
 		$nonce = wp_create_nonce( 'bwb_upload_photos' );
         $noimage = '';
 				
-		$use_tb = (int)$this->psOptions['use_thickbox'];
+		$use_tb = (int)$this->options['use_thickbox'];
 		$use_tb = $g['use_thickbox'] == 'false' ? false : $use_tb;
 		$use_tb = $g['use_thickbox'] == 'true' ? true : $use_tb;
 		$use_tb = $g['form_visible'] == 'true' ? false : $use_tb;
@@ -77,13 +76,9 @@ class BWBPS_UploadForm{
 		
 		
 		
-		if( $g['using_thickbox'] )
-		{
-		
+		if(isset($g['using_thickbox'])) {
 			$ret = '<div id="' . $g["pfx"] . 'bwbps-formcont" class="thickbox" style="display:none;">';
-		
 		} else {
-					
 			if( $g['form_isvisible'] ){
 				$ret = '<div id="' . $g["pfx"] . 'bwbps-formcont">';	//Do not hide...visible is set to ON
 			} else {

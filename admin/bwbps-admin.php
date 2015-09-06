@@ -1073,12 +1073,13 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				</td>
 			</tr>
 			<tr>
-				<th>Default moderation status:</th>
+				<th><?php _e('Image moderation', 'photosmash'); ?></th>
 				<td>
 					<select name="gal_img_status">
-						<option value="0" <?php if(!$galOptions['img_status']) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected'; ?>>Moderate all images (recommended)</option>
+						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected'; ?>>Do not moderate</option>
 					</select>
+                    <br><small>Moderate all submitted images (recommended).</small>
 				</td>
 			</tr>
 			<tr>
@@ -1406,12 +1407,13 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				</td>
 			</tr>
 			<tr>
-				<th>Default moderation status:</th>
+				<th><?php _e('Image moderation', 'photosmash'); ?></th>
 				<td>
 					<select name="gal_img_status">
-						<option value="0" <?php if(!$galOptions['img_status']) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected=selected'; ?>>Active</option>
+						<option value="0" <?php if($galOptions['img_status'] == 0) echo 'selected'; ?>>Moderate all images (recommended)</option>
+						<option value="1" <?php if($galOptions['img_status'] == 1) echo 'selected'; ?>>Do not moderate</option>
 					</select>
+                    <br><small>Moderate all submitted images (recommended).</small>
 				</td>
 			</tr>
 			<tr>
@@ -1844,32 +1846,25 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 
 		</table>
 	</div>
-	<div id='bwbps_uploading'>
-		<table class="form-table">
-				
-			<tr>
-				<th>Use WordPress Upload process:</th>
-				<td>
-					<input type="checkbox" name='ps_use_wp_upload_functions' <?php if($psOptions['use_wp_upload_functions'] == 1) echo 'checked'; ?>>
-					Use built-in WordPress upload functions.
-					<p>
-						<input type="checkbox" name='ps_add_to_wp_media_library' <?php if($psOptions['add_to_wp_media_library'] == 1) echo 'checked'; ?>> Add images the WordPress Media Library
-					</p><p><b>Don't use these if you're using custom upload code</b>...until you change your upload code to work with the new code in bwbps-wp-uploader.php</p>
-					<p><b>Benefits?</b><ol><li>Fixes folder issues some people have had</li><li>Adds images to the WP Media Library...so you can edit them through WP functionality.</li></ol></p>
-				</td>
-			</tr>
-			
-			<tr>
-				<th>Default Form for new Galleries:</th>
-				<td>
-					<?php 
-						echo $this->getCFDDL($psOptions['custom_formid'], "ps_custom_formid");
-					?> <a href='javascript: void(0);' class='psmass_update' id='save_ps_custom_formid' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a> Default upload form.  See custom form below
-				</td>
-			</tr>
-		
-		
-			<tr>
+    <div id="bwbps_uploading">
+        <table class="form-table">
+            <tr>
+                <th><?php _e('WordPress upload', 'photosmash'); ?></th>
+                <td>
+                    <input type="checkbox" name="ps_use_wp_upload_functions" <?php if($psOptions['use_wp_upload_functions'] == 1) echo 'checked'; ?>> Use built-in WordPress upload functions
+                    <br>
+                    <input type="checkbox" name="ps_add_to_wp_media_library" <?php if($psOptions['add_to_wp_media_library'] == 1) echo 'checked'; ?>> Add images to media library
+                    <br><small><b>Note:</b> Do not use these functions if you are using custom upload code.</small>
+                </td>
+            </tr>
+            <tr>
+                <th><?php _e('Default form for new galleries', 'photosmash'); ?></th>
+                <td>
+                    <?php echo $this->getCFDDL($psOptions['custom_formid'], 'ps_custom_formid'); ?> <a href="javascript: void(0);" class="psmass_update" id="save_ps_custom_formid" title="Update all galleries"><i class="fa fa-floppy-o"></i></a>
+                    <br><small>Default upload form.</small>
+                </td>
+            </tr>
+            <tr>
 				<th>Default Minimum role to upload photos:</th>
 				<td>
 					<select name="ps_contrib_role">
@@ -1883,12 +1878,13 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				</td>
 			</tr>
 			<tr>
-				<th>Default moderation status:</th>
+				<th><?php _e('Image moderation', 'photosmash'); ?></th>
 				<td>
 					<select name="ps_img_status">
-						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected=selected'; ?>>Moderate</option>
-						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected=selected'; ?>>Approved</option>
-					</select>  <a href='javascript: void(0);' class='psmass_update' id='save_ps_img_status' title='Update ALL GALLERIES with this value.'><i class="fa fa-floppy-o"></i></a>
+						<option value="0" <?php if($psOptions['img_status'] == 0) echo 'selected'; ?>>Moderate all images (recommended)</option>
+						<option value="1" <?php if($psOptions['img_status'] == 1) echo 'selected'; ?>>Do not moderate</option>
+					</select> <a href="javascript: void(0);" class="psmass_update" id="save_ps_img_status" title="Update all galleries"><i class="fa fa-floppy-o"></i></a>
+                    <br><small>Moderate all submitted images (recommended).</small>
 				</td>
 			</tr>
 			<tr>
@@ -2855,11 +2851,13 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 		} 
 		
 		if(is_array($this->psForm->cfList)){
-		foreach( $this->psForm->cfList as $f ){
-			$cfNamesArrayForJS[] .= '"' . $f->field_name . '"';
-			$cfArrayForJS[] .= ' "' . $f->field_name . '" : "" ';
-		
-		}
+            $cfNamesArrayForJS = array();
+            $cfArrayForJS = array();
+            foreach( $this->psForm->cfList as $f ){
+                $cfNamesArrayForJS[] .= '"' . $f->field_name . '"';
+                $cfArrayForJS[] .= ' "' . $f->field_name . '" : "" ';
+
+            }
 		}
 		
 		if(!(int)get_option('bwbps_show_fileurl')){
@@ -2882,8 +2880,7 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				$jsfieldnamearray = implode(',', $cfNamesArrayForJS);
 			}
 					
-			$psTableWrap .= "
-			<script type='text/javascript'>var bwbpsCustomFields = {" . $jsfieldarray . "};
+			$psTableWrap = "<script>var bwbpsCustomFields = {" . $jsfieldarray . "};
 			var bwbpsCustomFieldNames = [" . $jsfieldnamearray . "];
 			</script>
 			<div id='bwbpsGetMediaGalleryBox' style='display: none;'>
@@ -2904,13 +2901,14 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				<th class='' scope='col'>Images</th>
 				</tr>
 			</tfoot>
-			<tbody id='psimage-tbody'>
-			";
+			<tbody id='psimage-tbody'>";
 		
 		
 		
 		$i=-1;
 		$ialt = 1;
+        $rowstyle = '';
+        $psTable = '';
 		foreach($images as $image){
 			
 			if($i==-1){
@@ -2928,8 +2926,7 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				$ialt++;
 				
 				$i = 1;
-				$psTable .= "</tr><tr id='bwbps-img-" 
-					. $image->image_id . "' class='iedit $rowstyle' valign='top'>";
+				$psTable .= "</tr><tr id='bwbps-img-" . $image->image_id . "' class='iedit $rowstyle' valign='top'>";
 				
 			} else {
 				$i++; 
@@ -3267,7 +3264,7 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 	
 	/*
 	 *	Get Image Moderation Status
-	 *  Determine the moderation status of an Imageand supply a link for moderating
+	 *  Determine the moderation status of an Image and supply a link for moderating
 	 *  Returns array:  $mod['class'] and $mod['menu']
 	*/
 	function getGIModStatus($g, $image, $admin){
@@ -3361,24 +3358,7 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 		if(current_user_can('level_10')){
 			switch ($gallery_id){
 				case "all" :
-					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
-						.$wpdb->users.'.user_nicename,'
-						. $wpdb->users.'.display_name, '.$wpdb->users
-						. '.user_login, '.PSGALLERIESTABLE.'.gallery_name, '
-						. $wpdb->posts . '.post_status '
-						. $cfsql . " "
-						. ' FROM ' . PSIMAGESTABLE 
-						. ' LEFT OUTER JOIN '.PSCUSTOMDATATABLE.' ON '.PSCUSTOMDATATABLE
-						. '.image_id = '. PSIMAGESTABLE. '.image_id '
-						. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-						. '.ID = '. PSIMAGESTABLE. '.user_id '
-						. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
-						. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
-						. PSIMAGESTABLE.'.gallery_id '
-						. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
-						. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
-						. ' ORDER BY '
-						. PSIMAGESTABLE. '.image_id' . $desc . $limitsql);
+					$sql = 'SELECT ' . PSIMAGESTABLE . '.*, ' . $wpdb->users . '.user_nicename,' . $wpdb->users . '.display_name, ' . $wpdb->users . '.user_login, ' . PSGALLERIESTABLE . '.gallery_name, ' . $wpdb->posts . '.post_status ' . $cfsql . ' FROM ' . PSIMAGESTABLE . ' LEFT OUTER JOIN ' . PSCUSTOMDATATABLE . ' ON ' . PSCUSTOMDATATABLE . '.image_id = ' . PSIMAGESTABLE . '.image_id LEFT OUTER JOIN ' . $wpdb->users . ' ON ' . $wpdb->users . '.ID = ' . PSIMAGESTABLE . '.user_id LEFT OUTER JOIN ' . PSGALLERIESTABLE . ' ON ' . PSGALLERIESTABLE . '.gallery_id = ' . PSIMAGESTABLE . '.gallery_id LEFT OUTER JOIN ' . $wpdb->posts . ' ON ' . $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id ORDER BY ' . PSIMAGESTABLE. '.image_id' . $desc . $limitsql;
 					break;
 					
 				case "moderation" :
@@ -3399,32 +3379,14 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 					. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
 					. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
 					. ' WHERE '. PSIMAGESTABLE
-					. '.status = -1 OR '. PSIMAGESTABLE
+					. ".status = '%d' OR ". PSIMAGESTABLE
 					. '.alerted IN (-1, 0) ORDER BY '
-					. PSIMAGESTABLE. '.image_id' . $desc . $limitsql);
+					. PSIMAGESTABLE. '.image_id' . $desc . $limitsql, '-1');
 					break;
 					
 				default:
 					$gallery_id = (int)$gallery_id;
-					$sql = $wpdb->prepare('SELECT '.PSIMAGESTABLE.'.*, '
-					. $wpdb->users.'.user_nicename,'
-					. $wpdb->users.'.display_name, '.$wpdb->users
-					. '.user_login, '.PSGALLERIESTABLE.'.gallery_name, '
-					. $wpdb->posts . '.post_status '
-					. $cfsql . " "
-					. ' FROM '.PSIMAGESTABLE 
-					. ' LEFT OUTER JOIN '.PSCUSTOMDATATABLE.' ON '.PSCUSTOMDATATABLE
-					. '.image_id = '. PSIMAGESTABLE. '.image_id '
-					. ' LEFT OUTER JOIN '.$wpdb->users.' ON '.$wpdb->users
-					. '.ID = '. PSIMAGESTABLE. '.user_id '
-					. ' LEFT OUTER JOIN '.PSGALLERIESTABLE 
-					. ' ON '.PSGALLERIESTABLE.'.gallery_id = '
-					. PSIMAGESTABLE.'.gallery_id '
-					. ' LEFT OUTER JOIN ' . $wpdb->posts . ' ON '
-					. $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id '
-					. ' WHERE '. PSIMAGESTABLE
-					. '.gallery_id = %d ORDER BY '
-					. PSIMAGESTABLE. '.image_id ' . $desc . $limitsql, $gallery_id);			
+					$sql = $wpdb->prepare('SELECT ' . PSIMAGESTABLE . '.*, ' . $wpdb->users . '.user_nicename,' . $wpdb->users . '.display_name, ' . $wpdb->users . '.user_login, ' . PSGALLERIESTABLE . '.gallery_name, ' . $wpdb->posts . '.post_status ' . $cfsql . ' FROM ' . PSIMAGESTABLE . ' LEFT OUTER JOIN ' . PSCUSTOMDATATABLE . ' ON ' . PSCUSTOMDATATABLE . '.image_id = ' . PSIMAGESTABLE . '.image_id LEFT OUTER JOIN ' . $wpdb->users . ' ON ' . $wpdb->users . '.ID = ' . PSIMAGESTABLE . '.user_id LEFT OUTER JOIN ' . PSGALLERIESTABLE . ' ON ' . PSGALLERIESTABLE . '.gallery_id = ' . PSIMAGESTABLE . '.gallery_id LEFT OUTER JOIN ' . $wpdb->posts . ' ON ' . $wpdb->posts . '.ID = ' . PSIMAGESTABLE . '.post_id WHERE ' . PSIMAGESTABLE . '.gallery_id = %d ORDER BY ' . PSIMAGESTABLE .  '.image_id ' . $desc . $limitsql, $gallery_id);
 			}
 			
 			$images = $wpdb->get_results($sql);
@@ -3500,7 +3462,7 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				$title = $row->post_title;
 			}
 			
-			$title = "Gal: $row->gallery_id - " . $title .  " (".$row->img_cnt." imgs)";
+			$title = 'Gallery: ' . $row->gallery_id . ' - ' . $title . ' (' . $row->img_cnt . ' images)';
 			
 			$ret .= '<input type="checkbox" class="bwbps_multigal" name="' . $cbxName . '[]" '. $checked .' /value="'.$row->gallery_id.'"> '.$title.' <br/>
 			';
@@ -3514,6 +3476,7 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 	function getGalleryDDL($selectedGallery = 0, $newtag = "New", $idPfx = "", $ddlName= "gal_gallery_id", $length = 0, $showImgCount = true, $exclude_virtual = false)
  	{
  		global $wpdb;
+        $ret = '';
  		 
  		if($newtag <> 'skipnew' ){
 			$ret = "<option value='0'>&lt;$newtag&gt;</option>";
@@ -3533,8 +3496,8 @@ Select gallery: <?php echo $galleryDDL; ?> <input type="submit" name="show_bwbPS
 				$title = substr($title,0,$length). "&#8230;";
 			}
 			
-			if($showImgCount){
-				$title .=  " (".$row->img_cnt." imgs)";
+			if($showImgCount) {
+				$title .=  ' (' . $row->img_cnt . ' images)';
 			}
 			
 			if( !$row->status ){

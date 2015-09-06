@@ -75,14 +75,6 @@ define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>Photosmash
 define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>Photosmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
 		<br/>");
 
-/*
-define('PSADVANCEDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=psmashSharing'>Sharing</a> | <a href='admin.php?page=editPSForm'>Custom Forms</a> | <a href='admin.php?page=editPSFields'>Custom Fields</a> | <a href='admin.php?page=editPSHTMLLayouts'>Layouts Editor</a>
-		<br/>");
-
-define('PSSTANDARDDMENU', "<a href='admin.php?page=bwb-photosmash.php'>PhotoSmash Settings</a> | <a href='admin.php?page=editPSGallerySettings'>Gallery Settings</a> | <a href='admin.php?page=managePhotoSmashImages'>Photo Manager</a> | <a href='admin.php?page=psmashSharing'>Sharing</a>
-		<br/>");
-*/
-		
 $bwbps_special_msg = "";
 $bwbps_preview_id = 0;
 
@@ -94,106 +86,6 @@ if ( (gettype( ini_get('safe_mode') ) == 'string') ) {
 	define( 'SAFE_MODE', ini_get('safe_mode') );
 }
 
-
-//Move up to WP 2.8+
-//Using new url sanitizing function
-if( ! function_exists('esc_url_raw') ){
-
-	function esc_url_raw($url){
-		
-		if( function_exists('sanitize_url') ){
-			return sanitize_url($url);
-		} else {
-			return false;
-		}
-	
-	}
-}
-
-if( ! function_exists('esc_url') ){
-
-	function esc_url($url){
-		
-		if( function_exists('clean_url') ){
-			return clean_url($url);
-		} else {
-			return false;
-		}
-	
-	}
-}
-
-if( ! function_exists('esc_attr__') ){
-
-	function esc_attr__($string){
-		
-		if( function_exists('attribute_escape') ){
-			return attribute_escape($string);
-		} else {
-			return false;
-		}
-	
-	}
-}
-if( ! function_exists('esc_attr') ){
-	function esc_attr($string){
-		
-		if( function_exists('attribute_escape') ){
-			return attribute_escape($string);
-		} else {
-			return false;
-		}
-	
-	}
-}
-
-if( ! function_exists('esc_attr_e') ){
-	function esc_attr_e($string){
-		
-		if( function_exists('attribute_escape') ){
-			echo attribute_escape($string);
-		} 
-	
-	}
-}
-
-if( ! function_exists('esc_html__') ){
-
-	function esc_html__($string){
-		
-		if( function_exists('wp_specialchars') ){
-			return wp_specialchars($string);
-		} else {
-			return esc_attr__($string);;
-		}
-	
-	}
-}
-
-if( ! function_exists('esc_html') ){
-
-	function esc_html($string){
-		
-		if( function_exists('wp_specialchars') ){
-			return wp_specialchars($string);
-		} else {
-			return esc_attr($string);;
-		}
-	
-	}
-}
-
-if( ! function_exists('esc_html_e') ){
-	function esc_html_e($string){
-		
-		if( function_exists('wp_specialchars') ){
-			echo wp_specialchars($string);
-		} else {
-			esc_attr_e($string);
-		}
-	
-	}
-}
 
 
 class BWB_PhotoSmash{
@@ -280,7 +172,7 @@ class BWB_PhotoSmash{
 		
 		//Add actions for Contributor Gallery
 		if( $this->psOptions['contrib_gal_on'] ){
-			add_filter('the_posts',  array(&$this,'displayContributorGallery') ); 
+			add_filter('the_posts',  array($this,'displayContributorGallery') ); 
 		}
 		
 		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/image-functions.php");
@@ -289,10 +181,10 @@ class BWB_PhotoSmash{
 		require_once(WP_PLUGIN_DIR . "/photosmash-galleries/admin/gallery-functions.php");
 		$this->gal_funcs = new BWBPS_GalleryFunc($this->psOptions);
 		
-		add_filter('the_permalink',array(&$this,'fixSpecialGalleryLinks') );
+		add_filter('the_permalink',array($this,'fixSpecialGalleryLinks') );
 		
 		//Add action for Tags Gallery
-		add_filter('the_posts', array(&$this, 'displayTagGallery') );
+		add_filter('the_posts', array($this, 'displayTagGallery') );
 		
 		// PhotoSmash API
 		if( is_admin() && (int)$this->psOptions['api_enabled'] ){
@@ -564,15 +456,15 @@ class BWB_PhotoSmash{
         }
 
         if(function_exists('add_menu_page')) {
-            add_menu_page('Photosmash', 'Photosmash', 'manage_options', basename(__FILE__), array(&$bwbPS, 'loadAdminPage'), 'dashicons-format-gallery');
-            add_submenu_page(basename(__FILE__), __('Settings'), __('Settings'), 'manage_options',  basename(__FILE__), array(&$bwbPS, 'loadAdminPage'));
-            add_submenu_page(basename(__FILE__), __('Gallery Settings'), __('Gallery Settings'), 'manage_options', 'editPSGallerySettings', array(&$bwbPS, 'loadGallerySettings'));
-            add_submenu_page(basename(__FILE__), __('Photo Manager'), __('Photo Manager'), 'manage_options', 'managePhotoSmashImages', array(&$bwbPS, 'loadPhotoManager'));
-            add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 'manage_options', 'importPSImages', array(&$bwbPS, 'loadImageImporter'));
-            add_submenu_page(basename(__FILE__), __('PS Form Editor'), __('Custom Forms'), 'manage_options', 'editPSForm', array(&$bwbPS, 'loadFormEditor'));
-            add_submenu_page(basename(__FILE__), __('PS Field Editor'), __('Custom Fields'), 'manage_options', 'editPSFields', array(&$bwbPS, 'loadFieldEditor'));
-            add_submenu_page(basename(__FILE__), __('PS Layouts Editor'), __('Layouts Editor'), 'manage_options', 'editPSHTMLLayouts', array(&$bwbPS, 'loadLayoutsEditor'));
-			add_submenu_page(basename(__FILE__), __('Plugin Info'), __('Plugin Info'), 'manage_options', 'psInfo', array(&$bwbPS, 'loadPsInfo'));
+            add_menu_page('Photosmash', 'Photosmash', 'manage_options', basename(__FILE__), array($bwbPS, 'loadAdminPage'), 'dashicons-format-gallery');
+            add_submenu_page(basename(__FILE__), __('Settings'), __('Settings'), 'manage_options',  basename(__FILE__), array($bwbPS, 'loadAdminPage'));
+            add_submenu_page(basename(__FILE__), __('Gallery Settings'), __('Gallery Settings'), 'manage_options', 'editPSGallerySettings', array($bwbPS, 'loadGallerySettings'));
+            add_submenu_page(basename(__FILE__), __('Photo Manager'), __('Photo Manager'), 'manage_options', 'managePhotoSmashImages', array($bwbPS, 'loadPhotoManager'));
+            add_submenu_page(basename(__FILE__), __('Image Importer'), __('Import Photos'), 'manage_options', 'importPSImages', array($bwbPS, 'loadImageImporter'));
+            add_submenu_page(basename(__FILE__), __('PS Form Editor'), __('Custom Forms'), 'manage_options', 'editPSForm', array($bwbPS, 'loadFormEditor'));
+            add_submenu_page(basename(__FILE__), __('PS Field Editor'), __('Custom Fields'), 'manage_options', 'editPSFields', array($bwbPS, 'loadFieldEditor'));
+            add_submenu_page(basename(__FILE__), __('PS Layouts Editor'), __('Layouts Editor'), 'manage_options', 'editPSHTMLLayouts', array($bwbPS, 'loadLayoutsEditor'));
+			add_submenu_page(basename(__FILE__), __('Plugin Info'), __('Plugin Info'), 'manage_options', 'psInfo', array($bwbPS, 'loadPsInfo'));
         }
     }
 
@@ -1442,7 +1334,7 @@ function getGallery($g){
 	return $g;
 }
 
-function getAddPhotosLink(&$g, $blogname, &$formname){
+function getAddPhotosLink($g, $blogname, $formname){
 	
 	global $post;
 	global $current_user;
@@ -2139,7 +2031,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 		if(!get_query_var( 'bwbps_wp_tag' ) && !get_query_var( 'bwbps_contributor' )){ return $theposts; } //leave if this isn't the tag page
 		
 		
-		add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );
+		add_filter('the_excerpt',array($this,'fixExcerptGallery') );
 		
 		$d = date( 'Y-m-d H:i:s' );
 		
@@ -2290,7 +2182,7 @@ function buildGallery($g, $skipForm=false, $layoutName=false, $formName=false, $
 	function displayContributorGallery($theposts){
 			
 		if(is_author()){
-			add_filter('the_excerpt',array(&$this,'fixExcerptGallery') );												
+			add_filter('the_excerpt',array($this,'fixExcerptGallery') );												
 			$author = (int) get_query_var( 'author' );
 			
 			$author_name = get_the_author_meta(  'user_nicename', $author );
@@ -3273,50 +3165,38 @@ function get_photosmash_favlink($link_text='Favorite Images', $before='', $after
 }
 
 //Set up the actions!
-add_action('admin_notices', array(&$bwbPS, 'verifyDatabase'));
-add_action('admin_notices', array(&$bwbPS, 'verifyGalleryViewerPage'));
+add_action('admin_notices', array($bwbPS, 'verifyDatabase'));
+add_action('admin_notices', array($bwbPS, 'verifyGalleryViewerPage'));
 
 //Call the Function that will Add the Options Page
-add_action('admin_menu', array(&$bwbPS, 'photoSmashOptionsPage'));
+add_action('admin_menu', array($bwbPS, 'photoSmashOptionsPage'));
 
 //Inject Admin Javascript & Styles
-
-add_action('admin_print_scripts', array( &$bwbPS, 'injectAdminJS') );
-add_action('admin_print_styles', array( &$bwbPS, 'injectAdminStyles') );
+add_action('admin_print_scripts', array( $bwbPS, 'injectAdminJS') );
+add_action('admin_print_styles', array( $bwbPS, 'injectAdminStyles') );
 
 //Call the INIT function whenever the Plugin is activated
 add_action('activate_photosmash-galleries/bwb-photosmash.php',
-array(&$bwbPS, 'init'));
+array($bwbPS, 'init'));
 
-
-add_action('init', array(&$bwbPS, 'enqueueBWBPS'), 1);
-
-add_action( 'init', array(&$bwbPS, 'createTaxonomy'), 0 );
-
-add_action('wp_print_styles', array(&$bwbPS, 'injectBWBPS_CSS'));
-
-//add_action('wp_head', array(&$bwbPS, 'injectBWBPS_CSS'), 10);
-
-add_action('wp_footer', array(&$bwbPS, 'injectFooterJavascript'), 100);
+add_action('init', array($bwbPS, 'enqueueBWBPS'), 1);
+add_action( 'init', array($bwbPS, 'createTaxonomy'), 0 );
+add_action('wp_print_styles', array($bwbPS, 'injectBWBPS_CSS'));
+add_action('wp_footer', array($bwbPS, 'injectFooterJavascript'), 100);
 
 //Media Uploader Integration
-add_action('post-html-upload-ui', array(&$bwbPS, 'mediaUAddGalleryFieldToMediaUploader'), 10);
-add_action('post-flash-upload-ui', array(&$bwbPS, 'mediaUAddGalleryFieldToFlashUploader'), 10);
-add_action('add_attachment',array(&$bwbPS, 'mediaUImportAttachmentToGallery'), 100 );
+add_action('post-html-upload-ui', array($bwbPS, 'mediaUAddGalleryFieldToMediaUploader'), 10);
+add_action('post-flash-upload-ui', array($bwbPS, 'mediaUAddGalleryFieldToFlashUploader'), 10);
+add_action('add_attachment',array($bwbPS, 'mediaUImportAttachmentToGallery'), 100 );
 
-add_filter('the_content',array(&$bwbPS, 'autoAddGallery'), 100);
+add_filter('the_content',array($bwbPS, 'autoAddGallery'), 100);
 
-add_shortcode('photosmash', array(&$bwbPS, 'shortCodeGallery'));
+add_shortcode('photosmash', array($bwbPS, 'shortCodeGallery'));
+add_shortcode('psmash', array($bwbPS, 'shortCodes'));
+add_shortcode('photosmash_gmap', array($bwbPS, 'gmapShortCode'));
 
-add_shortcode('psmash', array(&$bwbPS, 'shortCodes'));
+add_filter('plugin_action_links', array($bwbPS, 'add_settings_link'), 10, 2 );
 
-add_shortcode('photosmash_gmap', array(&$bwbPS, 'gmapShortCode'));
-
-add_filter('plugin_action_links', array(&$bwbPS, 'add_settings_link'), 10, 2 );
-
-if( version_compare($wp_version,"2.8", ">=" ) ){
-	//Load the PhotoSmash Widget
-	add_action( 'widgets_init', array(&$bwbPS, 'loadPSWidgets') );
-}
-
+//Load the PhotoSmash Widget
+add_action( 'widgets_init', array($bwbPS, 'loadPSWidgets') );
 ?>
